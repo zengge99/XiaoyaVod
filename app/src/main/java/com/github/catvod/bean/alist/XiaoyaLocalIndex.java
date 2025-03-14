@@ -317,15 +317,43 @@ public class XiaoyaLocalIndex {
      * @param extractDir 解压目录
      * @param outputFile 合并后的文件路径
      */
+    /**
+ * 合并文件
+ *
+ * @param extractDir 解压目录
+ * @param outputFile 合并后的文件路径
+ */
     private static void mergeFiles(String extractDir, String outputFile) throws IOException {
         Path dirPath = Paths.get(extractDir);
         Path outputFilePath = Paths.get(outputFile);
 
+        // 定义文件读取顺序
+        List<String> fileOrder = List.of("index.video.txt", "index.115.txt");
+
         try (BufferedWriter writer = Files.newBufferedWriter(outputFilePath)) {
+            // 按照指定顺序读取文件
+            for (String fileName : fileOrder) {
+                Path filePath = dirPath.resolve(fileName);
+                if (Files.exists(filePath)) {
+                    try (BufferedReader reader = Files.newBufferedReader(filePath)) {
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                            if (line.startsWith("./")) {
+                                line = line.substring(2);
+                            }
+                            if (!line.contains("/")) continue;
+                            writer.write(line);
+                            writer.newLine();
+                        }
+                    }
+                }
+            }
+
+            // 读取剩余的其他 .txt 文件（如果有）
             try (var stream = Files.newDirectoryStream(dirPath, "*.txt")) {
                 for (Path file : stream) {
-                    // 跳过 outputFile
-                    if (file.equals(outputFilePath)) {
+                    // 跳过 outputFile 和已经处理的文件
+                    if (file.equals(outputFilePath) || fileOrder.contains(file.getFileName().toString())) {
                         continue;
                     }
 
@@ -335,8 +363,7 @@ public class XiaoyaLocalIndex {
                             if (line.startsWith("./")) {
                                 line = line.substring(2);
                             }
-                            if (!line.contains("/"))
-                                continue;
+                            if (!line.contains("/")) continue;
                             writer.write(line);
                             writer.newLine();
                         }
