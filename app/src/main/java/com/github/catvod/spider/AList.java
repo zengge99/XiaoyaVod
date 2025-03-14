@@ -421,6 +421,10 @@ public class AList extends Spider {
         List<Job> jobs = new ArrayList<>();
 
         if (!drive.getName().equals("每日更新")) {
+            jobs.add(new Job(drive.check(), "~daily:100000"));
+            for (Future<List<Vod>> future : executor.invokeAll(jobs, 15, TimeUnit.SECONDS))
+                list.addAll(future.get());  
+        } else {
             if (XiaoyaLocalIndex.isBusy) {
                 Init.show("本地索引正在构建，请等待30秒再试");
             } else {
@@ -428,11 +432,6 @@ public class AList extends Spider {
                 for (Future<List<Vod>> future : executor.invokeAll(jobs, 15, TimeUnit.SECONDS))
                     list.addAll(future.get());
             }
-            
-        } else {
-            jobs.add(new Job(drive.check(), "~daily:100000"));
-            for (Future<List<Vod>> future : executor.invokeAll(jobs, 15, TimeUnit.SECONDS))
-                list.addAll(future.get());
         }
 
         if (filter) {

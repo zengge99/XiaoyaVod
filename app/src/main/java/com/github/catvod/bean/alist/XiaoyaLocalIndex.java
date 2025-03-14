@@ -25,7 +25,7 @@ import android.os.Debug;
 public class XiaoyaLocalIndex {
     private static Map<String, List<Vod>> cacheMap = new HashMap<>();
     private static Map<String, Map<String, List<Integer>>> invertedIndexMap = new HashMap<>();
-    private volatile boolean isBusy = false;
+    private static volatile boolean isBusy = false;
 
     public static synchronized List<Vod> downlodadAndUnzip(Drive drive) {
         isBusy = true;
