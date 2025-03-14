@@ -25,8 +25,10 @@ import android.os.Debug;
 public class XiaoyaLocalIndex {
     private static Map<String, List<Vod>> cacheMap = new HashMap<>();
     private static Map<String, Map<String, List<Integer>>> invertedIndexMap = new HashMap<>();
+    private volatile boolean isBusy = false;
 
     public static synchronized List<Vod> downlodadAndUnzip(Drive drive) {
+        isBusy = true;
 
         Logger.log("本地索引前的内存：" + Debug.getNativeHeapAllocatedSize());
 
@@ -36,6 +38,7 @@ public class XiaoyaLocalIndex {
             for (Vod vod : vods) {
                 vod.setVodDrive(drive.getName());
             }
+            isBusy = false;
             return vods;
         }
 
@@ -83,10 +86,11 @@ public class XiaoyaLocalIndex {
             cacheMap.put(server, vods);
 
         } catch (IOException e) {
+            isBusy = false;
         }
 
         Logger.log("本地索引后的内存：" + Debug.getNativeHeapAllocatedSize());
-
+        isBusy = false;
         return vods;
     }
 
