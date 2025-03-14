@@ -183,10 +183,11 @@ public class AList extends Spider {
 
         List<Vod> list = new ArrayList<>();
         if (defaultDrive != null) {
-            List<Job> jobs = new ArrayList<>();
-            jobs.add(new Job(defaultDrive.check(), "~daily:1000"));
-            for (Future<List<Vod>> future : executor.invokeAll(jobs, 15, TimeUnit.SECONDS))
-                list.addAll(future.get());
+            // List<Job> jobs = new ArrayList<>();
+            // jobs.add(new Job(defaultDrive.check(), "~daily:1000"));
+            // for (Future<List<Vod>> future : executor.invokeAll(jobs, 15, TimeUnit.SECONDS))
+            //     list.addAll(future.get());
+            list = (new Job(defaultDrive.check(), "~daily:1000")).call();
         }
 
         Drive tmpDrive = defaultDrive;
@@ -296,10 +297,11 @@ public class AList extends Spider {
         Vod vod = vodMap.get(id);
         if (vod == null && id.endsWith("~soulist")) {
             String keyword = path.substring(path.indexOf("/") + 1);
-            List<Job> jobs = new ArrayList<>();
-            jobs.add(new Job(drive.check(), "~search:" + keyword));
-            for (Future<List<Vod>> future : executor.invokeAll(jobs, 15, TimeUnit.SECONDS))
-                future.get();
+            // List<Job> jobs = new ArrayList<>();
+            // jobs.add(new Job(drive.check(), "~search:" + keyword));
+            // for (Future<List<Vod>> future : executor.invokeAll(jobs, 15, TimeUnit.SECONDS))
+            //     future.get();
+            (new Job(drive.check(), "~search:" + keyword)).call();
             vod = vodMap.get(id);
         }
         if (vod == null) {
@@ -335,10 +337,11 @@ public class AList extends Spider {
         Vod vod = vodMap.get(id);
         if (vod == null && id.endsWith("~soufile")) {
             String keyword = path.substring(path.indexOf("/") + 1);
-            List<Job> jobs = new ArrayList<>();     
-            jobs.add(new Job(drive.check(), keyword));
-            for (Future<List<Vod>> future : executor.invokeAll(jobs, 15, TimeUnit.SECONDS))
-                future.get();
+            // List<Job> jobs = new ArrayList<>();     
+            // jobs.add(new Job(drive.check(), keyword));
+            // for (Future<List<Vod>> future : executor.invokeAll(jobs, 15, TimeUnit.SECONDS))
+            //     future.get();
+            (new Job(drive.check(), keyword)).call();
             vod = vodMap.get(id);
         }
         if (vod == null) {
@@ -419,19 +422,21 @@ public class AList extends Spider {
         }
 
         list = new ArrayList<>();
-        List<Job> jobs = new ArrayList<>();
+        //List<Job> jobs = new ArrayList<>();
 
         if (!drive.getName().equals("每日更新")) {
-            jobs.add(new Job(drive.check(), "~daily:100000"));
-            for (Future<List<Vod>> future : executor.invokeAll(jobs, 15, TimeUnit.SECONDS))
-                list.addAll(future.get());  
+            // jobs.add(new Job(drive.check(), "~daily:100000"));
+            // for (Future<List<Vod>> future : executor.invokeAll(jobs, 15, TimeUnit.SECONDS))
+            //     list.addAll(future.get());  
+            list = (new Job(drive.check(), "~daily:100000")).call();
         } else {
             if (XiaoyaLocalIndex.isBusy) {
                 Notify.show("本地索引正在构建，请等待30秒再试");
             } else {
-                jobs.add(new Job(drive.check(), drive.getPath()));
-                for (Future<List<Vod>> future : executor.invokeAll(jobs, 15, TimeUnit.SECONDS))
-                    list.addAll(future.get());
+                // jobs.add(new Job(drive.check(), drive.getPath()));
+                // for (Future<List<Vod>> future : executor.invokeAll(jobs, 15, TimeUnit.SECONDS))
+                //     list.addAll(future.get());
+                list = (new Job(drive.check(), drive.getPath())).call();
             }
         }
 
