@@ -424,7 +424,7 @@ public class AList extends Spider {
         list = new ArrayList<>();
         //List<Job> jobs = new ArrayList<>();
 
-        if (!drive.getName().equals("每日更新")) {
+        if (drive.getName().equals("每日更新")) {
             // jobs.add(new Job(drive.check(), "~daily:100000"));
             // for (Future<List<Vod>> future : executor.invokeAll(jobs, 15, TimeUnit.SECONDS))
             //     list.addAll(future.get());  
