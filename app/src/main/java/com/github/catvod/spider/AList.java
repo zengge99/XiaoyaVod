@@ -53,7 +53,7 @@ public class AList extends Spider {
     private String xiaoyaAlistToken;
     private Map<String, Vod> vodMap = new HashMap<>();
     // private Map<String, List<Vod>> driveVodsMap = new HashMap<>();
-    private List<Vod> vodCache;
+    private volatile List<Vod> vodCache;
     private ExecutorService executor = Executors.newCachedThreadPool();
 
     private List<Filter> getFilter(String tid) {
