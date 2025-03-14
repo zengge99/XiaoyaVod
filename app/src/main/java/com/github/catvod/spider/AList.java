@@ -484,7 +484,7 @@ public class AList extends Spider {
 
         for (Item item : folders) {
             Vod vod = item.getVod(tid, vodPic);
-            vod.setVodRemarks(item.getModified() + "\t文件夹");
+            vod.setVodRemarks(item.getModified().split("T")[0] + "\t文件夹");
             list.add(vod);
         }
             
