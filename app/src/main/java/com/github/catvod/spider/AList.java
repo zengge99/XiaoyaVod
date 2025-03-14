@@ -527,31 +527,26 @@ public class AList extends Spider {
         }
 
         String filesize;
+        double size;
         if (sz > 1024L * 1024 * 1024 * 1024) {
-            sz /= 1024L * 1024 * 1024 * 1024;
+            size = sz / (1024.0 * 1024 * 1024 * 1024);
             filesize = "TB";
         } else if (sz > 1024L * 1024 * 1024) {
-            sz /= 1024L * 1024 * 1024;
+            size = sz / (1024.0 * 1024 * 1024);
             filesize = "GB";
         } else if (sz > 1024L * 1024) {
-            sz /= 1024L * 1024;
+            size = sz / (1024.0 * 1024);
             filesize = "MB";
         } else if (sz > 1024) {
-            sz /= 1024;
+            size = sz / 1024.0;
             filesize = "KB";
         } else {
+            size = sz;
             filesize = "B";
         }
 
-        String sizeStr = String.format("%.2f", (double) sz) + filesize;
-        int index = sizeStr.indexOf(".");
-        String dou = sizeStr.substring(index + 1, index + 3);
-
-        if (dou.equals("00")) {
-            return sizeStr.substring(0, index) + sizeStr.substring(index + 3);
-        } else {
-            return sizeStr;
-        }
+        // 格式化输出，保留两位小数
+        return String.format("%.2f %s", size, filesize);
     }
 
     private Item getDetail(String id) {
