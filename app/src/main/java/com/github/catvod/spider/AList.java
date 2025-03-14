@@ -253,7 +253,7 @@ public class AList extends Spider {
     public String playerContent(String flag, String id, List<String> vipFlags) {
         Logger.log(flag);
         Logger.log(id);
-        String[] ids = id.split("~~~");
+        String[] ids = id.split("~~~"); 
         String key = ids[0].contains("/") ? ids[0].substring(0, ids[0].indexOf("/")) : ids[0];
         Drive drive = getDrive(key);
         String url = getDetail(ids[0]).getUrl();
