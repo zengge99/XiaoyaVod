@@ -19,6 +19,7 @@ import com.github.catvod.crawler.Spider;
 import com.github.catvod.crawler.SpiderDebug;
 import com.github.catvod.net.OkHttp;
 import com.github.catvod.utils.Util;
+import com.github.catvod.utils.Notify;
 
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -426,7 +427,7 @@ public class AList extends Spider {
                 list.addAll(future.get());  
         } else {
             if (XiaoyaLocalIndex.isBusy) {
-                Init.show("本地索引正在构建，请等待30秒再试");
+                Notify.show("本地索引正在构建，请等待30秒再试");
             } else {
                 jobs.add(new Job(drive.check(), drive.getPath()));
                 for (Future<List<Vod>> future : executor.invokeAll(jobs, 15, TimeUnit.SECONDS))
