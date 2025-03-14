@@ -52,7 +52,9 @@ public class AList extends Spider {
     private String ext;
     private String xiaoyaAlistToken;
     private Map<String, Vod> vodMap = new HashMap<>();
-    public static Context appContext;
+    // private Map<String, List<Vod>> driveVodsMap = new HashMap<>();
+    private List<Vod> vodCache;
+    private ExecutorService executor = Executors.newCachedThreadPool();
 
     private List<Filter> getFilter(String tid) {
         List<Filter> items = new ArrayList<>();
@@ -160,7 +162,6 @@ public class AList extends Spider {
     @Override
     public void init(Context context, String extend) {
         try {
-            appContext = context;
             ext = extend;
             fetchRule();
         } catch (Exception ignored) {
@@ -181,7 +182,6 @@ public class AList extends Spider {
         List<Vod> list = new ArrayList<>();
         if (defaultDrive != null) {
             List<Job> jobs = new ArrayList<>();
-            ExecutorService executor = Executors.newCachedThreadPool();
             jobs.add(new Job(defaultDrive.check(), "~daily:1000"));
             for (Future<List<Vod>> future : executor.invokeAll(jobs, 15, TimeUnit.SECONDS))
                 list.addAll(future.get());
@@ -191,7 +191,7 @@ public class AList extends Spider {
         String result = Result.string(classes, list, filters);
         Thread thread = new Thread(() -> {
             try {
-                Thread.sleep(3000);
+                Thread.sleep(500);
             } catch (InterruptedException e) {
             }
             XiaoyaLocalIndex.downlodadAndUnzip(tmpDrive);
@@ -231,7 +231,6 @@ public class AList extends Spider {
         fetchRule();
         List<Vod> list = new ArrayList<>();
         List<Job> jobs = new ArrayList<>();
-        ExecutorService executor = Executors.newCachedThreadPool();
         for (Drive drive : drives) {
             if (drive.search()) {
                 if (quick) {
@@ -296,7 +295,6 @@ public class AList extends Spider {
         if (vod == null && id.endsWith("~soulist")) {
             String keyword = path.substring(path.indexOf("/") + 1);
             List<Job> jobs = new ArrayList<>();
-            ExecutorService executor = Executors.newCachedThreadPool();
             jobs.add(new Job(drive.check(), "~search:" + keyword));
             for (Future<List<Vod>> future : executor.invokeAll(jobs, 15, TimeUnit.SECONDS))
                 future.get();
@@ -335,8 +333,7 @@ public class AList extends Spider {
         Vod vod = vodMap.get(id);
         if (vod == null && id.endsWith("~soufile")) {
             String keyword = path.substring(path.indexOf("/") + 1);
-            List<Job> jobs = new ArrayList<>();
-            ExecutorService executor = Executors.newCachedThreadPool();
+            List<Job> jobs = new ArrayList<>();     
             jobs.add(new Job(drive.check(), keyword));
             for (Future<List<Vod>> future : executor.invokeAll(jobs, 15, TimeUnit.SECONDS))
                 future.get();
@@ -411,11 +408,16 @@ public class AList extends Spider {
             throws Exception {
         Logger.log(tid);
         fetchRule();
-        List<Vod> list = new ArrayList<>();
-        List<Job> jobs = new ArrayList<>();
-        ExecutorService executor = Executors.newCachedThreadPool();
         String key = tid.contains("/") ? tid.substring(0, tid.indexOf("/")) : tid;
         Drive drive = getDrive(key);
+        //List<Vod> list = driveVodsMap.get(drive.getName());
+        List<Vod> list = vodCache;
+        if(list != null && !pg.equals("1")) {
+            return Result.get().vod(list).page(pg, true).string();
+        }
+
+        list = new ArrayList<>();
+        List<Job> jobs = new ArrayList<>();
 
         if (!drive.getName().equals("每日更新")) {
             jobs.add(new Job(drive.check(), drive.getPath()));
@@ -432,6 +434,8 @@ public class AList extends Spider {
         }
 
         // Logger.log(Result.string(list));
+        //driveVodsMap.put(drive.getName(), list);
+        vodCache = list;
         return Result.get().vod(list).page(pg, true).string();
     }
 
