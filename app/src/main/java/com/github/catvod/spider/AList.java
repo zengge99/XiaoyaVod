@@ -490,7 +490,7 @@ public class AList extends Spider {
             
         for (Item item : files) {
             Vod vod = item.getVod(tid, vodPic);
-            vod.setVodRemarks(item.getModified().split('T')[0] + "\t" + getSize(item.getSize()));
+            vod.setVodRemarks(item.getModified().split("T")[0] + "\t" + getSize(item.getSize()));
             list.add(vod);
         }
 
