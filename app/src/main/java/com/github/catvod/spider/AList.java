@@ -482,10 +482,18 @@ public class AList extends Spider {
             list.add(playlistVod);
         }
 
-        for (Item item : folders)
-            list.add(item.getVod(tid, vodPic));
-        for (Item item : files)
-            list.add(item.getVod(tid, vodPic));
+        for (Item item : folders) {
+            Vod vod = item.getVod(tid, vodPic);
+            vod.setVodRemarks(item.getModified() + "\t文件夹");
+            list.add(vod);
+        }
+            
+        for (Item item : files) {
+            Vod vod = item.getVod(tid, vodPic);
+            vod.setVodRemarks(item.getModified() + "\t" + getSize(item.getSize()));
+            list.add(vod);
+        }
+
         // Logger.log(Result.get().vod(list).page().string());
         return Result.get().vod(list).page().string();
     }
@@ -510,6 +518,39 @@ public class AList extends Spider {
         } catch (Exception e) {
             e.printStackTrace();
             return false;
+        }
+    }
+
+    private String getSize(long sz) {
+        if (sz <= 0) {
+            return "";
+        }
+
+        String filesize;
+        if (sz > 1024L * 1024 * 1024 * 1024) {
+            sz /= 1024L * 1024 * 1024 * 1024;
+            filesize = "TB";
+        } else if (sz > 1024L * 1024 * 1024) {
+            sz /= 1024L * 1024 * 1024;
+            filesize = "GB";
+        } else if (sz > 1024L * 1024) {
+            sz /= 1024L * 1024;
+            filesize = "MB";
+        } else if (sz > 1024) {
+            sz /= 1024;
+            filesize = "KB";
+        } else {
+            filesize = "B";
+        }
+
+        String sizeStr = String.format("%.2f", (double) sz) + filesize;
+        int index = sizeStr.indexOf(".");
+        String dou = sizeStr.substring(index + 1, index + 3);
+
+        if (dou.equals("00")) {
+            return sizeStr.substring(0, index) + sizeStr.substring(index + 3);
+        } else {
+            return sizeStr;
         }
     }
 
