@@ -380,6 +380,8 @@ public class AList extends Spider {
             throws Exception {
         List<Item> items = getList(path, false);
         String name = path.substring(path.lastIndexOf("/") + 1);
+        Sorter.sort("name", "asc", items);
+        /*
         String order = drive.fl.containsKey("order") ? drive.fl.get("order") : "";
         if (order.isEmpty()) {
             Sorter.sort("name", "asc", items);
@@ -387,6 +389,7 @@ public class AList extends Spider {
             String[] splits = order.split("_");
             Sorter.sort(splits[0], splits[1], items);
         }
+        */
         
         List<String> playUrls = new ArrayList<>();
         Boolean haveFile = false;
