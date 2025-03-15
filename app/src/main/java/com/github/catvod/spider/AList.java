@@ -210,6 +210,11 @@ public class AList extends Spider {
             throws Exception {
         String key = tid.contains("/") ? tid.substring(0, tid.indexOf("/")) : tid;
         Drive drive = getDrive(key);
+        HashMap<String, String> fl = new HashMap<>();
+        if (filter) {
+            fl = extend;
+        }
+        drive.fl = fl;
         if (drive.noPoster()) {
             return alistCategoryContent(tid, pg, filter, extend);
         } else {
@@ -223,7 +228,7 @@ public class AList extends Spider {
         if (id.endsWith("~soulist") || id.endsWith("~playlist")) {
             return listDetailContent(ids);
         }
-        if (id.endsWith("~soufile") || id.endsWith("~playlist")) {
+        if (id.endsWith("~soufile")) {
             return fileDetailContent(ids);
         }
         return defaultDetailContent(ids);
@@ -371,7 +376,14 @@ public class AList extends Spider {
             throws Exception {
         List<Item> items = getList(path, false);
         String name = path.substring(path.lastIndexOf("/") + 1);
-        Sorter.sort("name", "asc", items);
+        String order = extend.containsKey("order") ? extend.get("order") : "";
+        if (order.isEmpty()) {
+            Sorter.sort("name", "asc", items);
+        } else {
+            Stiring[] splits = order.split("_");
+            Sorter.sort(splits[0], splits[1], items);
+        }
+        
         List<String> playUrls = new ArrayList<>();
         Boolean haveFile = false;
         for (Item item : items)
