@@ -107,13 +107,15 @@ public class Item {
     }
 
     public boolean isMedia(boolean isNew) {
-        if (getName().endsWith(".ts") || getName().endsWith(".mpg")) return true;
+        //if (getName().endsWith(".ts") || getName().endsWith(".mpg")) return true;
+        if (util.isMedia(getName())) return true;
         if (isNew) return getType() == 2 || getType() == 3;
         return getType() == 3 || getType() == 4;
     }
 
     public boolean ignore(boolean isNew) {
-        if (getName().endsWith(".ts") || getName().endsWith(".mpg")) return false;
+        //if (getName().endsWith(".ts") || getName().endsWith(".mpg")) return false;
+        if (util.isMedia(getName())) return false;
         if (isNew) return getType() == 0 || getType() == 4;
         return getType() == 0 || getType() == 2 || getType() == 5;
     }
