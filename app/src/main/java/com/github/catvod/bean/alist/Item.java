@@ -120,7 +120,7 @@ public class Item {
         // if (isNew) return getType() == 0 || getType() == 4;
         // return getType() == 0 || getType() == 2 || getType() == 5;
         if (isFolder()) return false;
-        return !isMedia();
+        return !Util.isMedia(getName());
     }
 
     public String getExt() {
