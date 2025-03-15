@@ -442,14 +442,14 @@ public class AList extends Spider {
             //     list.addAll(future.get());  
             list = (new Job(drive.check(), "~daily:100000")).call();
         } else {
-            if (XiaoyaLocalIndex.isBusy) {
-                Notify.show("本地索引正在构建，请等待30秒再试");
-            } else {
+            //if (XiaoyaLocalIndex.isBusy) {
+                //Notify.show("本地索引正在构建，请等待30秒再试");
+            //} else {
                 // jobs.add(new Job(drive.check(), drive.getPath()));
                 // for (Future<List<Vod>> future : executor.invokeAll(jobs, 15, TimeUnit.SECONDS))
                 //     list.addAll(future.get());
                 list = (new Job(drive.check(), drive.getPath())).call();
-            }
+            //}
         }
 
         if (filter) {
