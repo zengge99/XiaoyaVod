@@ -380,7 +380,7 @@ public class AList extends Spider {
         if (order.isEmpty()) {
             Sorter.sort("name", "asc", items);
         } else {
-            Stiring[] splits = order.split("_");
+            String[] splits = order.split("_");
             Sorter.sort(splits[0], splits[1], items);
         }
         
