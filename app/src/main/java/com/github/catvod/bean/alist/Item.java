@@ -14,6 +14,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.time.Instant;
 
 public class Item {
 
@@ -92,8 +93,10 @@ public class Item {
 
     public Date getDate() {
         try {
-            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault());
-            return format.parse(getModified().substring(0, 23) + "Z");
+            //SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault());
+            //return format.parse(getModified().subs
+            Instant instant = new Instant.parse(getModified());
+            return Date.form(instant);
         } catch (Exception e) {
             return new Date();
         }
