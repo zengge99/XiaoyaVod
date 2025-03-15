@@ -694,6 +694,7 @@ public class AList extends Spider {
         }
 
         private List<Vod> xiaoya() {
+            Logger.log("xiaoya:" + keyword + "drive:" + drive.getName());
             long startTime = System.currentTimeMillis();
             long duration = 0;
             List<Vod> list = new ArrayList<>();
