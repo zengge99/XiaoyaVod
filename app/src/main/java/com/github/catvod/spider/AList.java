@@ -211,11 +211,7 @@ public class AList extends Spider {
         Logger.log(tid);
         String key = tid.contains("/") ? tid.substring(0, tid.indexOf("/")) : tid;
         Drive drive = getDrive(key);
-        HashMap<String, String> fl = new HashMap<>();
-        if (filter) {
-            fl = extend;
-        }
-        drive.fl = fl;
+        drive.fl = extend;
         if (drive.noPoster()) {
             return alistCategoryContent(tid, pg, filter, extend);
         } else {
@@ -382,18 +378,14 @@ public class AList extends Spider {
             throws Exception {
         List<Item> items = getList(path, false);
         String name = path.substring(path.lastIndexOf("/") + 1);
-        Logger.log("walkFolder");
-        Logger.log(drive.fl);
-        Sorter.sort("name", "asc", items);
-        /*
-        String order = drive.fl.containsKey("order") ? drive.fl.get("order") : "";
+
+        String order = (drive.fl != null && drive.fl.containsKey("order")) ? drive.fl.get("order") : "";
         if (order.isEmpty()) {
             Sorter.sort("name", "asc", items);
         } else {
             String[] splits = order.split("_");
             Sorter.sort(splits[0], splits[1], items);
         }
-        */
         
         List<String> playUrls = new ArrayList<>();
         Boolean haveFile = false;
