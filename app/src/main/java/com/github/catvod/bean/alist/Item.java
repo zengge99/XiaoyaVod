@@ -95,8 +95,8 @@ public class Item {
         try {
             //SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault());
             //return format.parse(getModified().subs
-            Instant instant = new Instant.parse(getModified());
-            return Date.form(instant);
+            Instant instant = Instant.parse(getModified());
+            return Date.from(instant);
         } catch (Exception e) {
             return new Date();
         }
