@@ -421,7 +421,7 @@ public class AList extends Spider {
         }
     }
 
-    private String xiaoyaCategoryContent(String tid, String pg, boolean filter, HashMap<String, String> extend)
+    private synchronized String xiaoyaCategoryContent(String tid, String pg, boolean filter, HashMap<String, String> extend)
             throws Exception {
         Logger.log(tid);
         fetchRule();
