@@ -346,11 +346,11 @@ public class AList extends Spider {
         Vod vod = vodMap.get(id);
         if (vod == null && id.endsWith("~soufile")) {
             String keyword = path.substring(path.indexOf("/") + 1);
-            // List<Job> jobs = new ArrayList<>();     
-            // jobs.add(new Job(drive.check(), keyword));
-            // for (Future<List<Vod>> future : executor.invokeAll(jobs, 15, TimeUnit.SECONDS))
-            //     future.get();
-            (new Job(drive.check(), keyword)).call();
+            List<Job> jobs = new ArrayList<>();     
+            jobs.add(new Job(drive.check(), keyword));
+            for (Future<List<Vod>> future : executor.invokeAll(jobs, 15, TimeUnit.SECONDS))
+                future.get();
+            //(new Job(drive.check(), keyword)).call();
             vod = vodMap.get(id);
         }
         if (vod == null) {
