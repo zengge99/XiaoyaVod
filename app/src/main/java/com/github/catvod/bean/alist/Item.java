@@ -92,8 +92,8 @@ public class Item {
 
     public Date getDate() {
         try {
-            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.getDefault());
-            return format.parse(getModified());
+            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault());
+            return format.parse(getModified().substring(0, 23));
         } catch (Exception e) {
             return new Date();
         }
