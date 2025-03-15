@@ -382,6 +382,8 @@ public class AList extends Spider {
             throws Exception {
         List<Item> items = getList(path, false);
         String name = path.substring(path.lastIndexOf("/") + 1);
+        Logger.log("walkFolder");
+        Logger.log(drive.fl);
         Sorter.sort("name", "asc", items);
         /*
         String order = drive.fl.containsKey("order") ? drive.fl.get("order") : "";
