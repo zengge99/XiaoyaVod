@@ -376,7 +376,7 @@ public class AList extends Spider {
             throws Exception {
         List<Item> items = getList(path, false);
         String name = path.substring(path.lastIndexOf("/") + 1);
-        String order = extend.containsKey("order") ? extend.get("order") : "";
+        String order = drive.fl.containsKey("order") ? extend.get("order") : "";
         if (order.isEmpty()) {
             Sorter.sort("name", "asc", items);
         } else {
