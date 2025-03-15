@@ -201,13 +201,14 @@ public class AList extends Spider {
         });
         thread.start();
 
-        // Logger.log(result);
+        Logger.log(result);
         return result;
     }
 
     @Override
     public String categoryContent(String tid, String pg, boolean filter, HashMap<String, String> extend)
             throws Exception {
+        Logger.log(tid);
         String key = tid.contains("/") ? tid.substring(0, tid.indexOf("/")) : tid;
         Drive drive = getDrive(key);
         HashMap<String, String> fl = new HashMap<>();
@@ -225,6 +226,7 @@ public class AList extends Spider {
     @Override
     public String detailContent(List<String> ids) throws Exception {
         String id = ids.get(0);
+        Logger.log(id);
         if (id.endsWith("~soulist") || id.endsWith("~playlist")) {
             return listDetailContent(ids);
         }
@@ -237,6 +239,8 @@ public class AList extends Spider {
     @Override
     public String searchContent(String keyword, boolean quick) throws Exception {
         fetchRule();
+        Logger.log(keyword);
+        Logger.log(quick);
         List<Vod> list = new ArrayList<>();
         List<Job> jobs = new ArrayList<>();
         for (Drive drive : drives) {
@@ -250,7 +254,7 @@ public class AList extends Spider {
         }
         for (Future<List<Vod>> future : executor.invokeAll(jobs, 15, TimeUnit.SECONDS))
             list.addAll(future.get());
-        // Logger.log(Result.string(list));
+        Logger.log(Result.string(list));
         return Result.get().vod(list).page().string();
     }
 
@@ -456,7 +460,7 @@ public class AList extends Spider {
             list = VodSorter.sortVods(list, extend);
         }
 
-        // Logger.log(Result.string(list));
+        Logger.log(Result.string(list));
         //driveVodsMap.put(drive.getName(), list);
         vodCache = list;
         return Result.get().vod(list).page(pg, true).string();
@@ -506,7 +510,7 @@ public class AList extends Spider {
             list.add(vod);
         }
 
-        // Logger.log(Result.get().vod(list).page().string());
+        Logger.log(Result.get().vod(list).page().string());
         return Result.get().vod(list).page().string();
     }
 
@@ -739,7 +743,7 @@ public class AList extends Spider {
                     //vod.setVodDrive(drive.getName());
                     vodMap.put(vod.getVodId(), vod);
                 }
-                //Logger.log("快速搜索耗时：" + duration);
+                Logger.log("快速搜索耗时：" + duration);
                 return vods;
             } else {
                 vods = XiaoyaLocalIndex.downlodadAndUnzip(drive);
