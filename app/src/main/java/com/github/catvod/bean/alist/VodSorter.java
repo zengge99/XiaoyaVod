@@ -84,7 +84,7 @@ public class VodSorter {
 
     private static double parseDoubleSafe(String s) {
         try {
-            return s != null ? Double.parseDouble(s) : 0.0;
+            return (s != null && !s.isEmpty()) ? Double.parseDouble(s) : 0.0;
         } catch (NumberFormatException e) {
             return 0.0;
         }
@@ -92,7 +92,7 @@ public class VodSorter {
 
     private static int parseIntSafe(String s) {
         try {
-            return s != null ? Integer.parseInt(s) : 0;
+            return (s != null && !s.isEmpty()) ? Integer.parseInt(s) : 0;
         } catch (NumberFormatException e) {
             return 0;
         }
