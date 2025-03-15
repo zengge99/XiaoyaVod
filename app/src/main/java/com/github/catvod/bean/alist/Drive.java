@@ -54,7 +54,7 @@ public class Drive {
     private Boolean noPoster;
     @SerializedName("pathByApi")
     private Boolean pathByApi;
-    public HashMap<String, String> fl = new HashMap<>;
+    public HashMap<String, String> fl = new HashMap<>();
 
     //public static Drive objectFrom(String str) {
     //    return new Gson().fromJson(str, Drive.class);
