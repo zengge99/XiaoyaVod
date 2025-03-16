@@ -400,7 +400,7 @@ public class AList extends Spider {
         }
         if (recursive) {
             for (Item item : items)
-                if (!item.isMedia(drive.isNew())) {
+                if (item.isFolder()) {
                     walkFolder(drive, item.getVodId(path), from, url, recursive);
                 }
         }
