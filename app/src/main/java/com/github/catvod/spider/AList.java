@@ -737,9 +737,9 @@ public class AList extends Spider {
                 return vods;
             } else if (keyword.startsWith("~quick:")) {
                 XiaoyaLocalIndex.downlodadAndUnzip(drive);
-                //startTime = System.currentTimeMillis();
+                startTime1 = System.currentTimeMillis();
                 vods = XiaoyaLocalIndex.quickSearch(drive, shortKeyword);
-                //duration = System.currentTimeMillis() - startTime;
+                duration = System.currentTimeMillis() - startTime1;
                 for (Vod vod : vods) {
                     //vod.setVodDrive(drive.getName());
                     vodMap.put(vod.getVodId(), vod);
@@ -762,7 +762,6 @@ public class AList extends Spider {
             }
 
             List<Vod> filteredVods = new ArrayList<>();
-            startTime = System.currentTimeMillis();
             for (Vod vod : vods) {
                 if (!vod.getVodIdWithoutDrivePrefix().startsWith(drive.getPath())) {
                     continue;
@@ -773,7 +772,7 @@ public class AList extends Spider {
                 vodMap.put(vod.getVodId(), vod);
             }
             duration = System.currentTimeMillis() - startTime;
-            Logger.log("转换Vod耗时：" + duration);
+            Logger.log("搜索耗时：" + duration);
 
             return filteredVods;
         }
