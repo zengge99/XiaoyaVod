@@ -250,11 +250,12 @@ public class AList extends Spider {
         for (Future<List<Vod>> future : executor.invokeAll(jobs, 15, TimeUnit.SECONDS))
             list.addAll(future.get());
         String result = Result.get().vod(list).page().vodDrive(drive.getName()).string();
+        Logger.log(result);
         return result;
     }
     */
 
-   @Override
+    @Override
     public String searchContent(String keyword, boolean quick) throws Exception {
         fetchRule();
         Logger.log(keyword);
@@ -301,6 +302,7 @@ public class AList extends Spider {
             
             // 如果找到了驱动名称，则为每个Vod对象设置vodDrive属性
             if (driveName != null) {
+                Logger.log("找到驱动：" + driveName);
                 for (Vod vod : vods) {
                     Vod cloneVod = vod.clone();
                     cloneVod.setVodDrive(driveName); 
@@ -314,6 +316,7 @@ public class AList extends Spider {
 
         // 构建并返回结果字符串
         String result = Result.get().vod(list).page().string();
+        Logger.log(result);
         return result;
     }
 
