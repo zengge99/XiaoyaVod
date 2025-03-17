@@ -255,7 +255,7 @@ public class Result {
         List<Vod> cloneList = new ArrayList<>();
         for (Vod vod : this.list) {
             Vod cloneVod = vod.clone();
-            cloneVod.setVodId(driveName + getVodId().substring(getVodId().indexOf("/"));
+            cloneVod.setVodId(driveName + getVodId().substring(getVodId().indexOf("/")));
             cloneList.add(cloneVod);
         }
         this.list = cloneList;
