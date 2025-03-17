@@ -234,31 +234,6 @@ public class AList extends Spider {
         return defaultDetailContent(ids);
     }
 
-/*
-    @Override
-    public String searchContent(String keyword, boolean quick) throws Exception {
-        fetchRule();
-        Logger.log(keyword);
-        Logger.log(quick);
-        List<Vod> list = new ArrayList<>();
-        List<Job> jobs = new ArrayList<>();
-        for (Drive drive : drives) {
-            if (drive.search()) {
-                if (quick) {
-                    jobs.add(new Job(drive.check(), "~quick:" + keyword));
-                } else {
-                    jobs.add(new Job(drive.check(), "~search:" + keyword));
-                }
-            }
-        }
-        for (Future<List<Vod>> future : executor.invokeAll(jobs, 15, TimeUnit.SECONDS))
-            list.addAll(future.get());
-        String result = Result.get().vod(list).page().vodDrive(drive.getName()).string();
-        Logger.log(result);
-        return result;
-    }
-    */
-
     @Override
     public String searchContent(String keyword, boolean quick) throws Exception {
         fetchRule();

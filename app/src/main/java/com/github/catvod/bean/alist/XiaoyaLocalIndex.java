@@ -19,27 +19,26 @@ import com.github.catvod.spider.Logger;
 import com.github.catvod.utils.Image;
 import com.github.catvod.utils.Util;
 import android.text.TextUtils;
+import com.github.catvod.utils.Notify;
 
 import android.os.Debug;
 
 public class XiaoyaLocalIndex {
     private static Map<String, List<Vod>> cacheMap = new HashMap<>();
     private static Map<String, Map<String, List<Integer>>> invertedIndexMap = new HashMap<>();
-    public static volatile boolean isBusy = false;
 
     public static synchronized List<Vod> downlodadAndUnzip(Drive drive) {
-        isBusy = true;
-
         Logger.log("本地索引前的内存：" + Debug.getNativeHeapAllocatedSize());
 
         String server = drive.getServer();
         List<Vod> vods = cacheMap.get(server);
         if (vods != null) {
-            isBusy = false;
             return vods;
         }
 
         try {
+            Notify.show("开始构建本地索引，需要数秒");
+
             String fileUrl = server + "/tvbox/data";
             String saveDir = com.github.catvod.utils.Path.cache().getPath() + "/TV/index/"
                     + server.split("//")[1].replace(":", "_port");
@@ -82,12 +81,13 @@ public class XiaoyaLocalIndex {
             invertedIndexMap.put(server, invertedIndex);
             cacheMap.put(server, vods);
 
+            Notify.show("本地索引构建完成");
+
         } catch (IOException e) {
-            isBusy = false;
+            Notify.show("本地索引构建失败");
         }
 
         Logger.log("本地索引后的内存：" + Debug.getNativeHeapAllocatedSize());
-        isBusy = false;
         return vods;
     }
 
