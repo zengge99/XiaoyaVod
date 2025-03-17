@@ -710,10 +710,6 @@ public class AList extends Spider {
             this.keyword = keyword;
         }
 
-        public getDriveName() {
-            return drive.getName();
-        }
-
         @Override
         public List<Vod> call() {
             return xiaoya();
