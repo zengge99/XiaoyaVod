@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -38,6 +39,7 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
@@ -267,9 +269,9 @@ public class AList extends Spider {
             if (drive.search()) {
                 Future<List<Vod>> future;
                 if (quick) {
-                    future = executor.submit(() -> (new Job(drive.check(), "~quick:" + keyword)).execute());
+                    future = executor.submit(new Job(drive.check(), "~quick:" + keyword));
                 } else {
-                    future = executor.submit(() -> (new Job(drive.check(), "~search:" + keyword)).execute());
+                    future = executor.submit(new Job(drive.check(), "~search:" + keyword));
                 }
                 futuresWithDrives.add(new AbstractMap.SimpleEntry<>(future, drive.getName()));
             }
