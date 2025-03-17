@@ -32,7 +32,7 @@ public class VodSorter {
         if (subpath != null && !subpath.endsWith("~all")) {
             Logger.log("subpath:" + subpath);
             filteredVods = filteredVods.stream()
-                .filter(vod -> vod.getVodId().startsWith(subpath))
+                .filter(vod -> vod.getVodId().substring(indexOf("/")).startsWith(subpath.substring(indexOf("/"))))
                 .collect(Collectors.toList());
         }
         duration = System.currentTimeMillis() - startTime;
