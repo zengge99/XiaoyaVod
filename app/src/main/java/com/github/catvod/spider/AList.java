@@ -286,6 +286,7 @@ public class AList extends Spider {
         // 遍历Future对象列表，并为每个Vod对象设置正确的vodDrive
         for (Future<List<Vod>> future : futures) {
             List<Vod> vods = future.get();
+            List<Vod> cloneVods = new ArrayList<>();
             
             // 假设每个Future对象都与一个特定的Job相关联，我们可以通过jobMap找到它所属的驱动名称
             String driveName = null;  // 初始化为空
@@ -301,12 +302,14 @@ public class AList extends Spider {
             // 如果找到了驱动名称，则为每个Vod对象设置vodDrive属性
             if (driveName != null) {
                 for (Vod vod : vods) {
-                    vod.setVodDrive(driveName);  // 设置vodDrive属性
+                    Vod cloneVod = vod.clone();
+                    cloneVod.setVodDrive(driveName); 
+                    cloneVods.add(cloneVod);
                 }
             }
             
             // 将处理后的Vod对象添加到最终列表中
-            list.addAll(vods);
+            list.addAll(cloneVods);
         }
 
         // 构建并返回结果字符串
