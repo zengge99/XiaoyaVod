@@ -586,7 +586,7 @@ public class AList extends Spider {
             Drive drive = getDrive(key);
             path = path.startsWith(drive.getPath()) ? path : drive.getPath() + path;
             Item item = new Item();
-            String url = drive.getServer() + "/d" + URLEncoder.encode(path, "UTF-8");
+            String url = drive.getServer() + "/d" + URLEncoder.encode(path, "UTF-8").replace("+", "%20").replace("%2F", "/");
             Logger.log(url);
             item.setUrl(url);
             return item;
