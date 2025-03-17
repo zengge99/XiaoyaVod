@@ -737,7 +737,7 @@ public class AList extends Spider {
                 return vods;
             } else if (keyword.startsWith("~quick:")) {
                 XiaoyaLocalIndex.downlodadAndUnzip(drive);
-                startTime1 = System.currentTimeMillis();
+                long startTime1 = System.currentTimeMillis();
                 vods = XiaoyaLocalIndex.quickSearch(drive, shortKeyword);
                 duration = System.currentTimeMillis() - startTime1;
                 for (Vod vod : vods) {
