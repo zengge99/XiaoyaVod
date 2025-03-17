@@ -525,7 +525,7 @@ public class AList extends Spider {
             Logger.log("用户名:" + userName + "密码:" + password);
             userName = userName.isEmpty() ? "guest" : userName;
             password = password.isEmpty() ? "guest_Api789" : password;
-            String loginPath = Path.root() + "/" + drive.getServer().replace("://", "_").replace(":", "_") + ".login";
+            String loginPath = Path.files() + "/" + drive.getServer().replace("://", "_").replace(":", "_") + ".login";
             File loginFile = new File(loginPath);
             Path.write(loginFile, (userName + "\n" + password).getBytes());
             params.put("username", userName);
@@ -546,7 +546,7 @@ public class AList extends Spider {
     private boolean loginByFile(Drive drive) {
         try {
             JSONObject params = new JSONObject();
-            String loginPath = Path.root() + "/" + drive.getServer().replace("://", "_").replace(":", "_") + ".login";
+            String loginPath = Path.files() + "/" + drive.getServer().replace("://", "_").replace(":", "_") + ".login";
             File loginFile = new File(loginPath);
             String login = Path.read(loginFile) + "\n" + "\n";
             String userName = login.split("\n")[0];
