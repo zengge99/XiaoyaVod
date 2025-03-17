@@ -106,10 +106,6 @@ public class Vod {
         this.vodId = vodId;
     }
 
-    public void setVodDrive(String driveName) {
-        this.vodId = driveName + getVodId().substring(getVodId().indexOf("/"));
-    }
-
     public String getVodId() {
         return this.vodId;
     }
@@ -184,6 +180,11 @@ public class Vod {
 
     public void setStyle(Style style) {
         this.style = style;
+    }
+
+    public Vod clone() {
+        Gson gson = new Gson();
+        return gson.fromJson(gson.toJson(this), Vod.class);
     }
 
     public static class Style {

@@ -184,15 +184,13 @@ public class AList extends Spider {
 
         List<Vod> list = new ArrayList<>();
         if (defaultDrive != null) {
-            // List<Job> jobs = new ArrayList<>();
-            // jobs.add(new Job(defaultDrive.check(), "~daily:1000"));
-            // for (Future<List<Vod>> future : executor.invokeAll(jobs, 15, TimeUnit.SECONDS))
-            //     list.addAll(future.get());
             list = (new Job(defaultDrive.check(), "~daily:1000")).call();
         }
 
-        Drive tmpDrive = defaultDrive;
         String result = Result.string(classes, list, filters);
+        Logger.log(result);
+
+        Drive tmpDrive = defaultDrive;
         Thread thread = new Thread(() -> {
             try {
                 Thread.sleep(500);
@@ -201,8 +199,7 @@ public class AList extends Spider {
             XiaoyaLocalIndex.downlodadAndUnzip(tmpDrive);
         });
         thread.start();
-
-        Logger.log(result);
+        
         return result;
     }
 
@@ -251,8 +248,8 @@ public class AList extends Spider {
         }
         for (Future<List<Vod>> future : executor.invokeAll(jobs, 15, TimeUnit.SECONDS))
             list.addAll(future.get());
-        Logger.log(Result.string(list));
-        return Result.get().vod(list).page().string();
+        Result result = Result.get().vod(list).page().vodDrive(drive.getName()).string();
+        return result;
     }
 
     @Override
@@ -303,10 +300,6 @@ public class AList extends Spider {
         Vod vod = vodMap.get(id);
         if (vod == null && id.endsWith("~soulist")) {
             String keyword = path.substring(path.indexOf("/") + 1);
-            // List<Job> jobs = new ArrayList<>();
-            // jobs.add(new Job(drive.check(), "~search:" + keyword));
-            // for (Future<List<Vod>> future : executor.invokeAll(jobs, 15, TimeUnit.SECONDS))
-            //     future.get();
             (new Job(drive.check(), "~search:" + keyword)).call();
             vod = vodMap.get(id);
         }
@@ -315,7 +308,6 @@ public class AList extends Spider {
             vod.setVodId(id);
             vod.setVodName(name);
             vod.setVodPic(vodPic);
-            vod.setVodDrive(drive.getName());
         }
         vod.setVodPlayFrom(from.toString());
         vod.setVodPlayUrl(url.toString());
@@ -329,8 +321,10 @@ public class AList extends Spider {
             vod.setVodRemarks(vod.doubanInfo.getRating());
             vod.setTypeName(vod.doubanInfo.getType());
         }
-        Logger.log(Result.string(vod));
-        return Result.string(vod);
+
+        Result result = Result.get().vod(vod).vodDrive(drive.getName()).string();
+        Logger.log(result);
+        return result;
     }
 
     private String fileDetailContent(List<String> ids) throws Exception {
@@ -343,12 +337,6 @@ public class AList extends Spider {
         Vod vod = vodMap.get(id);
         if (vod == null && id.endsWith("~soufile")) {
             String keyword = path.substring(path.indexOf("/") + 1);
-            /*
-            List<Job> jobs = new ArrayList<>();  
-            jobs.add(new Job(drive.check(), keyword));
-            for (Future<List<Vod>> future : executor.invokeAll(jobs, 15, TimeUnit.SECONDS))
-                future.get();
-            */
             (new Job(drive.check(), keyword)).call();
             vod = vodMap.get(id);
         }
@@ -357,7 +345,6 @@ public class AList extends Spider {
             vod.setVodId(id);
             vod.setVodName(name);
             vod.setVodPic(vodPic);
-            vod.setVodDrive(drive.getName());
         }
         vod.setVodPlayFrom(drive.getName());
         vod.setVodPlayUrl(name + "$" + path);
@@ -371,8 +358,9 @@ public class AList extends Spider {
             vod.setVodRemarks(vod.doubanInfo.getRating());
             vod.setTypeName(vod.doubanInfo.getType());
         }
-        Logger.log(Result.string(vod));
-        return Result.string(vod);
+        Result result = Result.get().vod(vod).vodDrive(drive.getName()).string();
+        Logger.log(result);
+        return result;
     }
 
     private void walkFolder(Drive drive, String path, StringBuilder from, StringBuilder url, Boolean recursive)
@@ -391,7 +379,7 @@ public class AList extends Spider {
         List<String> playUrls = new ArrayList<>();
         Boolean haveFile = false;
         for (Item item : items)
-            if (item.isMedia(drive.isNew())) {
+            if (item.isMedia()) {
                 playUrls.add(item.getName() + "$" + item.getVodId(path) + findSubs(path, items));
                 haveFile = true;
             }
@@ -428,42 +416,32 @@ public class AList extends Spider {
     private synchronized String xiaoyaCategoryContent(String tid, String pg, boolean filter, HashMap<String, String> extend)
             throws Exception {
         Logger.log(tid);
+        String result = "";
         fetchRule();
         String key = tid.contains("/") ? tid.substring(0, tid.indexOf("/")) : tid;
         Drive drive = getDrive(key);
-        //List<Vod> list = driveVodsMap.get(drive.getName());
         List<Vod> list = vodCache;
         if(list != null && !pg.equals("1")) {
-            return Result.get().vod(list).page(pg, true).string();
+            result = Result.get().vod(list).page(pg).vodDrive(drive.getName()).string();
+            Logger.log(result);
+            return result;
         }
 
         list = new ArrayList<>();
-        //List<Job> jobs = new ArrayList<>();
-
         if (drive.getName().equals("每日更新")) {
-            // jobs.add(new Job(drive.check(), "~daily:100000"));
-            // for (Future<List<Vod>> future : executor.invokeAll(jobs, 15, TimeUnit.SECONDS))
-            //     list.addAll(future.get());  
             list = (new Job(drive.check(), "~daily:100000")).call();
         } else {
-            //if (XiaoyaLocalIndex.isBusy) {
-                //Notify.show("本地索引正在构建，请等待30秒再试");
-            //} else {
-                // jobs.add(new Job(drive.check(), drive.getPath()));
-                // for (Future<List<Vod>> future : executor.invokeAll(jobs, 15, TimeUnit.SECONDS))
-                //     list.addAll(future.get());
-                list = (new Job(drive.check(), drive.getPath())).call();
-            //}
+            list = (new Job(drive.check(), drive.getPath())).call();
         }
 
         if (filter) {
             list = VodSorter.sortVods(list, extend);
         }
 
-        Logger.log(Result.string(list));
-        //driveVodsMap.put(drive.getName(), list);
         vodCache = list;
-        return Result.get().vod(list).page(pg, true).string();
+        result = Result.get().vod(list).page(pg).vodDrive(drive.getName()).string();
+        Logger.log(result);
+        return result;
     }
 
     private String alistCategoryContent(String tid, String pg, boolean filter, HashMap<String, String> extend)
@@ -510,8 +488,9 @@ public class AList extends Spider {
             list.add(vod);
         }
 
-        Logger.log(Result.get().vod(list).page().string());
-        return Result.get().vod(list).page().string();
+        Result result = Result.get().vod(list).page().string();
+        Logger.log(result);
+        return result;
     }
 
     private boolean login(Drive drive) {
@@ -623,7 +602,7 @@ public class AList extends Spider {
             Iterator<Item> iterator = items.iterator();
             if (filter)
                 while (iterator.hasNext())
-                    if (iterator.next().ignore(drive.isNew()))
+                    if (iterator.next().ignore())
                         iterator.remove();
             return items;
         } catch (Exception e) {
@@ -716,7 +695,6 @@ public class AList extends Spider {
                 }
                 vods = XiaoyaLocalIndex.toVods(drive, lines);
                 for (Vod vod : vods) {
-                    //vod.setVodDrive(drive.getName());
                     vodMap.put(vod.getVodId(), vod);
                 }
                 return vods;
@@ -731,7 +709,6 @@ public class AList extends Spider {
                 }
                 vods = XiaoyaLocalIndex.toVods(drive, lines);
                 for (Vod vod : vods) {
-                    //vod.setVodDrive(drive.getName());
                     vodMap.put(vod.getVodId(), vod);
                 }
                 return vods;
@@ -741,7 +718,6 @@ public class AList extends Spider {
                 vods = XiaoyaLocalIndex.quickSearch(drive, shortKeyword);
                 duration = System.currentTimeMillis() - startTime1;
                 for (Vod vod : vods) {
-                    //vod.setVodDrive(drive.getName());
                     vodMap.put(vod.getVodId(), vod);
                 }
                 Logger.log("快速搜索耗时：" + duration);
@@ -767,7 +743,6 @@ public class AList extends Spider {
                     continue;
                 }
 
-                //vod.setVodDrive(drive.getName());
                 filteredVods.add(vod);
                 vodMap.put(vod.getVodId(), vod);
             }

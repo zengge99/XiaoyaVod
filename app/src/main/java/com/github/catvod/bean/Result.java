@@ -14,6 +14,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
 
 public class Result {
@@ -224,10 +225,7 @@ public class Result {
         return page(1, 1, 0, 1);
     }
 
-    public Result page(String pg, boolean auto) {
-        if (!auto) {
-            return page(1, 1, 0, 1);
-        }
+    public Result page(String pg) {
         int page = 1; 
         try {
             page = Integer.parseInt(pg);
@@ -250,6 +248,17 @@ public class Result {
         this.limit = limit > 0 ? limit : Integer.MAX_VALUE;
         this.total = total > 0 ? total : Integer.MAX_VALUE;
         this.pagecount = count > 0 ? count : Integer.MAX_VALUE;
+        return this;
+    }
+
+    public Result vodDrive(String driveName) {
+        List<Vod> cloneList = new ArrayList<>();
+        for (Vod vod : this.list) {
+            Vod cloneVod = vod.clone();
+            cloneVod.setVodId(driveName + getVodId().substring(getVodId().indexOf("/"));
+            cloneList.add(cloneVod);
+        }
+        this.list = cloneList;
         return this;
     }
 

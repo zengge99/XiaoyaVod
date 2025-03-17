@@ -35,9 +35,6 @@ public class XiaoyaLocalIndex {
         String server = drive.getServer();
         List<Vod> vods = cacheMap.get(server);
         if (vods != null) {
-            for (Vod vod : vods) {
-                vod.setVodDrive(drive.getName());
-            }
             isBusy = false;
             return vods;
         }
