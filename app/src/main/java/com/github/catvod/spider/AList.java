@@ -50,6 +50,7 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import com.github.catvod.bean.alist.LoginDlg;
 import android.widget.Toast;
+import com.github.catvod.utils.Path;
 
 public class AList extends Spider {
 
@@ -161,7 +162,7 @@ public class AList extends Spider {
         String response = OkHttp.post(url, param, drive.getHeader()).getBody();
         SpiderDebug.log(response);
         if (retry && (response.contains("Guest user is disabled") || response.contains("token is invalidated")
-                || response.contains("without permission")) && login(drive))
+                || response.contains("without permission")) && (loginByFile(drive) || loginByUser(drive)))
             return post(drive, url, param, false);
         return response;
     }
@@ -515,11 +516,40 @@ public class AList extends Spider {
         return result;
     }
 
-    private boolean login(Drive drive) {
+    private boolean loginByUser(Drive drive) {
         try {
             JSONObject params = new JSONObject();
             String userName = LoginDlg.showLoginDlg("用户名(留空默认guest)");
             String password = LoginDlg.showLoginDlg("密码(留空默认guest_Api789，\"alist-\"打头会被识别为alist token)");
+            Logger.log("用户名:" + userName + "密码:" + password);
+            userName = userName.isEmpty() ? "guest" : userName;
+            password = password.isEmpty() ? "guest_Api789" : password;
+            String loginPath = Path.root() + "/" + getServer().replace("://", "_").replace(":", "_") + ".login";
+            File loginFile = new File(loginPath);
+            Path.write(loginFile, (userName + "\n" + password).getBytes());
+            params.put("username", userName);
+            params.put("password", password);
+            if (password.startsWith("alist-")) {
+                drive.setToken(password);
+                return true;
+            } 
+            String response = OkHttp.post(drive.loginApi(), params.toString());
+            drive.setToken(new JSONObject(response).getJSONObject("data").getString("token"));
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    private boolean loginByFile(Drive drive) {
+        try {
+            JSONObject params = new JSONObject();
+            String loginPath = Path.root() + "/" + getServer().replace("://", "_").replace(":", "_") + ".login";
+            File loginFile = new File(loginPath);
+            String login = Path.read(loginFile) + "\n" + "\n";
+            String userName = login.split("\n")[0];
+            String password = login.split("\n")[1];
             Logger.log("用户名:" + userName + "密码:" + password);
             userName = userName.isEmpty() ? "guest" : userName;
             password = password.isEmpty() ? "guest_Api789" : password;
@@ -537,6 +567,7 @@ public class AList extends Spider {
             return false;
         }
     }
+
 
     private String getSize(long sz) {
         if (sz <= 0) {
