@@ -260,61 +260,36 @@ public class AList extends Spider {
         fetchRule();
         Logger.log(keyword);
         Logger.log(quick);
-        
         List<Vod> list = new ArrayList<>();
-        List<Job> jobs = new ArrayList<>();
+        List<AbstractMap.SimpleEntry<Future<List<Vod>>, String>> futuresWithDrives = new ArrayList<>();
 
-        // 创建一个映射来存储驱动名称和它们对应的任务
-        Map<String, Job> jobMap = new HashMap<>();
-        
         for (Drive drive : drives) {
             if (drive.search()) {
-                Job job;
+                Future<List<Vod>> future;
                 if (quick) {
-                    job = new Job(drive.check(), "~quick:" + keyword);
+                    future = executor.submit(() -> (new Job(drive.check(), "~quick:" + keyword)).execute());
                 } else {
-                    job = new Job(drive.check(), "~search:" + keyword);
+                    future = executor.submit(() -> (new Job(drive.check(), "~search:" + keyword)).execute());
                 }
-                
-                jobs.add(job);
-                jobMap.put(drive.getName(), job);  // 将任务与驱动名称关联起来
+                futuresWithDrives.add(new AbstractMap.SimpleEntry<>(future, drive.getName()));
             }
         }
 
-        // 提交所有任务并获取Future对象列表
-        List<Future<List<Vod>>> futures = executor.invokeAll(jobs, 15, TimeUnit.SECONDS);
-
-        // 遍历Future对象列表，并为每个Vod对象设置正确的vodDrive
-        for (Future<List<Vod>> future : futures) {
-            List<Vod> vods = future.get();
-            List<Vod> cloneVods = new ArrayList<>();
-            
-            // 假设每个Future对象都与一个特定的Job相关联，我们可以通过jobMap找到它所属的驱动名称
-            String driveName = null;  // 初始化为空
-            
-            // 查找与当前Future对象相关的Job及其驱动名称
-            for (Map.Entry<String, Job> entry : jobMap.entrySet()) {
-                if (entry.getValue().equals(future)) {  // 检查Job是否匹配
-                    driveName = entry.getKey();  // 获取驱动名称
-                    break;
-                }
-            }
-            
-            // 如果找到了驱动名称，则为每个Vod对象设置vodDrive属性
-            if (driveName != null) {
-                Logger.log("找到驱动：" + driveName);
+        // 处理每个Future的结果，并为每个Vod设置正确的vodDrive
+        for (AbstractMap.SimpleEntry<Future<List<Vod>>, String> entry : futuresWithDrives) {
+            Future<List<Vod>> future = entry.getKey();
+            String driveName = entry.getValue();
+            try {
+                List<Vod> vods = future.get(15, TimeUnit.SECONDS);
                 for (Vod vod : vods) {
-                    Vod cloneVod = vod.clone();
-                    cloneVod.setVodDrive(driveName); 
-                    cloneVods.add(cloneVod);
+                    vod.setVodDrive(driveName); // 设置vodDrive
                 }
+                list.addAll(vods);
+            } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                e.printStackTrace();
             }
-            
-            // 将处理后的Vod对象添加到最终列表中
-            list.addAll(cloneVods);
         }
 
-        // 构建并返回结果字符串
         String result = Result.get().vod(list).page().string();
         Logger.log(result);
         return result;
@@ -733,6 +708,10 @@ public class AList extends Spider {
         public Job(Drive drive, String keyword) {
             this.drive = drive;
             this.keyword = keyword;
+        }
+
+        public getDriveName() {
+            return drive.getName();
         }
 
         @Override
