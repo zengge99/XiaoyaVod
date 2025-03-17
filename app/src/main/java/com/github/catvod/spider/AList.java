@@ -3,6 +3,7 @@ package com.github.catvod.spider;
 import android.content.Context;
 import android.net.Uri;
 import android.text.TextUtils;
+import java.net.URLEncoder;
 
 import com.github.catvod.bean.Class;
 import com.github.catvod.bean.Filter;
@@ -585,7 +586,7 @@ public class AList extends Spider {
             Drive drive = getDrive(key);
             path = path.startsWith(drive.getPath()) ? path : drive.getPath() + path;
             Item item = new Item();
-            String url = drive.getServer() + "/d" + path;
+            String url = drive.getServer() + "/d" + URLEncoder.encode(path);
             Logger.log(url);
             item.setUrl(url);
             return item;
