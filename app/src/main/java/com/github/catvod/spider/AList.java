@@ -248,7 +248,7 @@ public class AList extends Spider {
         }
         for (Future<List<Vod>> future : executor.invokeAll(jobs, 15, TimeUnit.SECONDS))
             list.addAll(future.get());
-        Result result = Result.get().vod(list).page().vodDrive(drive.getName()).string();
+        String result = Result.get().vod(list).page().vodDrive(drive.getName()).string();
         return result;
     }
 
@@ -322,7 +322,7 @@ public class AList extends Spider {
             vod.setTypeName(vod.doubanInfo.getType());
         }
 
-        Result result = Result.get().vod(vod).vodDrive(drive.getName()).string();
+        String result = Result.get().vod(vod).vodDrive(drive.getName()).string();
         Logger.log(result);
         return result;
     }
@@ -358,7 +358,7 @@ public class AList extends Spider {
             vod.setVodRemarks(vod.doubanInfo.getRating());
             vod.setTypeName(vod.doubanInfo.getType());
         }
-        Result result = Result.get().vod(vod).vodDrive(drive.getName()).string();
+        String result = Result.get().vod(vod).vodDrive(drive.getName()).string();
         Logger.log(result);
         return result;
     }
@@ -488,7 +488,7 @@ public class AList extends Spider {
             list.add(vod);
         }
 
-        Result result = Result.get().vod(list).page().string();
+        String result = Result.get().vod(list).page().string();
         Logger.log(result);
         return result;
     }
