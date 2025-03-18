@@ -11,12 +11,18 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import com.github.catvod.net.OkHttp;
+import java.util.HashMap;
 
 public class DoubanParser {
+    private HashMap<String, DoubanInfo> doubanCache = new HashMap<>();
 
     public static DoubanInfo getDoubanInfo(String id, DoubanInfo info) {
         if (id == null || id.isEmpty()) {
             return info;
+        }
+
+        if (doubanCache.get(id) != null) {
+            return doubanCache.get(id);
         }
 
         try {
@@ -67,7 +73,8 @@ public class DoubanParser {
             info.setDirector(director);
             info.setType(type);
             info.setRating(rating);
-
+            
+            doubanCache.put(id, info);
             return info;
         } catch (Exception e) {
             return new DoubanInfo();
