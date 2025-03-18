@@ -324,7 +324,9 @@ public class AList extends Spider {
         Vod vod = vodMap.get(id);
         if (vod == null && id.endsWith("~soulist")) {
             String keyword = path.substring(path.indexOf("/") + 1);
-            (new Job(drive.check(), "~search:" + keyword)).call();
+            //小雅在线搜索按照路径搜索不可靠，有可能搜不到，直接用本地索引查找海报
+            //(new Job(drive.check(), "~search:" + keyword)).call();
+            (new Job(drive.check(), keyword)).call();
             vod = vodMap.get(id);
         }
         if (vod == null) {
