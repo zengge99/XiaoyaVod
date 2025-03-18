@@ -321,13 +321,13 @@ public class AList extends Spider {
         } else {
             walkFolder(drive, path, from, url, false);
         }
-        Vod vod = vodMap.get(id.substring(vodId.indexOf("/")));
+        Vod vod = vodMap.get(id.substring(id.indexOf("/")));
         if (vod == null && id.endsWith("~soulist")) {
             String keyword = path.substring(path.indexOf("/") + 1);
             //小雅在线搜索按照路径搜索不可靠，有可能搜不到，直接用本地索引查找海报
             //(new Job(drive.check(), "~search:" + keyword)).call();
             (new Job(drive.check(), keyword)).call();
-            vod = vodMap.get(id.substring(vodId.indexOf("/")));
+            vod = vodMap.get(id.substring(id.indexOf("/")));
         }
         if (vod == null) {
             vod = new Vod();
@@ -360,11 +360,11 @@ public class AList extends Spider {
         String path = id.substring(0, id.lastIndexOf("/"));
         String name = path.substring(path.lastIndexOf("/") + 1);
         Drive drive = getDrive(key);
-        Vod vod = vodMap.get(id.substring(vodId.indexOf("/")));
+        Vod vod = vodMap.get(id.substring(id.indexOf("/")));
         if (vod == null && id.endsWith("~soufile")) {
             String keyword = path.substring(path.indexOf("/") + 1);
             (new Job(drive.check(), keyword)).call();
-            vod = vodMap.get(id.substring(vodId.indexOf("/")));
+            vod = vodMap.get(id.substring(id.indexOf("/")));
         }
         if (vod == null) {
             vod = new Vod();
