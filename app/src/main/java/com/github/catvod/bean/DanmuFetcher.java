@@ -135,7 +135,7 @@ public class DanmuFetcher {
             String bilibiliMode = convertMode(youkuMode);
 
             // Bilibili 弹幕格式：时间,模式,字体大小,颜色,时间戳,弹幕池,用户Hash,弹幕ID
-            String attrs = String.format("%.5f,%s,%s,%d,0,0,0,0", time, bilibiliMode, fontSize, colorDecimal);
+            String attrs = String.format("%.5f,%s,%s,%d,0,0,0,0,0", time, bilibiliMode, fontSize, colorDecimal);
             xmlBuilder.append(String.format("  <d p=\"%s\">%s</d>\n", attrs, text));
         }
 
