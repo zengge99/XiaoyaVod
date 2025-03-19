@@ -144,9 +144,9 @@ public class XiaoyaLocalIndex {
         for (String line : lines) {
             String[] splits = line.split("#");
             int index = splits[0].lastIndexOf("/");
-            boolean file = Util.isMedia(splits[0]);
+            //boolean file = Util.isMedia(splits[0]);
             if (splits[0].endsWith("/")) {
-                file = false;
+                //file = false;
                 splits[0] = splits[0].substring(0, index);
                 index = splits[0].lastIndexOf("/");
             }
@@ -163,11 +163,12 @@ public class XiaoyaLocalIndex {
             vod.setVodRemarks(item.doubanInfo.getRating());
             vod.setVodName(item.doubanInfo.getName());
             vod.doubanInfo = item.doubanInfo;
-            if (!file) {
-                vod.setVodId(vod.getVodId() + "/~soulist");
-            } else {
-                vod.setVodId(vod.getVodId() + "/~soufile");
-            }
+            // if (!file) {
+            //     vod.setVodId(vod.getVodId() + "/~soulist");
+            // } else {
+            //     vod.setVodId(vod.getVodId() + "/~soufile");
+            // }
+            vod.setVodId(vod.getVodId() + "/~xiaoya");
             if (TextUtils.isEmpty(item.getThumb())) {
                 noPicList.add(vod);
             } else {

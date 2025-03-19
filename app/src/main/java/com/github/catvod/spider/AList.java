@@ -63,7 +63,6 @@ public class AList extends Spider {
     private String xiaoyaAlistToken;
     private Map<String, Vod> vodMap = new HashMap<>();
     private Map<String, List<Vod>> driveVodsMap = new WeakHashMap<>();
-    // private volatile List<Vod> vodCache;
     private ExecutorService executor = Executors.newCachedThreadPool();
 
     private List<Filter> getFilter(String tid) {
@@ -228,12 +227,30 @@ public class AList extends Spider {
     public String detailContent(List<String> ids) throws Exception {
         String id = ids.get(0);
         Logger.log(id);
-        if (id.endsWith("~soulist") || id.endsWith("~playlist")) {
-            return listDetailContent(ids);
+
+        Boolean isFile = id.endsWith("~playlist") ? false : true;
+        String path = id.substring(id.indexOf("/"));
+        if (id.endsWith("~xiaoya")) {
+            path = path.substring(0, path.lastIndexOf("/"));
+            isFile = getList(path, false).size() == 0 ? true : false;
+            isFile = isFile && Util.isMedia(path);
         }
-        if (id.endsWith("~soufile")) {
-            return fileDetailContent(ids);
+
+        if (id.endsWith("~xiaoya") || id.endsWith("~playlist")) {
+            if (isFile) {
+                return fileDetailContent(ids);
+            } else {
+                return listDetailContent(ids);
+            }
         }
+
+        // if (id.endsWith("~soulist") || id.endsWith("~playlist")) {
+        //     return listDetailContent(ids);
+        // }
+        // if (id.endsWith("~soufile")) {
+        //     return fileDetailContent(ids);
+        // }
+
         return defaultDetailContent(ids);
     }
 
@@ -317,13 +334,15 @@ public class AList extends Spider {
         Drive drive = getDrive(key);
         StringBuilder from = new StringBuilder();
         StringBuilder url = new StringBuilder();
-        if (id.endsWith("~soulist")) {
+        //if (id.endsWith("~soulist")) {
+        if (id.endsWith("~xiaoya")) {
             walkFolder(drive, path, from, url, true);
         } else {
             walkFolder(drive, path, from, url, false);
         }
         Vod vod = vodMap.get(id);
-        if (vod == null && id.endsWith("~soulist")) {
+        //if (vod == null && id.endsWith("~soulist")) {
+        if (vod == null && id.endsWith("~xiaoya")) {
             String keyword = path.substring(path.indexOf("/") + 1);
             //小雅在线搜索按照路径搜索不可靠，有可能搜不到，直接用本地索引查找海报
             //(new Job(drive.check(), "~search:" + keyword)).call();
@@ -338,7 +357,8 @@ public class AList extends Spider {
         }
         vod.setVodPlayFrom(from.toString());
         vod.setVodPlayUrl(url.toString());
-        if (id.endsWith("~soulist") && vod.doubanInfo.getYear().isEmpty() && !vod.doubanInfo.getId().isEmpty()) {
+        //if (id.endsWith("~soulist") && vod.doubanInfo.getYear().isEmpty() && !vod.doubanInfo.getId().isEmpty()) {
+        if (id.endsWith("~xiaoya") && vod.doubanInfo.getYear().isEmpty() && !vod.doubanInfo.getId().isEmpty()) {
             vod.doubanInfo = DoubanParser.getDoubanInfo(vod.doubanInfo.getId(), vod.doubanInfo);
             vod.setVodContent(vod.doubanInfo.getPlot() + "\r\n\r\n文件路径: " + path.substring(path.indexOf("/") + 1));
             vod.setVodActor(vod.doubanInfo.getActors());
@@ -362,7 +382,8 @@ public class AList extends Spider {
         String name = path.substring(path.lastIndexOf("/") + 1);
         Drive drive = getDrive(key);
         Vod vod = vodMap.get(id);
-        if (vod == null && id.endsWith("~soufile")) {
+        //if (vod == null && id.endsWith("~soufile")) {
+        if (vod == null && id.endsWith("~xiaoya")) {
             String keyword = path.substring(path.indexOf("/") + 1);
             (new Job(drive.check(), keyword)).call();
             vod = vodMap.get(id);
@@ -375,7 +396,8 @@ public class AList extends Spider {
         }
         vod.setVodPlayFrom(drive.getName());
         vod.setVodPlayUrl(name + "$" + path);
-        if (id.endsWith("~soufile") && vod.doubanInfo.getYear().isEmpty() && !vod.doubanInfo.getId().isEmpty()) {
+        //if (id.endsWith("~soufile") && vod.doubanInfo.getYear().isEmpty() && !vod.doubanInfo.getId().isEmpty()) {
+        if (id.endsWith("~xiaoya") && vod.doubanInfo.getYear().isEmpty() && !vod.doubanInfo.getId().isEmpty()) {
             vod.doubanInfo = DoubanParser.getDoubanInfo(vod.doubanInfo.getId(), vod.doubanInfo);
             vod.setVodContent(vod.doubanInfo.getPlot() + "\r\n\r\n文件路径: " + path.substring(path.indexOf("/") + 1));
             vod.setVodActor(vod.doubanInfo.getActors());
@@ -447,7 +469,6 @@ public class AList extends Spider {
         fetchRule();
         String key = tid.contains("/") ? tid.substring(0, tid.indexOf("/")) : tid;
         Drive drive = getDrive(key);
-        // List<Vod> list = vodCache;
         List<Vod> list = driveVodsMap.get(drive.getName());
         if(list != null && !pg.equals("1")) {
             result = Result.get().vod(list).page(pg).vodDrive(drive.getName()).string();
@@ -466,7 +487,6 @@ public class AList extends Spider {
             list = VodSorter.sortVods(list, extend);
         }
 
-        // vodCache = list;
         driveVodsMap.put(drive.getName(), list);
         result = Result.get().vod(list).page(pg).vodDrive(drive.getName()).string();
         Logger.log(result);
