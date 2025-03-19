@@ -308,7 +308,7 @@ public class AList extends Spider {
         String result = Result.get().url(url).header(drive.getHeader()).subs(getSubs(ids)).string();
         // String result =
         // Result.get().url(url).header(getPlayHeader(url)).subs(getSubs(ids)).string();
-        DanmuFetcher.pushDanmu("北上", 1, 200);
+        DanmuFetcher.pushDanmu("北上", 1, 2025);
         Logger.log(result);
         return result;
     }
