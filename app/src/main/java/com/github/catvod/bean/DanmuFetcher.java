@@ -12,8 +12,24 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.github.catvod.spider.Logger;
+import com.github.catvod.utils.Path;
 
 public class DanmuFetcher {
+
+    public static vod pushDanmu(String title, int episode, int year) {
+        Thread thread = new Thread(() -> {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+            }
+            String danmu = getBilibiliDanmakuXML(title, episode, year);
+            String danmuPath = Path.root() + "/TV/danmu.txt";
+            File danmuPath = new File(tokenPath);
+            Path.write(danmuPath, danmu.getBytes());
+            sendGetRequest("http://127.0.0.1:9978/action?do=refresh&type=danmaku&path=" + "file://" + danmuPath);
+        });
+        thread.start();
+    }
 
     /**
      * 获取 Bilibili 弹幕格式的 XML

@@ -51,6 +51,7 @@ import com.github.catvod.bean.alist.LoginDlg;
 import android.widget.Toast;
 import com.github.catvod.utils.Path;
 import java.io.File;
+import com.github.catvod.bean.DanmuFetcher;
 
 public class AList extends Spider {
 
@@ -307,6 +308,7 @@ public class AList extends Spider {
         String result = Result.get().url(url).header(drive.getHeader()).subs(getSubs(ids)).string();
         // String result =
         // Result.get().url(url).header(getPlayHeader(url)).subs(getSubs(ids)).string();
+        DanmuFetcher.pushDanmu("北上", 1, 200);
         Logger.log(result);
         return result;
     }
