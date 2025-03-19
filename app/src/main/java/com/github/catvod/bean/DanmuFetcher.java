@@ -5,12 +5,12 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Map;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.github.catvod.spider.Logger;
 
 public class DanmuFetcher {
 
@@ -37,7 +37,7 @@ public class DanmuFetcher {
         }
 
         // Step 3: Fetch danmaku data
-        List<Map<String, Object>> danmakuData = fetchDanmaku(episodeUrl);
+        List<List<String>> danmakuData = fetchDanmaku(episodeUrl);
         if (danmakuData == null) {
             throw new RuntimeException("Failed to fetch danmaku");
         }
@@ -47,7 +47,9 @@ public class DanmuFetcher {
     }
 
     private static String searchShowId(String title, int year) throws IOException {
-        String searchUrl = "https://search.youku.com/api/search?pg=1&keyword=" + title;
+        // URL 编码影片名
+        String encodedTitle = URLEncoder.encode(title, StandardCharsets.UTF_8.toString());
+        String searchUrl = "https://search.youku.com/api/search?pg=1&keyword=" + encodedTitle;
         String jsonResponse = sendGetRequest(searchUrl);
 
         Gson gson = new Gson();
@@ -82,7 +84,7 @@ public class DanmuFetcher {
         return null;
     }
 
-    private static List<Map<String, Object>> fetchDanmaku(String episodeUrl) throws IOException {
+    private static List<List<String>> fetchDanmaku(String episodeUrl) throws IOException {
         String danmakuUrl = "https://dmku.thefilehosting.com?ac=dm&url=" + episodeUrl;
         String jsonResponse = sendGetRequest(danmakuUrl);
 
@@ -93,17 +95,17 @@ public class DanmuFetcher {
         return gson.fromJson(danmuku, List.class);
     }
 
-    private static String convertToBilibiliXML(List<Map<String, Object>> danmakuData) {
+    private static String convertToBilibiliXML(List<List<String>> danmakuData) {
         StringBuilder xmlBuilder = new StringBuilder();
         xmlBuilder.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
         xmlBuilder.append("<i>\n");
 
-        for (Map<String, Object> danmaku : danmakuData) {
-            double time = (double) danmaku.get(0);
-            String mode = danmaku.get(1).toString();
-            String color = danmaku.get(2).toString();
-            String text = danmaku.get(4).toString();
-            String fontSize = danmaku.get(7).toString().replace("px", ""); // 提取字体大小
+        for (List<String> danmaku : danmakuData) {
+            double time = Double.parseDouble(danmaku.get(0)); // 时间
+            String mode = danmaku.get(1); // 模式（如 "right"）
+            String color = danmaku.get(2); // 颜色（如 "#FFFFFF"）
+            String text = danmaku.get(4); // 弹幕文本
+            String fontSize = danmaku.get(7).replace("px", ""); // 字体大小（如 "24px"）
 
             // 将颜色转换为十进制，去掉 # 号
             int colorDecimal = Integer.parseInt(color.replace("#", ""), 16);
