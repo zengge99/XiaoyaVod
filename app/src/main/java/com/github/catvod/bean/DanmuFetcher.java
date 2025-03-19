@@ -143,7 +143,7 @@ public class DanmuFetcher {
             double time = ((Number) danmaku.get(0)).doubleValue(); // 时间
             String youkuMode = danmaku.get(1).toString(); // 优酷的 mode
             String color = danmaku.get(2).toString(); // 颜色（如 "#FFFFFF"）
-            String text = danmaku.get(4).toString(); // 弹幕文本
+            String text = escapeXml(danmaku.get(4).toString()); // 弹幕文本
             String fontSize = danmaku.get(7).toString().replace("px", ""); // 字体大小（如 "24px"）
 
             // 将颜色转换为十进制，去掉 # 号
@@ -159,6 +159,23 @@ public class DanmuFetcher {
 
         xmlBuilder.append("</i>");
         return xmlBuilder.toString();
+    }
+
+    /**
+     * 转义 XML 特殊字符
+     *
+     * @param text 输入的文本
+     * @return 转义后的文本
+     */
+    private static String escapeXml(String text) {
+        if (text == null) {
+            return "";
+        }
+        return text.replace("&", "&amp;")
+                   .replace("<", "&lt;")
+                   .replace(">", "&gt;")
+                   .replace("\"", "&quot;")
+                   .replace("'", "&apos;");
     }
 
     private static String sendGetRequest(String url) throws IOException {
