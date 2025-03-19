@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.WeakHashMap;
 import static java.util.AbstractMap.SimpleEntry;
 import java.util.AbstractMap;
 import java.util.concurrent.TimeoutException;
@@ -61,8 +62,8 @@ public class AList extends Spider {
     private String ext;
     private String xiaoyaAlistToken;
     private Map<String, Vod> vodMap = new HashMap<>();
-    // private Map<String, List<Vod>> driveVodsMap = new HashMap<>();
-    private volatile List<Vod> vodCache;
+    private Map<String, List<Vod>> driveVodsMap = new WeakHashMap<>();
+    // private volatile List<Vod> vodCache;
     private ExecutorService executor = Executors.newCachedThreadPool();
 
     private List<Filter> getFilter(String tid) {
@@ -446,7 +447,8 @@ public class AList extends Spider {
         fetchRule();
         String key = tid.contains("/") ? tid.substring(0, tid.indexOf("/")) : tid;
         Drive drive = getDrive(key);
-        List<Vod> list = vodCache;
+        // List<Vod> list = vodCache;
+        List<Vod> list = driveVodsMap.get(drive.getName());
         if(list != null && !pg.equals("1")) {
             result = Result.get().vod(list).page(pg).vodDrive(drive.getName()).string();
             Logger.log(result);
@@ -464,7 +466,8 @@ public class AList extends Spider {
             list = VodSorter.sortVods(list, extend);
         }
 
-        vodCache = list;
+        // vodCache = list;
+        driveVodsMap.put(drive.getName(), list);
         result = Result.get().vod(list).page(pg).vodDrive(drive.getName()).string();
         Logger.log(result);
         return result;
