@@ -228,6 +228,9 @@ public class AList extends Spider {
         String id = ids.get(0);
         Logger.log(id);
 
+        //兼容老id格式
+        id = id.replace("~soulist", "~xiaoya").replace("~soufile", "~xiaoya");
+        
         Boolean isFile = id.endsWith("~playlist") ? false : true;
         String path = id.substring(id.indexOf("/"));
         if (id.endsWith("~xiaoya")) {
