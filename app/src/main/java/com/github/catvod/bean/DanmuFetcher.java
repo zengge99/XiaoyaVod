@@ -21,12 +21,13 @@ public class DanmuFetcher {
         Thread thread = new Thread(() -> {
             try {
                 Thread.sleep(100);
-            } catch (Exception e) {
                 String danmu = getBilibiliDanmakuXML(title, episode, year);
                 String danmuPath = Path.root() + "/TV/danmu.txt";
                 File danmuFile = new File(danmuPath);
                 Path.write(danmuFile, danmu.getBytes());
                 sendGetRequest("http://127.0.0.1:9978/action?do=refresh&type=danmaku&path=" + "file://" + danmuPath);
+            } catch (Exception e) {
+                Logger.log(e);
             }
         });
         thread.start();
