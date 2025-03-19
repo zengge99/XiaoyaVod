@@ -17,7 +17,7 @@ import java.io.File;
 
 public class DanmuFetcher {
 
-    public static vod pushDanmu(String title, int episode, int year) {
+    public static void pushDanmu(String title, int episode, int year) {
         Thread thread = new Thread(() -> {
             try {
                 Thread.sleep(100);
