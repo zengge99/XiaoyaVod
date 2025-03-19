@@ -38,7 +38,7 @@ public class DanmuFetcher {
         }
 
         // Step 3: Fetch danmaku data
-        List<List<String>> danmakuData = fetchDanmaku(episodeUrl);
+        List<List<Object>> danmakuData = fetchDanmaku(episodeUrl);
         if (danmakuData == null) {
             throw new RuntimeException("Failed to fetch danmaku");
         }
@@ -85,7 +85,7 @@ public class DanmuFetcher {
         return null;
     }
 
-    private static List<List<String>> fetchDanmaku(String episodeUrl) throws IOException {
+    private static List<List<Object>> fetchDanmaku(String episodeUrl) throws IOException {
         String danmakuUrl = "https://dmku.thefilehosting.com?ac=dm&url=" + episodeUrl;
         String jsonResponse = sendGetRequest(danmakuUrl);
 
@@ -96,23 +96,46 @@ public class DanmuFetcher {
         return gson.fromJson(danmuku, List.class);
     }
 
-    private static String convertToBilibiliXML(List<List<String>> danmakuData) {
+    /**
+     * 将优酷的 mode 转换为 Bilibili 的 mode
+     *
+     * @param youkuMode 优酷的 mode（如 "top", "right", "bottom"）
+     * @return Bilibili 的 mode（如 "5", "1", "4"）
+     */
+    private static String convertMode(String youkuMode) {
+        switch (youkuMode) {
+            case "top":
+                return "5"; // 顶部弹幕
+            case "right":
+                return "1"; // 滚动弹幕
+            case "bottom":
+                return "4"; // 底部弹幕
+            default:
+                return "1"; // 默认滚动弹幕
+        }
+    }
+
+    private static String convertToBilibiliXML(List<List<Object>> danmakuData) {
         StringBuilder xmlBuilder = new StringBuilder();
         xmlBuilder.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
         xmlBuilder.append("<i>\n");
 
-        for (List<String> danmaku : danmakuData) {
-            double time = Double.parseDouble(danmaku.get(0)); // 时间
-            String mode = danmaku.get(1); // 模式（如 "right"）
-            String color = danmaku.get(2); // 颜色（如 "#FFFFFF"）
-            String text = danmaku.get(4); // 弹幕文本
-            String fontSize = danmaku.get(7).replace("px", ""); // 字体大小（如 "24px"）
+        for (List<Object> danmaku : danmakuData) {
+            // 解析字段，确保类型正确
+            double time = ((Number) danmaku.get(0)).doubleValue(); // 时间
+            String youkuMode = danmaku.get(1).toString(); // 优酷的 mode
+            String color = danmaku.get(2).toString(); // 颜色（如 "#FFFFFF"）
+            String text = danmaku.get(4).toString(); // 弹幕文本
+            String fontSize = danmaku.get(7).toString().replace("px", ""); // 字体大小（如 "24px"）
 
             // 将颜色转换为十进制，去掉 # 号
             int colorDecimal = Integer.parseInt(color.replace("#", ""), 16);
 
+            // 转换 mode
+            String bilibiliMode = convertMode(youkuMode);
+
             // Bilibili 弹幕格式：时间,模式,字体大小,颜色,时间戳,弹幕池,用户Hash,弹幕ID
-            String attrs = String.format("%.5f,%s,%s,%d,0,0,0,0", time, mode, fontSize, colorDecimal);
+            String attrs = String.format("%.5f,%s,%s,%d,0,0,0,0", time, bilibiliMode, fontSize, colorDecimal);
             xmlBuilder.append(String.format("  <d p=\"%s\">%s</d>\n", attrs, text));
         }
 
