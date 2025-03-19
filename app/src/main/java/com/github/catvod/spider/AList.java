@@ -387,7 +387,7 @@ public class AList extends Spider {
         if (id.endsWith("~xiaoya")) {
             urlString = urlString.replace("%NAME%", vod.doubanInfo.getName()).replace("%YEAR%", vod.doubanInfo.getYear());
         } else {
-            urlString = urlString.split("danmu:")[0];
+            urlString = urlString.replace("danmu:", "");
         }
         vod.setVodPlayUrl(urlString);
 
@@ -452,9 +452,9 @@ public class AList extends Spider {
         int i = 1;
         for (Item item : items)
             if (item.isMedia()) {
-                // playUrls.add(item.getName() + "$" + item.getVodId(path) + findSubs(path, items)
-                //  + "~~~" + String.format("danmu:%%NAME%%,%i,%%YEAR%%", i++));
-                playUrls.add(item.getName() + "$" + item.getVodId(path) + findSubs(path, items));
+                playUrls.add(item.getName() + "$" + item.getVodId(path) + findSubs(path, items)
+                 + "~~~" + String.format("danmu:%%NAME%%,%i,%%YEAR%%", i++));
+                //playUrls.add(item.getName() + "$" + item.getVodId(path) + findSubs(path, items));
                 haveFile = true;
             }
         if (haveFile) {
