@@ -308,6 +308,9 @@ public class AList extends Spider {
         String result = Result.get().url(url).header(drive.getHeader()).subs(getSubs(ids)).string();
         // String result =
         // Result.get().url(url).header(getPlayHeader(url)).subs(getSubs(ids)).string();
+        if(ids[ids.length - 1].contains("danmu:")) {
+            
+        }
         DanmuFetcher.pushDanmu("北上", 1, 2025);
         Logger.log(result);
         return result;
@@ -360,6 +363,8 @@ public class AList extends Spider {
             vod.setVodPic(vodPic);
         }
 
+        vod.setVodPlayFrom(from.toString());
+
         //if (id.endsWith("~soulist") && vod.doubanInfo.getYear().isEmpty() && !vod.doubanInfo.getId().isEmpty()) {
         if (id.endsWith("~xiaoya") && vod.doubanInfo.getYear().isEmpty() && !vod.doubanInfo.getId().isEmpty()) {
             vod.doubanInfo = DoubanParser.getDoubanInfo(vod.doubanInfo.getId(), vod.doubanInfo);
@@ -372,14 +377,13 @@ public class AList extends Spider {
             vod.setTypeName(vod.doubanInfo.getType());
         }
 
+        String urlString = url.toString();
         if (id.endsWith("~xiaoya")) {
-            url = url.replace("%NAME", vod.doubanInfo.getName()).replace("%YEAR%", vod.doubanInfo.getYear());
+            urlString = urlString.replace("%NAME%", vod.doubanInfo.getName()).replace("%YEAR%", vod.doubanInfo.getYear());
         } else {
-            url = url.splits("danmu:")[0];
+            urlString = urlString.split("danmu:")[0];
         }
-
-        vod.setVodPlayFrom(from.toString());
-        vod.setVodPlayUrl(url.toString());
+        vod.setVodPlayUrl(urlString);
 
         String result = Result.get().vod(vod).vodDrive(drive.getName()).string();
         Logger.log(result);
