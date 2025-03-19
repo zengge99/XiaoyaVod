@@ -384,6 +384,7 @@ public class AList extends Spider {
         }
 
         String urlString = url.toString();
+        Logger.log("urlString is" + urlString);
         if (id.endsWith("~xiaoya")) {
             urlString = urlString.replace("%NAME%", vod.doubanInfo.getName()).replace("%YEAR%", vod.doubanInfo.getYear());
         } else {
