@@ -17,17 +17,17 @@ import java.io.File;
 
 public class DanmuFetcher {
 
-    public static void pushDanmu(String title, int episode, int year) throws IOException {
+    public static void pushDanmu(String title, int episode, int year) {
         Thread thread = new Thread(() -> {
             try {
                 Thread.sleep(100);
-            } catch (InterruptedException e) {
+            } catch (Exception e) {
+                String danmu = getBilibiliDanmakuXML(title, episode, year);
+                String danmuPath = Path.root() + "/TV/danmu.txt";
+                File danmuFile = new File(danmuPath);
+                Path.write(danmuFile, danmu.getBytes());
+                sendGetRequest("http://127.0.0.1:9978/action?do=refresh&type=danmaku&path=" + "file://" + danmuPath);
             }
-            String danmu = getBilibiliDanmakuXML(title, episode, year);
-            String danmuPath = Path.root() + "/TV/danmu.txt";
-            File danmuFile = new File(danmuPath);
-            Path.write(danmuFile, danmu.getBytes());
-            sendGetRequest("http://127.0.0.1:9978/action?do=refresh&type=danmaku&path=" + "file://" + danmuPath);
         });
         thread.start();
     }
