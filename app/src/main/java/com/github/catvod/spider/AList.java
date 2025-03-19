@@ -452,8 +452,9 @@ public class AList extends Spider {
         int i = 1;
         for (Item item : items)
             if (item.isMedia()) {
-                playUrls.add(item.getName() + "$" + item.getVodId(path) + findSubs(path, items)
-                 + "~~~" + String.format("danmu:%%NAME%%,%i,%%YEAR%%", i++));
+                // playUrls.add(item.getName() + "$" + item.getVodId(path) + findSubs(path, items)
+                //  + "~~~" + String.format("danmu:%%NAME%%,%i,%%YEAR%%", i++));
+                playUrls.add(item.getName() + "$" + item.getVodId(path) + findSubs(path, items));
                 haveFile = true;
             }
         if (haveFile) {
