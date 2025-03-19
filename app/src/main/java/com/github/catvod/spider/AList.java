@@ -309,9 +309,15 @@ public class AList extends Spider {
         // String result =
         // Result.get().url(url).header(getPlayHeader(url)).subs(getSubs(ids)).string();
         if(ids[ids.length - 1].contains("danmu:")) {
-            
+            String damuParams = ids[ids.length - 1].split("danmu:");
+            String danmuName = damuParams[1];
+            String danmuEp = damuParams[2];
+            String danmuYear = damuParams[3];
+            try {
+                DanmuFetcher.pushDanmu(danmuName, Int.parseInt(danmuEp), Int.parseInt(danmuYear));
+            } catch (Exception e) {
+            }
         }
-        DanmuFetcher.pushDanmu("北上", 1, 2025);
         Logger.log(result);
         return result;
     }
