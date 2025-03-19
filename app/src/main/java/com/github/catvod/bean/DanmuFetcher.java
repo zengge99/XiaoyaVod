@@ -24,8 +24,8 @@ public class DanmuFetcher {
             }
             String danmu = getBilibiliDanmakuXML(title, episode, year);
             String danmuPath = Path.root() + "/TV/danmu.txt";
-            File danmuPath = new File(tokenPath);
-            Path.write(danmuPath, danmu.getBytes());
+            File danmuFile = new File(danmuPath);
+            Path.write(danmuFile, danmu.getBytes());
             sendGetRequest("http://127.0.0.1:9978/action?do=refresh&type=danmaku&path=" + "file://" + danmuPath);
         });
         thread.start();
