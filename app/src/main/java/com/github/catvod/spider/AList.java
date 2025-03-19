@@ -359,8 +359,7 @@ public class AList extends Spider {
             vod.setVodName(name);
             vod.setVodPic(vodPic);
         }
-        vod.setVodPlayFrom(from.toString());
-        vod.setVodPlayUrl(url.toString());
+
         //if (id.endsWith("~soulist") && vod.doubanInfo.getYear().isEmpty() && !vod.doubanInfo.getId().isEmpty()) {
         if (id.endsWith("~xiaoya") && vod.doubanInfo.getYear().isEmpty() && !vod.doubanInfo.getId().isEmpty()) {
             vod.doubanInfo = DoubanParser.getDoubanInfo(vod.doubanInfo.getId(), vod.doubanInfo);
@@ -372,6 +371,13 @@ public class AList extends Spider {
             vod.setVodRemarks(vod.doubanInfo.getRating());
             vod.setTypeName(vod.doubanInfo.getType());
         }
+
+        if (id.endsWith("~xiaoya")) {
+            url = url.replace("%NAME", vod.doubanInfo.getName()).replace("%YEAR%", vod.doubanInfo.getYear());
+        }
+
+        vod.setVodPlayFrom(from.toString());
+        vod.setVodPlayUrl(url.toString());
 
         String result = Result.get().vod(vod).vodDrive(drive.getName()).string();
         Logger.log(result);
@@ -431,9 +437,11 @@ public class AList extends Spider {
         
         List<String> playUrls = new ArrayList<>();
         Boolean haveFile = false;
+        int i = 1;
         for (Item item : items)
             if (item.isMedia()) {
-                playUrls.add(item.getName() + "$" + item.getVodId(path) + findSubs(path, items));
+                playUrls.add(item.getName() + "$" + item.getVodId(path) + findSubs(path, items)
+                 + "~~~" + String.format("danmu:\%NAME\%,%i,\%YEAR\%", i++));
                 haveFile = true;
             }
         if (haveFile) {
