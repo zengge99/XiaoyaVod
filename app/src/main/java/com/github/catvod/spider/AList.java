@@ -309,14 +309,17 @@ public class AList extends Spider {
         // String result =
         // Result.get().url(url).header(getPlayHeader(url)).subs(getSubs(ids)).string();
         if(ids[ids.length - 1].contains("danmu:")) {
-            String damuParams = ids[ids.length - 1].split("danmu:");
-            String danmuName = damuParams[1];
-            String danmuEp = damuParams[2];
-            String danmuYear = damuParams[3];
-            try {
-                DanmuFetcher.pushDanmu(danmuName, Int.parseInt(danmuEp), Int.parseInt(danmuYear));
-            } catch (Exception e) {
+            String[] danmuParams = ids[ids.length - 1].replace("danmu:", "").split(",");
+            if (danmuParams.length == 3) {
+                String danmuName = danmuParams[0];
+                String danmuEp = danmuParams[1];
+                String danmuYear = danmuParams[2];
+                try {
+                    DanmuFetcher.pushDanmu(danmuName, Integer.parseInt(danmuEp), Integer.parseInt(danmuYear));
+                } catch (Exception e) {
+                }
             }
+
         }
         Logger.log(result);
         return result;
