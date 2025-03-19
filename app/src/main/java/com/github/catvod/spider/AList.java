@@ -374,6 +374,8 @@ public class AList extends Spider {
 
         if (id.endsWith("~xiaoya")) {
             url = url.replace("%NAME", vod.doubanInfo.getName()).replace("%YEAR%", vod.doubanInfo.getYear());
+        } else {
+            url = url.splits("danmu:")[0];
         }
 
         vod.setVodPlayFrom(from.toString());
@@ -441,7 +443,7 @@ public class AList extends Spider {
         for (Item item : items)
             if (item.isMedia()) {
                 playUrls.add(item.getName() + "$" + item.getVodId(path) + findSubs(path, items)
-                 + "~~~" + String.format("danmu:\%NAME\%,%i,\%YEAR\%", i++));
+                 + "~~~" + String.format("danmu:%%NAME%%,%i,%%YEAR%%", i++));
                 haveFile = true;
             }
         if (haveFile) {
