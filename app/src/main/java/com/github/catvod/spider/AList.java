@@ -4,7 +4,6 @@ import android.content.Context;
 import android.net.Uri;
 import android.text.TextUtils;
 import java.net.URLEncoder;
-
 import com.github.catvod.bean.Class;
 import com.github.catvod.bean.Filter;
 import com.github.catvod.bean.Result;
@@ -21,12 +20,10 @@ import com.github.catvod.crawler.SpiderDebug;
 import com.github.catvod.net.OkHttp;
 import com.github.catvod.utils.Util;
 import com.github.catvod.utils.Notify;
-
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
