@@ -131,7 +131,7 @@ public class DanmuFetcher {
         return response.toString();
     }
 
-    public static void test(String[] args) {
+    public static void test() {
         try {
             String xml = DanmuFetcher.getBilibiliDanmakuXML("北上", 1, 2025);
             Logger.log(xml);
