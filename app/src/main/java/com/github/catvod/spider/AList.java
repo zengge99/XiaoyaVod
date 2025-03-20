@@ -164,7 +164,12 @@ public class AList extends Spider {
         // if (retry && (response.contains("Guest user is disabled") || response.contains("token is invalidated") || 
         //     response.contains("without permission") || response.contains("token is expired")) && (loginByFile(drive) || loginByUser(drive)))
         //     return post(drive, url, param, false);
-        int code = new JSONObject(response).getInt("code");
+        int code = 200;
+        try {
+            code = new JSONObject(response).getInt("code");
+        } catch (Exception e) {
+            Logger.log(e);
+        }
         if (code == 401 && (loginByFile(drive) || loginByUser(drive))) {
             return post(drive, url, param, false);
         }
