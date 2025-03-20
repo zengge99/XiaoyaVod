@@ -26,7 +26,7 @@ public class KanDanmuFetcher {
      * @return Bilibili 弹幕格式的 XML 字符串
      * @throws IOException 如果请求失败
      */
-    public static String getBilibiliDanmakuXML(String title, int episode, int year) throws IOException {
+    public static String getBilibiliDanmakuXML(String title, int episode, int year) {
         try {
             // Step 1: Get showId
             String showId = searchEnId(title, year);
@@ -49,7 +49,7 @@ public class KanDanmuFetcher {
             // Step 4: Convert to Bilibili XML format
             return convertToBilibiliXML(danmakuData);
         } catch (Exception e) {
-            Logger.loge(e);
+            Logger.log(e);
             return "";
         }
     }
@@ -192,11 +192,7 @@ public class KanDanmuFetcher {
     }
 
     public static void test() {
-        try {
-            String xml = KanDanmuFetcher.getBilibiliDanmakuXML("北上广不相信眼泪", 1, 2015);
-            Logger.log(xml);
-        } catch (IOException e) {
-            Logger.log(e);
-        }
+        String xml = KanDanmuFetcher.getBilibiliDanmakuXML("北上广不相信眼泪", 1, 2015);
+        Logger.log(xml);
     }
 }

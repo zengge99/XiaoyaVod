@@ -202,11 +202,7 @@ public class DanmuFetcher {
     }
 
     public static void test() {
-        try {
-            String xml = DanmuFetcher.getBilibiliDanmakuXML("北上", 1, 2025);
-            Logger.log(xml);
-        } catch (IOException e) {
-            Logger.log(e);
-        }
+        String xml = DanmuFetcher.getBilibiliDanmakuXML("北上", 1, 2025);
+        Logger.log(xml);
     }
 }
