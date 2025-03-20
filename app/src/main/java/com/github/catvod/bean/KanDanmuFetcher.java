@@ -27,26 +27,31 @@ public class KanDanmuFetcher {
      * @throws IOException 如果请求失败
      */
     public static String getBilibiliDanmakuXML(String title, int episode, int year) throws IOException {
-        // Step 1: Get showId
-        String showId = searchEnId(title, year);
-        if (showId == null) {
-            throw new RuntimeException("No matching show found");
-        }
+        try {
+            // Step 1: Get showId
+            String showId = searchEnId(title, year);
+            if (showId == null) {
+                throw new RuntimeException("No matching show found");
+            }
 
-        // Step 2: Get episode URL
-        String episodeUrl = getEpisodeUrl(showId, episode);
-        if (episodeUrl == null) {
-            throw new RuntimeException("No matching episode found");
-        }
+            // Step 2: Get episode URL
+            String episodeUrl = getEpisodeUrl(showId, episode);
+            if (episodeUrl == null) {
+                throw new RuntimeException("No matching episode found");
+            }
 
-        // Step 3: Fetch danmaku data
-        List<List<Object>> danmakuData = fetchDanmaku(episodeUrl);
-        if (danmakuData == null) {
-            throw new RuntimeException("Failed to fetch danmaku");
-        }
+            // Step 3: Fetch danmaku data
+            List<List<Object>> danmakuData = fetchDanmaku(episodeUrl);
+            if (danmakuData == null) {
+                throw new RuntimeException("Failed to fetch danmaku");
+            }
 
-        // Step 4: Convert to Bilibili XML format
-        return convertToBilibiliXML(danmakuData);
+            // Step 4: Convert to Bilibili XML format
+            return convertToBilibiliXML(danmakuData);
+        } catch (Exception e) {
+            Logger.loge(e);
+            return "";
+        }
     }
 
     private static String searchEnId(String title, int year) throws IOException {

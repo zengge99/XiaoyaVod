@@ -21,7 +21,11 @@ public class DanmuFetcher {
         Thread thread = new Thread(() -> {
             try {
                 Thread.sleep(100);
-                String danmu = getBilibiliDanmakuXML(title, episode, year);
+                String danmu = "";
+                danmu = getBilibiliDanmakuXML(title, episode, year);
+                if (danmu.isEmpty()) {
+                    danmu = KanDanmuFetcher.getBilibiliDanmakuXML(title, episode, year);
+                }
                 String danmuPath = Path.root() + "/TV/danmu.txt";
                 File danmuFile = new File(danmuPath);
                 Path.write(danmuFile, danmu.getBytes());
@@ -42,27 +46,32 @@ public class DanmuFetcher {
      * @return Bilibili 弹幕格式的 XML 字符串
      * @throws IOException 如果请求失败
      */
-    public static String getBilibiliDanmakuXML(String title, int episode, int year) throws IOException {
-        // Step 1: Get showId
-        String showId = searchShowId(title, year);
-        if (showId == null) {
-            throw new RuntimeException("No matching show found");
-        }
+    public static String getBilibiliDanmakuXML(String title, int episode, int year) {
+        try {
+            // Step 1: Get showId
+            String showId = searchShowId(title, year);
+            if (showId == null) {
+                throw new RuntimeException("No matching show found");
+            }
 
-        // Step 2: Get episode URL
-        String episodeUrl = getEpisodeUrl(showId, episode);
-        if (episodeUrl == null) {
-            throw new RuntimeException("No matching episode found");
-        }
+            // Step 2: Get episode URL
+            String episodeUrl = getEpisodeUrl(showId, episode);
+            if (episodeUrl == null) {
+                throw new RuntimeException("No matching episode found");
+            }
 
-        // Step 3: Fetch danmaku data
-        List<List<Object>> danmakuData = fetchDanmaku(episodeUrl);
-        if (danmakuData == null) {
-            throw new RuntimeException("Failed to fetch danmaku");
-        }
+            // Step 3: Fetch danmaku data
+            List<List<Object>> danmakuData = fetchDanmaku(episodeUrl);
+            if (danmakuData == null) {
+                throw new RuntimeException("Failed to fetch danmaku");
+            }
 
-        // Step 4: Convert to Bilibili XML format
-        return convertToBilibiliXML(danmakuData);
+            // Step 4: Convert to Bilibili XML format
+            return convertToBilibiliXML(danmakuData);
+        } catch (Exception e) {
+            Logger.log(e);
+            return "";
+        }
     }
 
     private static String searchShowId(String title, int year) throws IOException {
