@@ -14,6 +14,8 @@ import com.google.gson.JsonObject;
 import com.github.catvod.spider.Logger;
 import com.github.catvod.utils.Path;
 import java.io.File;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class DanmuFetcher {
 
