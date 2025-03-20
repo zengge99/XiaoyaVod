@@ -110,7 +110,11 @@ public class DanmuFetcher {
             String showVideoStage = series.get("showVideoStage").getAsString();
             String displayName = series.get("displayName").getAsString();
             if (showVideoStage.equals(String.valueOf(episode)) || displayName.equals(String.valueOf(episode))) {
-                return series.get("url").getAsString().split("\\?")[0];
+                if (series.get("url") != null) {
+                    return series.get("url").getAsString().split("\\?")[0];
+                } else {
+                    return String.format("https://v.youku.com/v_show/id_%s.html", series.get("videoId").getAsString());
+                }
             }
         }
         return null;
