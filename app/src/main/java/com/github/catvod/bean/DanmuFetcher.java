@@ -29,7 +29,7 @@ public class DanmuFetcher {
                 if (danmu.isEmpty()) {
                     return;
                 }
-                String danmuPath = Path.root() + "/TV/danmu.txt";
+                String danmuPath = Path.cache() + "/TV/danmu.txt";
                 File danmuFile = new File(danmuPath);
                 Path.write(danmuFile, danmu.getBytes());
                 sendGetRequest("http://127.0.0.1:9978/action?do=refresh&type=danmaku&path=" + "file://" + danmuPath);
