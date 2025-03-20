@@ -109,7 +109,7 @@ public class DanmuFetcher {
             JsonObject series = item.getAsJsonObject();
             String showVideoStage = series.get("showVideoStage").getAsString();
             String displayName = series.get("displayName").getAsString();
-            Logger.log("showVideoStage:" + showVideoStage + "displayName:" + displayName);
+            Logger.log("showVideoStage:" + showVideoStage + "displayName:" + displayName + "episode:" + String.valueOf(episode));
             if (showVideoStage.equals(String.valueOf(episode)) || displayName.equals(String.valueOf(episode))) {
                 if (series.get("url") != null) {
                     Logger.log("url:" + series.get("url").getAsString());
