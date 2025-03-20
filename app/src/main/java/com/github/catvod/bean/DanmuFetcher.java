@@ -111,10 +111,17 @@ public class DanmuFetcher {
             String displayName = series.get("displayName").getAsString();
             Logger.log("showVideoStage:" + showVideoStage + "displayName:" + displayName + "episode:" + String.valueOf(episode));
             if (showVideoStage.equals(String.valueOf(episode)) || displayName.equals(String.valueOf(episode))) {
-                if (series.get("url") != null) {
+                // if (series.get("url") != null) {
+                //     Logger.log("url:" + series.get("url").getAsString());
+                //     return series.get("url").getAsString().split("\\?")[0];
+                // } else {
+                //     Logger.log("videoId:" + series.get("videoId").getAsString());
+                //     return String.format("https://v.youku.com/v_show/id_%s.html", series.get("videoId").getAsString());
+                // }
+                try {
                     Logger.log("url:" + series.get("url").getAsString());
                     return series.get("url").getAsString().split("\\?")[0];
-                } else {
+                } catch (Exception e) {
                     Logger.log("videoId:" + series.get("videoId").getAsString());
                     return String.format("https://v.youku.com/v_show/id_%s.html", series.get("videoId").getAsString());
                 }
