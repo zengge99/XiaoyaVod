@@ -170,7 +170,7 @@ public class AList extends Spider {
         } catch (Exception e) {
             Logger.log(e);
         }
-        if (code == 401 && (loginByFile(drive) || loginByUser(drive))) {
+        if (retry && code == 401 && (loginByFile(drive) || loginByUser(drive))) {
             return post(drive, url, param, false);
         }
         return response;
