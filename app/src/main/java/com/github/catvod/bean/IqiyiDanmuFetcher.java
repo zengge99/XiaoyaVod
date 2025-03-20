@@ -29,8 +29,7 @@ public class IqiyiDanmuFetcher {
     public static String getBilibiliDanmakuXML(String title, int episode, int year) {
         try {
             // Step 1: Get episode URL
-            String encodedTitle = URLEncoder.encode(title, StandardCharsets.UTF_8.toString());
-            String episodeUrl = getEpisodeUrl(encodedTitle, episode);
+            String episodeUrl = getEpisodeUrl(title, episode);
             if (episodeUrl == null) {
                 throw new RuntimeException("No matching episode found");
             }
@@ -50,26 +49,39 @@ public class IqiyiDanmuFetcher {
     }
 
     private static String getEpisodeUrl(String title, int episode) throws IOException {
-    // 使用步骤2的API获取剧集URL，en_id 作为参数
-    String episodeUrl = "https://search.video.iqiyi.com/o?if=html5&pageNum=1&pos=1&pageSize=24&site=iqiyi&key=" + title;
-    String jsonResponse = sendGetRequest(episodeUrl);
+        String encodedTitle = URLEncoder.encode(title, StandardCharsets.UTF_8.toString());
+        String episodeUrl = "https://search.video.iqiyi.com/o?if=html5&pageNum=1&pos=1&pageSize=24&site=iqiyi&key=" + encodedTitle;
+        String jsonResponse = sendGetRequest(episodeUrl);
 
-    Gson gson = new Gson();
-    JsonObject response = gson.fromJson(jsonResponse, JsonObject.class);
-    JsonObject albumDocInfo = response.getAsJsonObject("data").getAsJsonObject("docinfos").getAsJsonObject("albumDocInfo");
+        // Gson gson = new Gson();
+        // JsonObject response = gson.fromJson(jsonResponse, JsonObject.class);
+        // JsonObject albumDocInfo = response.getAsJsonObject("data").getAsJsonObject("docinfos").getAsJsonObject("albumDocInfo");
 
-    // 获取 qq 字段的 JsonArray
-    JsonArray videoInfos = albumDocInfo.getAsJsonArray("videoInfos");
+        // JsonArray videoInfos = albumDocInfo.getAsJsonArray("videoInfos");
 
-    for (var item : videoInfos) {
-        JsonObject episodeData = item.getAsJsonObject();
-        int itemNumber = episodeData.get("itemNumber").getAsInt();
-        if (itemNumber == episode) {
-            return episodeData.get("itemLink").getAsString(); // 返回剧集URL
+        Gson gson = new Gson();
+        JsonObject response = gson.fromJson(jsonResponse, JsonObject.class);
+        JsonArray docInfos = response.getAsJsonObject("data").getAsJsonArray("docinfos");
+        JsonObject episodeData = null;
+        for (var item : docInfos) {
+            episodeData = item.getAsJsonObject();
+            String albumTitle = episodeData.get("albumTitle").getAsString();
+            if (albumTitle.equals(title)) {
+                break;
+            }
         }
+
+        JsonArray videoInfos = episodeData.getAsJsonArray("videoInfos");
+
+        for (var item : videoInfos) {
+            JsonObject episodeData = item.getAsJsonObject();
+            int itemNumber = episodeData.get("itemNumber").getAsInt();
+            if (itemNumber == episode) {
+                return episodeData.get("itemLink").getAsString(); // 返回剧集URL
+            }
+        }
+        return null;
     }
-    return null;
-}
 
 
     private static List<List<Object>> fetchDanmaku(String episodeUrl) throws IOException {
