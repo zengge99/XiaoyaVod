@@ -109,10 +109,13 @@ public class DanmuFetcher {
             JsonObject series = item.getAsJsonObject();
             String showVideoStage = series.get("showVideoStage").getAsString();
             String displayName = series.get("displayName").getAsString();
+            Logger.log("showVideoStage:" + showVideoStage + "displayName:" + displayName);
             if (showVideoStage.equals(String.valueOf(episode)) || displayName.equals(String.valueOf(episode))) {
                 if (series.get("url") != null) {
+                    Logger.log("url:" + series.get("url").getAsString());
                     return series.get("url").getAsString().split("\\?")[0];
                 } else {
+                    Logger.log("videoId:" + series.get("videoId").getAsString());
                     return String.format("https://v.youku.com/v_show/id_%s.html", series.get("videoId").getAsString());
                 }
             }
