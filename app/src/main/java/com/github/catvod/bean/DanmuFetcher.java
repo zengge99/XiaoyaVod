@@ -108,7 +108,8 @@ public class DanmuFetcher {
         for (var item : serisesList) {
             JsonObject series = item.getAsJsonObject();
             String showVideoStage = series.get("showVideoStage").getAsString();
-            if (showVideoStage.equals(String.valueOf(episode))) {
+            String displayName = series.get("displayName").getAsString();
+            if (showVideoStage.equals(String.valueOf(episode)) || displayName.equals(String.valueOf(episode))) {
                 return series.get("url").getAsString().split("\\?")[0];
             }
         }
