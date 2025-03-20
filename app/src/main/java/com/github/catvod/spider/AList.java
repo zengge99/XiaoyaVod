@@ -161,9 +161,13 @@ public class AList extends Spider {
     private String post(Drive drive, String url, String param, boolean retry) {
         String response = OkHttp.post(url, param, drive.getHeader()).getBody();
         SpiderDebug.log(response);
-        if (retry && (response.contains("Guest user is disabled") || response.contains("token is invalidated") || 
-            response.contains("without permission") || response.contains("token is expired")) && (loginByFile(drive) || loginByUser(drive)))
+        // if (retry && (response.contains("Guest user is disabled") || response.contains("token is invalidated") || 
+        //     response.contains("without permission") || response.contains("token is expired")) && (loginByFile(drive) || loginByUser(drive)))
+        //     return post(drive, url, param, false);
+        int code = new JSONObject(response).get("code").getAsInt();
+        if (code == 401 && (loginByFile(drive) || loginByUser(drive))) {
             return post(drive, url, param, false);
+        }
         return response;
     }
 
