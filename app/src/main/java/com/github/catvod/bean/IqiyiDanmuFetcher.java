@@ -62,16 +62,16 @@ public class IqiyiDanmuFetcher {
         Gson gson = new Gson();
         JsonObject response = gson.fromJson(jsonResponse, JsonObject.class);
         JsonArray docInfos = response.getAsJsonObject("data").getAsJsonArray("docinfos");
-        JsonObject episodeData = null;
+        JsonObject docData = null;
         for (var item : docInfos) {
-            episodeData = item.getAsJsonObject();
-            String albumTitle = episodeData.get("albumTitle").getAsString();
+            docData = item.getAsJsonObject();
+            String albumTitle = docData.get("albumTitle").getAsString();
             if (albumTitle.equals(title)) {
                 break;
             }
         }
 
-        JsonArray videoInfos = episodeData.getAsJsonArray("videoInfos");
+        JsonArray videoInfos = docData.getAsJsonArray("videoInfos");
 
         for (var item : videoInfos) {
             JsonObject episodeData = item.getAsJsonObject();
