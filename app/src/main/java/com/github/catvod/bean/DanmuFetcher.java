@@ -29,6 +29,9 @@ public class DanmuFetcher {
                     danmu = KanDanmuFetcher.getBilibiliDanmakuXML(title, episode, year);
                 }
                 if (danmu.isEmpty()) {
+                    danmu = IqiyiDanmuFetcher.getBilibiliDanmakuXML(title, episode, year);
+                }
+                if (danmu.isEmpty()) {
                     return;
                 }
                 String danmuPath = Path.cache() + "/TV/danmu.txt";
