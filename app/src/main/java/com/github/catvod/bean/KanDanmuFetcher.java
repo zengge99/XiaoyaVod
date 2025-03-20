@@ -79,28 +79,6 @@ public class KanDanmuFetcher {
         return null;
     }
 
-    // private static String getEpisodeUrl(String enId, int episode) throws IOException {
-    //     // 使用步骤2的API获取剧集URL，en_id 作为参数
-    //     String episodeUrl = "https://api.web.360kan.com/v1/detail?cat=2&id=" + enId;
-    //     String jsonResponse = sendGetRequest(episodeUrl);
-
-    //     Gson gson = new Gson();
-    //     JsonObject response = gson.fromJson(jsonResponse, JsonObject.class);
-    //     JsonObject allepidetail = response.getAsJsonObject("data").getAsJsonObject("allepidetail");
-
-    //     // 获取 qq 字段的 JsonArray
-    //     JsonArray episodes = allepidetail.getAsJsonArray("qq");
-
-    //     for (var item : episodes) {
-    //         JsonObject episodeData = item.getAsJsonObject();
-    //         int playlinkNum = episodeData.get("playlink_num").getAsInt();
-    //         if (playlinkNum == episode) {
-    //             return episodeData.get("url").getAsString(); // 返回剧集URL
-    //         }
-    //     }
-    //     return null;
-    // }
-
     private static String getEpisodeUrl(String enId, int episode) throws IOException {
         // 使用步骤2的API获取剧集URL，en_id 作为参数
         String episodeUrl = "https://api.web.360kan.com/v1/detail?cat=2&id=" + enId;
@@ -127,15 +105,28 @@ public class KanDanmuFetcher {
     }
 
 
-    private static List<List<Object>> fetchDanmaku(String episodeUrl) throws IOException {
-        String danmakuUrl = "https://dmku.thefilehosting.com?ac=dm&url=" + episodeUrl;
-        String jsonResponse = sendGetRequest(danmakuUrl);
+    private static List<List<Object>> fetchDanmaku(String episodeUrl) {
+        try {
+            String danmakuUrl = "https://dmku.thefilehosting.com?ac=dm&url=" + episodeUrl;
+            String jsonResponse = sendGetRequest(danmakuUrl);
+            Gson gson = new Gson();
+            JsonObject response = gson.fromJson(jsonResponse, JsonObject.class);
+            JsonArray danmuku = response.getAsJsonArray("danmuku");
+            return gson.fromJson(danmuku, List.class);
+        } catch (Exception e) {
+            Logger.log(e);
+        } 
 
-        Gson gson = new Gson();
-        JsonObject response = gson.fromJson(jsonResponse, JsonObject.class);
-        JsonArray danmuku = response.getAsJsonArray("danmuku");
-
-        return gson.fromJson(danmuku, List.class);
+        try {
+            String danmakuUrl = "https://dmku.hls.one?ac=dm&url=" + episodeUrl;
+            String jsonResponse = sendGetRequest(danmakuUrl);
+            Gson gson = new Gson();
+            JsonObject response = gson.fromJson(jsonResponse, JsonObject.class);
+            JsonArray danmuku = response.getAsJsonArray("danmuku");
+            return gson.fromJson(danmuku, List.class);
+        } catch (Exception e) {
+            Logger.log(e);
+        } 
     }
 
     /**
@@ -162,13 +153,40 @@ public class KanDanmuFetcher {
         xmlBuilder.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
         xmlBuilder.append("<i>\n");
 
+        //处理dmku.thefilehosting.com的8字段格式
         for (List<Object> danmaku : danmakuData) {
+            if (danmaku.size() != 8) {
+                break;
+            }
             // 解析字段，确保类型正确
             double time = ((Number) danmaku.get(0)).doubleValue(); // 时间
             String youkuMode = danmaku.get(1).toString(); // 优酷的 mode
             String color = danmaku.get(2).toString(); // 颜色（如 "#FFFFFF"）
             String text = escapeXml(danmaku.get(4).toString()); // 弹幕文本
             String fontSize = danmaku.get(7).toString().replace("px", ""); // 字体大小（如 "24px"）
+
+            // 将颜色转换为十进制，去掉 # 号
+            int colorDecimal = Integer.parseInt(color.replace("#", ""), 16);
+
+            // 转换 mode
+            String bilibiliMode = convertMode(youkuMode);
+
+            // Bilibili 弹幕格式：时间,模式,字体大小,颜色,时间戳,弹幕池,用户Hash,弹幕ID
+            String attrs = String.format("%.5f,%s,%s,%d,0,0,0,0,0", time, bilibiliMode, fontSize, colorDecimal);
+            xmlBuilder.append(String.format("  <d p=\"%s\">%s</d>\n", attrs, text));
+        }
+
+        //处理dmku.hls.one的5字段格式
+        for (List<Object> danmaku : danmakuData) {
+            if (danmaku.size() != 5) {
+                break;
+            }
+            // 解析字段，确保类型正确
+            double time = ((Number) danmaku.get(0)).doubleValue(); // 时间
+            String youkuMode = danmaku.get(1).toString(); // 优酷的 mode
+            String color = danmaku.get(2).toString(); // 颜色（如 "#FFFFFF"）
+            String text = escapeXml(danmaku.get(4).toString()); // 弹幕文本
+            String fontSize = danmaku.get(3).toString().replace("px", ""); // 字体大小（如 "24px"）
 
             // 将颜色转换为十进制，去掉 # 号
             int colorDecimal = Integer.parseInt(color.replace("#", ""), 16);
