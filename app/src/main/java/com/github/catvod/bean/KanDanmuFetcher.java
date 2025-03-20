@@ -75,23 +75,26 @@ public class KanDanmuFetcher {
     }
 
     private static String getEpisodeUrl(String enId, int episode) throws IOException {
-        // 使用步骤2的API获取剧集URL，en_id 作为参数
-        String episodeUrl = "https://api.web.360kan.com/v1/detail?cat=2&id=" + enId;
-        String jsonResponse = sendGetRequest(episodeUrl);
+    // 使用步骤2的API获取剧集URL，en_id 作为参数
+    String episodeUrl = "https://api.web.360kan.com/v1/detail?cat=2&id=" + enId;
+    String jsonResponse = sendGetRequest(episodeUrl);
 
-        Gson gson = new Gson();
-        JsonObject response = gson.fromJson(jsonResponse, JsonObject.class);
-        JsonArray episodes = response.getAsJsonObject("data").getAsJsonArray("allepidetail").getAsJsonArray("qq");
+    Gson gson = new Gson();
+    JsonObject response = gson.fromJson(jsonResponse, JsonObject.class);
+    JsonObject allepidetail = response.getAsJsonObject("data").getAsJsonObject("allepidetail");
 
-        for (var item : episodes) {
-            JsonObject episodeData = item.getAsJsonObject();
-            int playlinkNum = episodeData.get("playlink_num").getAsInt();
-            if (playlinkNum == episode) {
-                return episodeData.get("url").getAsString().split("\\?")[0]; // 返回剧集URL
-            }
+    // 获取 qq 字段的 JsonArray
+    JsonArray episodes = allepidetail.getAsJsonArray("qq");
+
+    for (var item : episodes) {
+        JsonObject episodeData = item.getAsJsonObject();
+        int playlinkNum = episodeData.get("playlink_num").getAsInt();
+        if (playlinkNum == episode) {
+            return episodeData.get("url").getAsString(); // 返回剧集URL
         }
-        return null;
     }
+    return null;
+}
 
 
     private static List<List<Object>> fetchDanmaku(String episodeUrl) throws IOException {
