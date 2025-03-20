@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.TreeMap;
 import com.github.catvod.bean.DanmuFetcher;
+import com.github.catvod.bean.KanDanmuFetcher;
 
 import okhttp3.Response;
 import fi.iki.elonen.NanoHTTPD;
@@ -502,7 +503,7 @@ public class XiaoyaProxyHandler {
             case "gen":
                 return genProxy(params);
             case "test":
-                DanmuFetcher.test();
+                KanDanmuFetcher.test();
                 return new Object[]{200, "text/plain; charset=utf-8", new ByteArrayInputStream("ok".getBytes("UTF-8"))};
             default:
                 return Proxy.proxy(params);
