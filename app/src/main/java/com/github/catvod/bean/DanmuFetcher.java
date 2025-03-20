@@ -110,7 +110,7 @@ public class DanmuFetcher {
             String showVideoStage = series.get("showVideoStage").getAsString();
             String displayName = series.get("displayName").getAsString();
             Logger.log("showVideoStage:" + showVideoStage + "displayName:" + displayName + "episode:" + String.valueOf(episode));
-            if (showVideoStage.equals(String.valueOf(episode)) || displayName.equals(String.valueOf(episode))) {
+            if (extractNumber(showVideoStage) == episode || extractNumber(displayName) == episode) {
                 // if (series.get("url") != null) {
                 //     Logger.log("url:" + series.get("url").getAsString());
                 //     return series.get("url").getAsString().split("\\?")[0];
@@ -128,6 +128,22 @@ public class DanmuFetcher {
             }
         }
         return null;
+    }
+
+    public static int extractNumber(String input) {
+        // 定义正则表达式，匹配1到4位数字，包括以0开头的数字
+        String regex = "\\b\\d{1,4}\\b";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(input);
+
+        // 如果找到匹配的数字，将其转换为整数
+        if (matcher.find()) {
+            String numberStr = matcher.group();
+            return Integer.parseInt(numberStr);
+        }
+
+        // 如果没有找到匹配的数字，返回-1或其他默认值
+        return -1;
     }
 
     private static List<List<Object>> fetchDanmaku(String episodeUrl) throws IOException {
