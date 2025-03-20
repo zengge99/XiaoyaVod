@@ -28,7 +28,7 @@ public class KanDanmuFetcher {
      */
     public static String getBilibiliDanmakuXML(String title, int episode, int year) throws IOException {
         // Step 1: Get showId
-        String showId = searchShowId(title, year);
+        String showId = searchEnId(title, year);
         if (showId == null) {
             throw new RuntimeException("No matching show found");
         }
