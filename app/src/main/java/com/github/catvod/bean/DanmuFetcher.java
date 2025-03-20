@@ -153,7 +153,7 @@ public class DanmuFetcher {
 
     private static List<List<Object>> fetchDanmaku(String episodeUrl) {
         try {
-            String danmakuUrl = "https://dmku.thefilehosting.com?ac=dm&url=" + episodeUrl;
+            String danmakuUrl = "https://dmku.hls.one?ac=dm&url=" + episodeUrl;
             String jsonResponse = sendGetRequest(danmakuUrl);
             Gson gson = new Gson();
             JsonObject response = gson.fromJson(jsonResponse, JsonObject.class);
@@ -164,7 +164,7 @@ public class DanmuFetcher {
         } 
 
         try {
-            String danmakuUrl = "https://dmku.hls.one?ac=dm&url=" + episodeUrl;
+            String danmakuUrl = "https://dmku.thefilehosting.com?ac=dm&url=" + episodeUrl;
             String jsonResponse = sendGetRequest(danmakuUrl);
             Gson gson = new Gson();
             JsonObject response = gson.fromJson(jsonResponse, JsonObject.class);
@@ -172,8 +172,9 @@ public class DanmuFetcher {
             return gson.fromJson(danmuku, List.class);
         } catch (Exception e) {
             Logger.log(e);
-            return null;
         } 
+
+        return null;
     }
 
     /**
