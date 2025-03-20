@@ -53,31 +53,23 @@ public class IqiyiDanmuFetcher {
         String episodeUrl = "https://search.video.iqiyi.com/o?if=html5&pageNum=1&pos=1&pageSize=24&site=iqiyi&key=" + encodedTitle;
         String jsonResponse = sendGetRequest(episodeUrl);
 
-        // Gson gson = new Gson();
-        // JsonObject response = gson.fromJson(jsonResponse, JsonObject.class);
-        // JsonObject albumDocInfo = response.getAsJsonObject("data").getAsJsonObject("docinfos").getAsJsonObject("albumDocInfo");
-
-        // JsonArray videoInfos = albumDocInfo.getAsJsonArray("videoInfos");
-
         Gson gson = new Gson();
         JsonObject response = gson.fromJson(jsonResponse, JsonObject.class);
         JsonArray docInfos = response.getAsJsonObject("data").getAsJsonArray("docinfos");
-        JsonObject docData = null;
+
         for (var item : docInfos) {
-            docData = item.getAsJsonObject();
-            String albumTitle = docData.get("albumTitle").getAsString();
+            JsonObject docData = item.getAsJsonObject();
+            JsonObject albumDocInfo = docData.getAsJsonObject("albumDocInfo"); // 深入 albumDocInfo
+            String albumTitle = albumDocInfo.get("albumTitle").getAsString();
             if (albumTitle.equals(title)) {
-                break;
-            }
-        }
-
-        JsonArray videoInfos = docData.getAsJsonArray("videoInfos");
-
-        for (var item : videoInfos) {
-            JsonObject episodeData = item.getAsJsonObject();
-            int itemNumber = episodeData.get("itemNumber").getAsInt();
-            if (itemNumber == episode) {
-                return episodeData.get("itemLink").getAsString(); // 返回剧集URL
+                JsonArray videoInfos = albumDocInfo.getAsJsonArray("videoinfos"); // 注意字段名是 videoinfos
+                for (var videoItem : videoInfos) {
+                    JsonObject episodeData = videoItem.getAsJsonObject();
+                    int itemNumber = episodeData.get("itemNumber").getAsInt();
+                    if (itemNumber == episode) {
+                        return episodeData.get("itemLink").getAsString(); // 返回剧集URL
+                    }
+                }
             }
         }
         return null;
