@@ -26,6 +26,9 @@ public class DanmuFetcher {
                 if (danmu.isEmpty()) {
                     danmu = KanDanmuFetcher.getBilibiliDanmakuXML(title, episode, year);
                 }
+                if (danmu.isEmpty()) {
+                    return;
+                }
                 String danmuPath = Path.root() + "/TV/danmu.txt";
                 File danmuFile = new File(danmuPath);
                 Path.write(danmuFile, danmu.getBytes());
