@@ -126,6 +126,7 @@ public class KanDanmuFetcher {
             return gson.fromJson(danmuku, List.class);
         } catch (Exception e) {
             Logger.log(e);
+            return null;
         } 
     }
 
