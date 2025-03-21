@@ -175,7 +175,11 @@ public class DanmuFetcher {
             Gson gson = new Gson();
             JsonObject response = gson.fromJson(jsonResponse, JsonObject.class);
             JsonArray danmuku = response.getAsJsonArray("danmuku");
-            return gson.fromJson(danmuku, List.class);
+            int num = 1
+            if (response.has("danmu"))
+                num = response.get("danmu").getAsInt();
+            if (num > 0)
+                return gson.fromJson(danmuku, List.class);
         } catch (Exception e) {
             Logger.log(e);
         }
@@ -186,7 +190,11 @@ public class DanmuFetcher {
             Gson gson = new Gson();
             JsonObject response = gson.fromJson(jsonResponse, JsonObject.class);
             JsonArray danmuku = response.getAsJsonArray("danmuku");
-            return gson.fromJson(danmuku, List.class);
+            int num = 1
+            if (response.has("danmu"))
+                num = response.get("danmu").getAsInt();
+            if (num > 0)
+                return gson.fromJson(danmuku, List.class);
         } catch (Exception e) {
             Logger.log(e);
         }
