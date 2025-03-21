@@ -1,5 +1,5 @@
 package com.github.catvod.bean;
- 
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -114,37 +114,38 @@ public class DanmuFetcher {
             JsonObject series = item.getAsJsonObject();
             String showVideoStage = series.get("showVideoStage").getAsString();
             String displayName = series.get("displayName").getAsString();
-            Logger.log("showVideoStage:" + showVideoStage + "displayName:" + displayName + "episode:" + String.valueOf(episode));
+            Logger.log("showVideoStage:" + showVideoStage + "displayName:" + displayName + "episode:"
+                    + String.valueOf(episode));
             if (extractNumber(showVideoStage) == episode || extractNumber(displayName) == episode) {
                 if (series.has("url")) {
-                   try {
-                       String url = series.get("url").getAsString();
-                       // 确保 URL 不为空，并且是合法的链接
-                       if (url != null && !url.isEmpty()) {
-                           // 去除 URL 中的查询参数部分
-                           String baseUrl = url.split("\\?")[0];
-                           Logger.log("Extracted URL: " + baseUrl);
-                           return baseUrl;
-                       }
-                   } catch (Exception e) {
-                       Logger.log("Failed to parse URL: " + e.getMessage());
-                   }
-               }
-           
-               if (series.has("videoId")) {
-                   try {
-                       String videoId = series.get("videoId").getAsString();
-                       // 确保 videoId 不为空
-                       if (videoId != null && !videoId.isEmpty()) {
-                           String generatedUrl = String.format("https://v.youku.com/v_show/id_%s.html", videoId);
-                           Logger.log("Generated URL from videoId: " + generatedUrl);
-                           return generatedUrl;
-                       }
-                   } catch (Exception e) {
-                       Logger.log("Failed to parse videoId: " + e.getMessage());
-                   }
-               }
-               Logger.log("Neither 'url' nor 'videoId' is available.");
+                    try {
+                        String url = series.get("url").getAsString();
+                        // 确保 URL 不为空，并且是合法的链接
+                        if (url != null && !url.isEmpty()) {
+                            // 去除 URL 中的查询参数部分
+                            String baseUrl = url.split("\\?")[0];
+                            Logger.log("Extracted URL: " + baseUrl);
+                            return baseUrl;
+                        }
+                    } catch (Exception e) {
+                        Logger.log("Failed to parse URL: " + e.getMessage());
+                    }
+                }
+
+                if (series.has("videoId")) {
+                    try {
+                        String videoId = series.get("videoId").getAsString();
+                        // 确保 videoId 不为空
+                        if (videoId != null && !videoId.isEmpty()) {
+                            String generatedUrl = String.format("https://v.youku.com/v_show/id_%s.html", videoId);
+                            Logger.log("Generated URL from videoId: " + generatedUrl);
+                            return generatedUrl;
+                        }
+                    } catch (Exception e) {
+                        Logger.log("Failed to parse videoId: " + e.getMessage());
+                    }
+                }
+                Logger.log("Neither 'url' nor 'videoId' is available.");
             }
         }
         return null;
@@ -176,7 +177,7 @@ public class DanmuFetcher {
             return gson.fromJson(danmuku, List.class);
         } catch (Exception e) {
             Logger.log(e);
-        } 
+        }
 
         try {
             String danmakuUrl = "https://dmku.hls.one?ac=dm&url=" + episodeUrl;
@@ -187,7 +188,7 @@ public class DanmuFetcher {
             return gson.fromJson(danmuku, List.class);
         } catch (Exception e) {
             Logger.log(e);
-        } 
+        }
 
         return null;
     }
@@ -216,7 +217,7 @@ public class DanmuFetcher {
         xmlBuilder.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
         xmlBuilder.append("<i>\n");
 
-        //处理dmku.thefilehosting.com的8字段格式
+        // 处理dmku.thefilehosting.com的8字段格式
         for (List<Object> danmaku : danmakuData) {
             if (danmaku.size() != 8) {
                 break;
@@ -239,7 +240,7 @@ public class DanmuFetcher {
             xmlBuilder.append(String.format("  <d p=\"%s\">%s</d>\n", attrs, text));
         }
 
-        //处理dmku.hls.one的5字段格式
+        // 处理dmku.hls.one的5字段格式
         for (List<Object> danmaku : danmakuData) {
             if (danmaku.size() != 5) {
                 break;
@@ -277,10 +278,10 @@ public class DanmuFetcher {
             return "";
         }
         return text.replace("&", "&amp;")
-                   .replace("<", "&lt;")
-                   .replace(">", "&gt;")
-                   .replace("\"", "&quot;")
-                   .replace("'", "&apos;");
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&apos;");
     }
 
     private static String sendGetRequest(String url) throws IOException {
@@ -289,7 +290,7 @@ public class DanmuFetcher {
 
         // 设置连接超时和读取超时均为 10 秒
         connection.setConnectTimeout(10000); // 10 秒
-        connection.setReadTimeout(10000);    // 10 秒
+        connection.setReadTimeout(10000); // 10 秒
 
         StringBuilder response = new StringBuilder();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
