@@ -175,7 +175,7 @@ public class DanmuFetcher {
             Gson gson = new Gson();
             JsonObject response = gson.fromJson(jsonResponse, JsonObject.class);
             JsonArray danmuku = response.getAsJsonArray("danmuku");
-            int num = 1
+            int num = 1;
             if (response.has("danmu"))
                 num = response.get("danmu").getAsInt();
             if (num > 0)
@@ -190,7 +190,7 @@ public class DanmuFetcher {
             Gson gson = new Gson();
             JsonObject response = gson.fromJson(jsonResponse, JsonObject.class);
             JsonArray danmuku = response.getAsJsonArray("danmuku");
-            int num = 1
+            int num = 1;
             if (response.has("danmu"))
                 num = response.get("danmu").getAsInt();
             if (num > 0)
