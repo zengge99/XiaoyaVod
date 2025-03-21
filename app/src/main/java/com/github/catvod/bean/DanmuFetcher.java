@@ -116,20 +116,35 @@ public class DanmuFetcher {
             String displayName = series.get("displayName").getAsString();
             Logger.log("showVideoStage:" + showVideoStage + "displayName:" + displayName + "episode:" + String.valueOf(episode));
             if (extractNumber(showVideoStage) == episode || extractNumber(displayName) == episode) {
-                // if (series.get("url") != null) {
-                //     Logger.log("url:" + series.get("url").getAsString());
-                //     return series.get("url").getAsString().split("\\?")[0];
-                // } else {
-                //     Logger.log("videoId:" + series.get("videoId").getAsString());
-                //     return String.format("https://v.youku.com/v_show/id_%s.html", series.get("videoId").getAsString());
-                // }
-                try {
-                    Logger.log("url:" + series.get("url").getAsString());
-                    return series.get("url").getAsString().split("\\?")[0];
-                } catch (Exception e) {
-                    Logger.log("videoId:" + series.get("videoId").getAsString());
-                    return String.format("https://v.youku.com/v_show/id_%s.html", series.get("videoId").getAsString());
-                }
+                if (series.has("url")) {
+                   try {
+                       String url = series.get("url").getAsString();
+                       // 确保 URL 不为空，并且是合法的链接
+                       if (url != null && !url.isEmpty()) {
+                           // 去除 URL 中的查询参数部分
+                           String baseUrl = url.split("\\?")[0];
+                           Logger.log("Extracted URL: " + baseUrl);
+                           return baseUrl;
+                       }
+                   } catch (Exception e) {
+                       Logger.log("Failed to parse URL: " + e.getMessage());
+                   }
+               }
+           
+               if (series.has("videoId")) {
+                   try {
+                       String videoId = series.get("videoId").getAsString();
+                       // 确保 videoId 不为空
+                       if (videoId != null && !videoId.isEmpty()) {
+                           String generatedUrl = String.format("https://v.youku.com/v_show/id_%s.html", videoId);
+                           Logger.log("Generated URL from videoId: " + generatedUrl);
+                           return generatedUrl;
+                       }
+                   } catch (Exception e) {
+                       Logger.log("Failed to parse videoId: " + e.getMessage());
+                   }
+               }
+               Logger.log("Neither 'url' nor 'videoId' is available.");
             }
         }
         return null;
