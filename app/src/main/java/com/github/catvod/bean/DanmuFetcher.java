@@ -169,37 +169,40 @@ public class DanmuFetcher {
     }
 
     protected List<List<Object>> fetchDanmaku(String episodeUrl) {
+        // 尝试从第一个 URL 获取弹幕数据
+        List<List<Object>> danmakuData = fetchDanmakuFromUrl("https://dmku.thefilehosting.com?ac=dm&url=" + episodeUrl);
+        if (danmakuData != null) {
+            return danmakuData;
+        }
+
+        // 如果第一个 URL 失败，尝试从第二个 URL 获取弹幕数据
+        return fetchDanmakuFromUrl("https://dmku.hls.one?ac=dm&url=" + episodeUrl);
+    }
+
+    private List<List<Object>> fetchDanmakuFromUrl(String danmakuUrl) {
         try {
-            String danmakuUrl = "https://dmku.thefilehosting.com?ac=dm&url=" + episodeUrl;
             String jsonResponse = sendGetRequest(danmakuUrl);
             Gson gson = new Gson();
             JsonObject response = gson.fromJson(jsonResponse, JsonObject.class);
-            JsonArray danmuku = response.getAsJsonArray("danmuku");
-            int num = 1;
-            if (response.has("danmu"))
+
+            // 检查 danmu 字段的值
+            int num = 1; // 默认值
+            if (response.has("danmu")) {
                 num = response.get("danmu").getAsInt();
-            if (num > 0)
-                return gson.fromJson(danmuku, List.class);
+            }
+
+            // 如果 danmu 的值为 0，直接返回 null
+            if (num == 0) {
+                return null;
+            }
+
+            // 解析 danmuku 数组
+            JsonArray danmuku = response.getAsJsonArray("danmuku");
+            return gson.fromJson(danmuku, List.class);
         } catch (Exception e) {
             Logger.log(e);
+            return null;
         }
-
-        try {
-            String danmakuUrl = "https://dmku.hls.one?ac=dm&url=" + episodeUrl;
-            String jsonResponse = sendGetRequest(danmakuUrl);
-            Gson gson = new Gson();
-            JsonObject response = gson.fromJson(jsonResponse, JsonObject.class);
-            JsonArray danmuku = response.getAsJsonArray("danmuku");
-            int num = 1;
-            if (response.has("danmu"))
-                num = response.get("danmu").getAsInt();
-            if (num > 0)
-                return gson.fromJson(danmuku, List.class);
-        } catch (Exception e) {
-            Logger.log(e);
-        }
-
-        return null;
     }
 
     /**
