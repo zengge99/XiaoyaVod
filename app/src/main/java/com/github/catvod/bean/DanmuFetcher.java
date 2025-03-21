@@ -152,7 +152,7 @@ public class DanmuFetcher {
 
     public static int extractNumber(String input) {
         // 定义正则表达式，匹配1到4位数字，包括以0开头的数字
-        String regex = "\\b\\d{1,4}\\b";
+        String regex = "\\d{1,4}";
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(input);
 
