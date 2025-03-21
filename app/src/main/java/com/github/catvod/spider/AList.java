@@ -429,7 +429,12 @@ public class AList extends Spider {
             vod.setVodPic(vodPic);
         }
         vod.setVodPlayFrom(drive.getName());
-        vod.setVodPlayUrl(name + "$" + path);
+        if (id.endsWith("~xiaoya")) {
+            vod.setVodPlayUrl(name + "$" + path + String.format("~~~danmu:%s,1,%s", vod.doubanInfo.getName(), vod.doubanInfo.getYear()));
+        } else {
+            vod.setVodPlayUrl(name + "$" + path);
+        }
+        
         //if (id.endsWith("~soufile") && vod.doubanInfo.getYear().isEmpty() && !vod.doubanInfo.getId().isEmpty()) {
         if (id.endsWith("~xiaoya") && vod.doubanInfo.getYear().isEmpty() && !vod.doubanInfo.getId().isEmpty()) {
             vod.doubanInfo = DoubanParser.getDoubanInfo(vod.doubanInfo.getId(), vod.doubanInfo);
