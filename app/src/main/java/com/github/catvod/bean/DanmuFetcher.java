@@ -288,9 +288,9 @@ public class DanmuFetcher {
         HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
         connection.setRequestMethod("GET");
 
-        // 设置连接超时和读取超时均为 10 秒
-        connection.setConnectTimeout(10000); // 10 秒
-        connection.setReadTimeout(10000); // 10 秒
+        // 设置连接超时和读取超时均为 5 秒
+        connection.setConnectTimeout(5000); // 5 秒
+        connection.setReadTimeout(5000); // 5 秒
 
         StringBuilder response = new StringBuilder();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
