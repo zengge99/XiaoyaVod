@@ -17,6 +17,8 @@ import java.io.File;
 
 public class IqiyiDanmuFetcher extends DanmuFetcher {
 
+    private static IqiyiDanmuFetcher thisObject = new IqiyiDanmuFetcher();
+
     /**
      * 获取 Bilibili 弹幕格式的 XML
      *
@@ -29,26 +31,27 @@ public class IqiyiDanmuFetcher extends DanmuFetcher {
     public static String getBilibiliDanmakuXML(String title, int episode, int year) {
         try {
             // Step 1: Get episode URL
-            String episodeUrl = getEpisodeUrl(title, episode);
+            String episodeUrl = thisObject.getEpisodeUrl(title, episode);
             if (episodeUrl == null) {
                 throw new RuntimeException("No matching episode found");
             }
 
             // Step 2: Fetch danmaku data
-            List<List<Object>> danmakuData = fetchDanmaku(episodeUrl);
+            List<List<Object>> danmakuData = thisObject.fetchDanmaku(episodeUrl);
             if (danmakuData == null) {
                 throw new RuntimeException("Failed to fetch danmaku");
             }
 
             // Step 3: Convert to Bilibili XML format
-            return convertToBilibiliXML(danmakuData);
+            return thisObject.convertToBilibiliXML(danmakuData);
         } catch (Exception e) {
             Logger.log(e);
             return "";
         }
     }
 
-    private static String getEpisodeUrl(String title, int episode) throws IOException {
+    @Override
+    private String getEpisodeUrl(String title, int episode) throws IOException {
         String encodedTitle = URLEncoder.encode(title, StandardCharsets.UTF_8.toString());
         String episodeUrl = "https://search.video.iqiyi.com/o?if=html5&pageNum=1&pos=1&pageSize=24&site=iqiyi&key=" + encodedTitle;
         String jsonResponse = sendGetRequest(episodeUrl);

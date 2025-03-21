@@ -17,6 +17,8 @@ import java.io.File;
 
 public class KanDanmuFetcher extends DanmuFetcher {
 
+    private static IqiyiDanmuFetcher thisObject = new IqiyiDanmuFetcher();
+
     /**
      * 获取 Bilibili 弹幕格式的 XML
      *
@@ -29,32 +31,32 @@ public class KanDanmuFetcher extends DanmuFetcher {
     public static String getBilibiliDanmakuXML(String title, int episode, int year) {
         try {
             // Step 1: Get showId
-            String showId = searchEnId(title, year);
+            String showId = thisObject.searchEnId(title, year);
             if (showId == null) {
                 throw new RuntimeException("No matching show found");
             }
 
             // Step 2: Get episode URL
-            String episodeUrl = getEpisodeUrl(showId, episode);
+            String episodeUrl = thisObject.getEpisodeUrl(showId, episode);
             if (episodeUrl == null) {
                 throw new RuntimeException("No matching episode found");
             }
 
             // Step 3: Fetch danmaku data
-            List<List<Object>> danmakuData = fetchDanmaku(episodeUrl);
+            List<List<Object>> danmakuData = thisObject.fetchDanmaku(episodeUrl);
             if (danmakuData == null) {
                 throw new RuntimeException("Failed to fetch danmaku");
             }
 
             // Step 4: Convert to Bilibili XML format
-            return convertToBilibiliXML(danmakuData);
+            return thisObject.convertToBilibiliXML(danmakuData);
         } catch (Exception e) {
             Logger.log(e);
             return "";
         }
     }
 
-    private static String searchEnId(String title, int year) throws IOException {
+    private String searchEnId(String title, int year) throws IOException {
         // URL 编码影片名
         String encodedTitle = URLEncoder.encode(title, StandardCharsets.UTF_8.toString());
         // 使用步骤1的API搜索节目ID
@@ -79,7 +81,8 @@ public class KanDanmuFetcher extends DanmuFetcher {
         return null;
     }
 
-    private static String getEpisodeUrl(String enId, int episode) throws IOException {
+    @Override
+    private String getEpisodeUrl(String enId, int episode) throws IOException {
         // 使用步骤2的API获取剧集URL，en_id 作为参数
         String episodeUrl = "https://api.web.360kan.com/v1/detail?cat=2&id=" + enId;
         String jsonResponse = sendGetRequest(episodeUrl);

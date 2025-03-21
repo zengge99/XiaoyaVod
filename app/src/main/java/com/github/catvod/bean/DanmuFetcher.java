@@ -18,13 +18,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class DanmuFetcher {
+    private static DanmuFetcher thisObject = new DanmuFetcher();
 
     public static void pushDanmu(String title, int episode, int year) {
         Thread thread = new Thread(() -> {
             try {
                 Thread.sleep(100);
                 String danmu = "";
-                danmu = getBilibiliDanmakuXML(title, episode, year);
+                danmu = DanmuFetcher.getBilibiliDanmakuXML(title, episode, year);
                 if (danmu.isEmpty()) {
                     danmu = KanDanmuFetcher.getBilibiliDanmakuXML(title, episode, year);
                 }
@@ -57,32 +58,32 @@ public class DanmuFetcher {
     public static String getBilibiliDanmakuXML(String title, int episode, int year) {
         try {
             // Step 1: Get showId
-            String showId = searchShowId(title, year);
+            String showId = thisObject.searchShowId(title, year);
             if (showId == null) {
                 throw new RuntimeException("No matching show found");
             }
 
             // Step 2: Get episode URL
-            String episodeUrl = getEpisodeUrl(showId, episode);
+            String episodeUrl = thisObject.getEpisodeUrl(showId, episode);
             if (episodeUrl == null) {
                 throw new RuntimeException("No matching episode found");
             }
 
             // Step 3: Fetch danmaku data
-            List<List<Object>> danmakuData = fetchDanmaku(episodeUrl);
+            List<List<Object>> danmakuData = thisObject.fetchDanmaku(episodeUrl);
             if (danmakuData == null) {
                 throw new RuntimeException("Failed to fetch danmaku");
             }
 
             // Step 4: Convert to Bilibili XML format
-            return convertToBilibiliXML(danmakuData);
+            return thisObject.convertToBilibiliXML(danmakuData);
         } catch (Exception e) {
             Logger.log(e);
             return "";
         }
     }
 
-    private static String searchShowId(String title, int year) throws IOException {
+    private String searchShowId(String title, int year) throws IOException {
         // URL 编码影片名
         String encodedTitle = URLEncoder.encode(title, StandardCharsets.UTF_8.toString());
         String searchUrl = "https://search.youku.com/api/search?pg=1&keyword=" + encodedTitle;
@@ -102,7 +103,7 @@ public class DanmuFetcher {
         return null;
     }
 
-    private static String getEpisodeUrl(String showId, int episode) throws IOException {
+    private String getEpisodeUrl(String showId, int episode) throws IOException {
         String episodeUrl = "https://search.youku.com/api/search?appScene=show_episode&showIds=" + showId;
         String jsonResponse = sendGetRequest(episodeUrl);
 
@@ -151,7 +152,7 @@ public class DanmuFetcher {
         return null;
     }
 
-    public static int extractNumber(String input) {
+    public int extractNumber(String input) {
         // 定义正则表达式，匹配1到4位数字，包括以0开头的数字
         String regex = "\\d{1,4}";
         Pattern pattern = Pattern.compile(regex);
@@ -167,7 +168,7 @@ public class DanmuFetcher {
         return -1;
     }
 
-    private static List<List<Object>> fetchDanmaku(String episodeUrl) {
+    private List<List<Object>> fetchDanmaku(String episodeUrl) {
         try {
             String danmakuUrl = "https://dmku.thefilehosting.com?ac=dm&url=" + episodeUrl;
             String jsonResponse = sendGetRequest(danmakuUrl);
@@ -199,7 +200,7 @@ public class DanmuFetcher {
      * @param youkuMode 优酷的 mode（如 "top", "right", "bottom"）
      * @return Bilibili 的 mode（如 "5", "1", "4"）
      */
-    private static String convertMode(String youkuMode) {
+    private String convertMode(String youkuMode) {
         switch (youkuMode) {
             case "top":
                 return "5"; // 顶部弹幕
@@ -212,7 +213,7 @@ public class DanmuFetcher {
         }
     }
 
-    private static String convertToBilibiliXML(List<List<Object>> danmakuData) {
+    private String convertToBilibiliXML(List<List<Object>> danmakuData) {
         StringBuilder xmlBuilder = new StringBuilder();
         xmlBuilder.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
         xmlBuilder.append("<i>\n");
@@ -273,7 +274,7 @@ public class DanmuFetcher {
      * @param text 输入的文本
      * @return 转义后的文本
      */
-    private static String escapeXml(String text) {
+    private String escapeXml(String text) {
         if (text == null) {
             return "";
         }
@@ -284,7 +285,7 @@ public class DanmuFetcher {
                 .replace("'", "&apos;");
     }
 
-    private static String sendGetRequest(String url) throws IOException {
+    private String sendGetRequest(String url) throws IOException {
         HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
         connection.setRequestMethod("GET");
 
