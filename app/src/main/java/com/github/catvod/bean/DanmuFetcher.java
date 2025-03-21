@@ -187,8 +187,8 @@ public class DanmuFetcher {
 
             // 检查 danmu 字段的值
             int num = 1; // 默认值
-            if (response.has("danmu")) {
-                num = response.get("danmu").getAsInt();
+            if (response.has("danum")) {
+                num = response.get("danum").getAsInt();
             }
 
             // 如果 danmu 的值为 0，直接返回 null
