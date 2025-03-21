@@ -69,7 +69,7 @@ public class IqiyiDanmuFetcher extends DanmuFetcher {
                     JsonObject episodeData = videoItem.getAsJsonObject();
                     int itemNumber = episodeData.get("itemNumber").getAsInt();
                     if (itemNumber == episode) {
-                        return episodeData.get("itemLink").getAsString(); // 返回剧集URL
+                        return episodeData.get("itemLink").getAsString().split("\\?")[0]; // 返回剧集URL
                     }
                 }
             }

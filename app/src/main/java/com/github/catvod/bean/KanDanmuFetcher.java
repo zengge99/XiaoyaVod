@@ -97,7 +97,7 @@ public class KanDanmuFetcher extends DanmuFetcher {
                 JsonObject episodeData = item.getAsJsonObject();
                 int playlinkNum = episodeData.get("playlink_num").getAsInt();
                 if (playlinkNum == episode) {
-                    return episodeData.get("url").getAsString(); // 返回剧集URL
+                    return episodeData.get("url").getAsString().split("\\?")[0]; // 返回剧集URL
                 }
             }
         }
