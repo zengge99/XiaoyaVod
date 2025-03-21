@@ -17,7 +17,7 @@ import java.io.File;
 
 public class KanDanmuFetcher extends DanmuFetcher {
 
-    private static IqiyiDanmuFetcher thisObject = new IqiyiDanmuFetcher();
+    private static KanDanmuFetcher thisObject = new KanDanmuFetcher();
 
     /**
      * 获取 Bilibili 弹幕格式的 XML
