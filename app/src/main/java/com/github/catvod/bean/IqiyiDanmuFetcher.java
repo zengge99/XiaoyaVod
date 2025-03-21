@@ -50,7 +50,6 @@ public class IqiyiDanmuFetcher extends DanmuFetcher {
         }
     }
 
-    @Override
     private String getEpisodeUrl(String title, int episode) throws IOException {
         String encodedTitle = URLEncoder.encode(title, StandardCharsets.UTF_8.toString());
         String episodeUrl = "https://search.video.iqiyi.com/o?if=html5&pageNum=1&pos=1&pageSize=24&site=iqiyi&key=" + encodedTitle;

@@ -81,7 +81,6 @@ public class KanDanmuFetcher extends DanmuFetcher {
         return null;
     }
 
-    @Override
     private String getEpisodeUrl(String enId, int episode) throws IOException {
         // 使用步骤2的API获取剧集URL，en_id 作为参数
         String episodeUrl = "https://api.web.360kan.com/v1/detail?cat=2&id=" + enId;

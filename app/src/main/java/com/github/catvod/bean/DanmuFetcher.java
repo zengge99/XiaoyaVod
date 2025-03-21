@@ -38,7 +38,7 @@ public class DanmuFetcher {
                 String danmuPath = Path.cache() + "/TV/danmu.txt";
                 File danmuFile = new File(danmuPath);
                 Path.write(danmuFile, danmu.getBytes());
-                sendGetRequest("http://127.0.0.1:9978/action?do=refresh&type=danmaku&path=" + "file://" + danmuPath);
+                thisObject.sendGetRequest("http://127.0.0.1:9978/action?do=refresh&type=danmaku&path=" + "file://" + danmuPath);
             } catch (Exception e) {
                 Logger.log(e);
             }
