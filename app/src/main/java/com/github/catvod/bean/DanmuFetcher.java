@@ -152,7 +152,7 @@ public class DanmuFetcher {
         return null;
     }
 
-    public int extractNumber(String input) {
+    protected int extractNumber(String input) {
         // 定义正则表达式，匹配1到4位数字，包括以0开头的数字
         String regex = "\\d{1,4}";
         Pattern pattern = Pattern.compile(regex);
@@ -168,7 +168,7 @@ public class DanmuFetcher {
         return -1;
     }
 
-    private List<List<Object>> fetchDanmaku(String episodeUrl) {
+    protected List<List<Object>> fetchDanmaku(String episodeUrl) {
         try {
             String danmakuUrl = "https://dmku.thefilehosting.com?ac=dm&url=" + episodeUrl;
             String jsonResponse = sendGetRequest(danmakuUrl);
@@ -200,7 +200,7 @@ public class DanmuFetcher {
      * @param youkuMode 优酷的 mode（如 "top", "right", "bottom"）
      * @return Bilibili 的 mode（如 "5", "1", "4"）
      */
-    private String convertMode(String youkuMode) {
+    protected String convertMode(String youkuMode) {
         switch (youkuMode) {
             case "top":
                 return "5"; // 顶部弹幕
@@ -213,7 +213,7 @@ public class DanmuFetcher {
         }
     }
 
-    private String convertToBilibiliXML(List<List<Object>> danmakuData) {
+    protected String convertToBilibiliXML(List<List<Object>> danmakuData) {
         StringBuilder xmlBuilder = new StringBuilder();
         xmlBuilder.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
         xmlBuilder.append("<i>\n");
@@ -274,7 +274,7 @@ public class DanmuFetcher {
      * @param text 输入的文本
      * @return 转义后的文本
      */
-    private String escapeXml(String text) {
+    protected String escapeXml(String text) {
         if (text == null) {
             return "";
         }
@@ -285,7 +285,7 @@ public class DanmuFetcher {
                 .replace("'", "&apos;");
     }
 
-    private String sendGetRequest(String url) throws IOException {
+    protected String sendGetRequest(String url) throws IOException {
         HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
         connection.setRequestMethod("GET");
 
