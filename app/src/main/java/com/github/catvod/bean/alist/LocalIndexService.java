@@ -1,4 +1,3 @@
- 
 package com.github.catvod.bean.alist;
 
 import java.io.*;
@@ -581,4 +580,3 @@ public class LocalIndexService {
         }
     }
 }
- 
