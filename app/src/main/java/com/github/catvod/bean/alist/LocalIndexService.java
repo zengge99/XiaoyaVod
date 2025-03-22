@@ -265,7 +265,8 @@ public class LocalIndexService {
      * @throws IOException 如果文件读写失败
      */
     public String query(LinkedHashMap<String, String> queryParams) throws IOException {
-        try (String currentInputFile = inputFilePath) {
+        String currentInputFile = inputFilePath;
+        try {
             String cacheKey = generateCacheKey(queryParams);
             if (queryCache.get(cacheKey) != null) {
                 Logger.log("Cache hit for query: " + cacheKey);
