@@ -29,7 +29,6 @@ public class LocalIndexService {
         Logger.log("Input file path: " + inputFilePath);
         Logger.log("Cache directory path: " + cacheDirPath);
         createCacheDir(); // 创建缓存目录
-        this.outputFilePath = generateRandomOutputFilePath(); // 自动生成随机输出文件路径
         Logger.log("Output file path: " + outputFilePath);
     }
 
@@ -107,14 +106,6 @@ public class LocalIndexService {
         } else {
             Logger.log("Cache directory already exists: " + cacheDirPath);
         }
-    }
-
-    /**
-     * 生成随机的输出文件路径
-     */
-    private String generateRandomOutputFilePath() {
-        String randomFileName = "output_" + UUID.randomUUID().toString() + ".txt";
-        return cacheDirPath + File.separator + randomFileName;
     }
 
     /**
@@ -274,57 +265,59 @@ public class LocalIndexService {
      * @throws IOException 如果文件读写失败
      */
     public String query(LinkedHashMap<String, String> queryParams) throws IOException {
-        // 生成缓存键
-        String cacheKey = generateCacheKey(queryParams);
-        if (queryCache.get(cacheKey) != null) {
-            Logger.log("Cache hit for query: " + cacheKey);
-            return queryCache.get(cacheKey);
-        }
+        try (String currentInputFile = inputFilePath) {
+            String cacheKey = generateCacheKey(queryParams);
+            if (queryCache.get(cacheKey) != null) {
+                Logger.log("Cache hit for query: " + cacheKey);
+                currentInputFile = queryCache.get(cacheKey);
+                return currentInputFile;
+            }
+            Logger.log("Cache miss for query: " + cacheKey);
 
-        Logger.log("Cache miss for query: " + cacheKey);
+            // 依次处理查询方法
+            for (Map.Entry<String, String> entry : queryParams.entrySet()) {
+                String method = entry.getKey();
+                String param = entry.getValue();
 
-        // 初始输入文件
-        String currentInputFile = inputFilePath;
+                // 生成临时文件路径
+                String tempOutputFile = cacheDirPath + File.separator + UUID.randomUUID() + ".txt";
 
-        // 依次处理查询方法
-        for (Map.Entry<String, String> entry : queryParams.entrySet()) {
-            String method = entry.getKey();
-            String param = entry.getValue();
+                boolean reserveFile = false;
+                // 执行查询方法
+                switch (method) {
+                    case "subpath":
+                        filterByPath(currentInputFile, tempOutputFile, param);
+                        break;
+                    case "save":
+                        this.inputFilePath = currentInputFile;
+                        reserveFile = true;
+                        break;
+                    case "doubansort":
+                        sortByDouban(currentInputFile, tempOutputFile, param);
+                        break;
+                    case "limit":
+                        limitRows(currentInputFile, tempOutputFile, Integer.parseInt(param));
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Unknown query method: " + method);
+                }
 
-            // 生成临时文件路径
-            String tempOutputFile = cacheDirPath + File.separator + "temp_" + UUID.randomUUID() + ".txt";
-
-            boolean reserveFile = false;
-            // 执行查询方法
-            switch (method) {
-                case "subpath":
-                    filterByPath(currentInputFile, tempOutputFile, param);
-                    break;
-                case "save":
-                    this.inputFilePath = currentInputFile;
-                    reserveFile = true;
-                    break;
-                case "doubansort":
-                    sortByDouban(currentInputFile, tempOutputFile, param);
-                    break;
-                case "limit":
-                    limitRows(currentInputFile, tempOutputFile, Integer.parseInt(param));
-                    break;
-                default:
-                    throw new IllegalArgumentException("Unknown query method: " + method);
+                if (!reserveFile && !currentInputFile.equals(this.inputFilePath)) {
+                    new File(currentInputFile).delete();
+                }
+                
+                // 更新当前输入文件
+                currentInputFile = tempOutputFile;
             }
 
-            if (!reserveFile && !currentInputFile.equals(this.inputFilePath)) {
-                new File(currentInputFile).delete();
-            }
-            
-            // 更新当前输入文件
-            currentInputFile = tempOutputFile;
+            queryCache.put(cacheKey, currentInputFile);
+
+            return currentInputFile;
+
+        } finally {
+            this.outputFilePath = currentInputFile;
         }
 
-        queryCache.put(cacheKey, currentInputFile);
-
-        return currentInputFile;
     }
 
     /**
