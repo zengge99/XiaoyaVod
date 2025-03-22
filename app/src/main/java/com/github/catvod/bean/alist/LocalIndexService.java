@@ -17,6 +17,10 @@ public class LocalIndexService {
     private String outputFilePath; // 输出文件路径
     private HashMap<String, String> queryCache = new HashMap<>();
 
+    private List<Long> lineIndex; // 存储每行的起始位置
+    private Map<String, List<Integer>> invertedIndex; // 倒排索引：关键字 -> 行号列表
+    private RandomAccessFile randomAccessFile; // 用于随机访问文件
+
     /**
      * 私有构造函数
      *
@@ -179,9 +183,6 @@ public class LocalIndexService {
                     chunk.clear();
                 }
             }
-            if (!chunk.isEmpty()) {
-                sortedChunks.add(sortAndWriteChunk(chunk, order));
-            }
         }
         return sortedChunks;
     }
@@ -257,6 +258,12 @@ public class LocalIndexService {
         Logger.log("Sorted by field: " + order);
     }
 
+    /**
+     * 分页获取文件内容
+     *
+     * @param pageNum 页码，从 1 开始
+     * @return 该页的内容列表
+     */
     public List<String> page(int pageNum) {
         List<String> pageContent = new ArrayList<>();
         int linesPerPage = 72;
@@ -276,10 +283,94 @@ public class LocalIndexService {
                 pageContent.add(line);
                 currentLine++;
             }
-        } catch (Exception e) {
+        } catch (IOException e) {
+            Logger.log("Error reading file: " + e.getMessage());
         }
 
         return pageContent;
+    }
+
+    /**
+     * 构建行索引和倒排索引
+     *
+     * @throws IOException 如果文件读取失败
+     */
+    public void buildIndex() throws IOException {
+        lineIndex = new ArrayList<>();
+        invertedIndex = new HashMap<>();
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(outputFilePath))) {
+            String line;
+            int lineNum = 0;
+            long position = 0;
+            while ((line = reader.readLine()) != null) {
+                // 记录每行的起始位置
+                lineIndex.add(position);
+                position += line.length() + System.lineSeparator().length(); // 加上换行符的长度
+
+                // 构建倒排索引
+                String[] fields = line.split("#");
+                if (fields.length > 1) {
+                    String keyword = fields[1]; // 以第二个字段为关键字
+                    invertedIndex.computeIfAbsent(keyword, k -> new ArrayList<>()).add(lineNum);
+                }
+
+                lineNum++;
+            }
+        }
+        // 初始化 RandomAccessFile
+        randomAccessFile = new RandomAccessFile(outputFilePath, "r");
+    }
+
+    /**
+     * 获取指定行的内容
+     *
+     * @param lineNum 行号，从 0 开始
+     * @return 该行的内容
+     * @throws IOException 如果文件读取失败
+     */
+    public String getLine(int lineNum) throws IOException {
+        if (lineIndex == null || randomAccessFile == null) {
+            throw new IllegalStateException("Index not built. Call buildIndex() first.");
+        }
+        if (lineNum < 0 || lineNum >= lineIndex.size()) {
+            throw new IllegalArgumentException("Line number out of range.");
+        }
+        // 跳转到指定行的起始位置
+        randomAccessFile.seek(lineIndex.get(lineNum));
+        return randomAccessFile.readLine();
+    }
+
+    /**
+     * 快速搜索关键字对应的行内容列表
+     *
+     * @param keyword 关键字
+     * @return 关键字对应的行内容列表
+     * @throws IOException 如果文件读取失败
+     */
+    public List<String> quickSearch(String keyword) throws IOException {
+        if (invertedIndex == null) {
+            throw new IllegalStateException("Index not built. Call buildIndex() first.");
+        }
+        List<String> result = new ArrayList<>();
+        List<Integer> lineNumbers = invertedIndex.get(keyword);
+        if (lineNumbers != null) {
+            for (int lineNum : lineNumbers) {
+                result.add(getLine(lineNum));
+            }
+        }
+        return result;
+    }
+
+    /**
+     * 关闭 RandomAccessFile
+     *
+     * @throws IOException 如果关闭失败
+     */
+    public void close() throws IOException {
+        if (randomAccessFile != null) {
+            randomAccessFile.close();
+        }
     }
 
     /**
@@ -344,7 +435,6 @@ public class LocalIndexService {
         } finally {
             this.outputFilePath = currentInputFile;
         }
-
     }
 
     /**
@@ -456,7 +546,16 @@ public class LocalIndexService {
             queryParams.put("limit", "100");    // 限制 100 行
             resultFile = service.query(queryParams);
             Logger.log("Query result file2: " + resultFile);
-            Logger.log(service.page(2));
+
+            // 测试分页
+            Logger.log("Page 1: " + service.page(1));
+
+            // 构建索引并测试快速搜索
+            service.buildIndex();
+            Logger.log("Quick search for keyword: " + service.quickSearch("漫长的季节"));
+
+            // 关闭资源
+            service.close();
 
         } catch (IOException e) {
             Logger.log(e);
