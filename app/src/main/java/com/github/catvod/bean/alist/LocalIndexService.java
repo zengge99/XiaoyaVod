@@ -380,7 +380,7 @@ public class LocalIndexService {
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] fields = line.split("#");
-                if (fields.length > 0 && fields[0].equals(fieldValue)) {
+                if (fields.length > 0 && fields[0].startsWith(fieldValue)) {
                     writer.write(line);
                     writer.newLine();
                 }
