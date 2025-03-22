@@ -292,8 +292,8 @@ public class LocalIndexService {
 
             // 将 ./TV/ + "/index.all.txt" 拷贝到 BASE_DIR + sanitizedName + "/index.all.txt"
             String sanitizedName = sanitizeName("example:test/1");
-            File sourceFile = new File(com.github.catvod.utils.Path.root().getPath(), "TV/index.all.txt");
-            File destFile = new File(BASE_DIR + sanitizedName, "index.all.txt");
+            File sourceFile = new File(com.github.catvod.utils.Path.root().getPath() + "/TV/index.all.txt");
+            File destFile = new File(BASE_DIR + sanitizedName + "/index.all.txt");
             Logger.log("Source file: " + sourceFile.getAbsolutePath());
             Logger.log("Destination file: " + destFile.getAbsolutePath());
 
