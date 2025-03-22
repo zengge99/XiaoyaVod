@@ -67,7 +67,7 @@ public class ExternalSort {
         return tempFile;
     }
 
-    private double parseFieldAsDouble(String[] fields, int index) {
+    private static double parseFieldAsDouble(String[] fields, int index) {
     if (fields == null || fields.length <= index) {
         return 0.0; // 字段不足，返回 0
     }
@@ -85,8 +85,19 @@ public class ExternalSort {
     /**
      * 合并所有排序后的临时文件
      */
-    private static void mergeSortedChunks(List<File> sortedChunks, String outputFilePath, int sortFieldIndex) throws IOException {
-        PriorityQueue<BufferedLineReader> minHeap = new PriorityQueue<>(Comparator.comparing(br -> br.currentFields[sortFieldIndex]));
+    private static void mergeSortedChunks(List<File> sortedChunks, String outputFilePath, String order) throws IOException {
+        PriorityQueue<BufferedLineReader> minHeap = new PriorityQueue<>(
+            (br1, br2) -> {
+                double value1 = parseFieldAsDouble(br1.currentFields, 3);
+                double value2 = parseFieldAsDouble(br2.currentFields, 3);
+                if (order.equals("asc")) {
+                    return Double.compare(value1, value2); // 升序
+                    
+                } else {
+                    return Double.compare(value2, value1); // 降序
+                }
+            }
+        );
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputFilePath))) {
             // 初始化堆
             for (File file : sortedChunks) {
