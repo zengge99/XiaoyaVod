@@ -3,7 +3,9 @@ package com.github.catvod.bean.alist;
 import java.io.*;
 import java.util.*;
 import com.github.catvod.spider.Logger;
-import com.github.catvod.utils.Path;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 
 public class LocalIndexService {
 
@@ -22,7 +24,7 @@ public class LocalIndexService {
      */
     private LocalIndexService(String name) {
         String sanitizedName = sanitizeName(name); // 处理特殊字符
-        this.inputFilePath = BASE_DIR + sanitizedName + ".txt"; // 输入文件路径
+        this.inputFilePath = BASE_DIR + sanitizedName + "/index.all.txt"; // 输入文件路径
         this.cacheDirPath = BASE_DIR + "cache/" + sanitizedName; // 缓存目录路径
         createCacheDir(); // 创建缓存目录
         this.outputFilePath = generateRandomOutputFilePath(); // 自动生成随机输出文件路径
@@ -269,11 +271,29 @@ public class LocalIndexService {
      */
     public static void test() {
         try {
+            // 获取实例
             LocalIndexService service = LocalIndexService.get("example:test/1");
-            service.externalSort("desc"); // 按第4个字段降序排序
-            String line = service.getLine(99); // 获取第100行
+            
+            // 将 BASE_DIR + "/index.all.txt" 拷贝到 BASE_DIR + sanitizedName + "/index.all.txt"
+            String sanitizedName = sanitizeName("example:test/1");
+            Path sourcePath = Path.of(BASE_DIR, "index.all.txt");
+            Path destPath = Path.of(BASE_DIR, sanitizedName, "index.all.txt");
+            
+            // 确保目标目录存在
+            Files.createDirectories(destPath.getParent());
+            
+            // 执行文件拷贝（高效方式）
+            Files.copy(sourcePath, destPath, StandardCopyOption.REPLACE_EXISTING);
+            
+            // 按第4个字段降序排序
+            service.externalSort("desc");
+            
+            // 获取第100行
+            String line = service.getLine(99);
             Logger.log(line);
-            LocalIndexService.deleteAllIndex(); // 删除整个 /TV/index/ 目录
+            
+            // 删除整个 /TV/index/ 目录
+            LocalIndexService.deleteAllIndex();
         } catch (IOException e) {
             Logger.log(e);
         }
