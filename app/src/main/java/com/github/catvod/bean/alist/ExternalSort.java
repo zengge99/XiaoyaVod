@@ -136,7 +136,7 @@ public class ExternalSort {
         try {
             String path = com.github.catvod.utils.Path.cache().getPath() + "/TV/";
             externalSort(path + "/index.all.txt", path + "/output.txt", 0); // 字段索引从0开始
-            String line = getLine("output.txt", 99); // 第100行的索引是99
+            String line = getLine(path + "/output.txt", 99); // 第100行的索引是99
             Logger.log(line);
         } catch (IOException e) {
             Logger.log(e);
