@@ -3,28 +3,51 @@ package com.github.catvod.bean.alist;
 import java.io.*;
 import java.util.*;
 import com.github.catvod.spider.Logger;
+import com.github.catvod.utils.Path;
 
 public class LocalIndexService {
 
     private static final int MAX_LINES_IN_MEMORY = 5000; // 每个块的最大行数
+    private final String inputFilePath; // 输入文件路径
+    private final String outputDirPath; // 输出目录路径
+    private String outputFilePath; // 输出文件路径
+
+    /**
+     * 构造函数
+     *
+     * @param inputFilePath 输入文件路径
+     * @param outputDirPath 输出目录路径
+     */
+    public LocalIndexService(String inputFilePath, String outputDirPath) {
+        this.inputFilePath = inputFilePath;
+        this.outputDirPath = outputDirPath;
+        this.outputFilePath = generateRandomOutputFilePath(); // 自动生成随机输出文件路径
+    }
+
+    /**
+     * 生成随机的输出文件路径
+     */
+    private String generateRandomOutputFilePath() {
+        String randomFileName = "output_" + UUID.randomUUID().toString() + ".txt";
+        return outputDirPath + File.separator + randomFileName;
+    }
 
     /**
      * 外部排序的主方法
      *
-     * @param inputFilePath  输入文件路径
-     * @param outputFilePath 输出文件路径
      * @param sortFieldIndex 排序字段的索引
+     * @param order         排序顺序（"asc" 或 "desc"）
      * @throws IOException 如果文件读写失败
      */
-    public static void externalSort(String inputFilePath, String outputFilePath, String order) throws IOException {
-        List<File> sortedChunks = sortInChunks(inputFilePath, order);
-        mergeSortedChunks(sortedChunks, outputFilePath, order);
+    public void externalSort(int sortFieldIndex, String order) throws IOException {
+        List<File> sortedChunks = sortInChunks(sortFieldIndex, order);
+        mergeSortedChunks(sortedChunks, order);
     }
 
     /**
      * 将文件分块排序，返回排序后的临时文件列表
      */
-    private static List<File> sortInChunks(String inputFilePath, String order) throws IOException {
+    private List<File> sortInChunks(int sortFieldIndex, String order) throws IOException {
         List<File> sortedChunks = new ArrayList<>();
         try (BufferedReader reader = new BufferedReader(new FileReader(inputFilePath))) {
             List<String[]> chunk = new ArrayList<>();
@@ -33,12 +56,12 @@ public class LocalIndexService {
                 String[] fields = line.split("#");
                 chunk.add(fields);
                 if (chunk.size() >= MAX_LINES_IN_MEMORY) {
-                    sortedChunks.add(sortAndWriteChunk(chunk, order));
+                    sortedChunks.add(sortAndWriteChunk(chunk, sortFieldIndex, order));
                     chunk.clear();
                 }
             }
             if (!chunk.isEmpty()) {
-                sortedChunks.add(sortAndWriteChunk(chunk, order));
+                sortedChunks.add(sortAndWriteChunk(chunk, sortFieldIndex, order));
             }
         }
         return sortedChunks;
@@ -47,14 +70,14 @@ public class LocalIndexService {
     /**
      * 对内存中的块进行排序并写入临时文件
      */
-    private static File sortAndWriteChunk(List<String[]> chunk, String order) throws IOException {
+    private File sortAndWriteChunk(List<String[]> chunk, int sortFieldIndex, String order) throws IOException {
         chunk.sort((o1, o2) -> {
-            double value1 = parseFieldAsDouble(o1, 3); // 解析 o1 的第 4 个字段（索引 3）
-            double value2 = parseFieldAsDouble(o2, 3); // 解析 o2 的第 4 个字段（索引 3）
+            double value1 = parseFieldAsDouble(o1, sortFieldIndex);
+            double value2 = parseFieldAsDouble(o2, sortFieldIndex);
             if (order.equals("asc")) {
-                return Double.compare(value1, value2);
+                return Double.compare(value1, value2); // 升序
             } else {
-                return Double.compare(value2, value1);
+                return Double.compare(value2, value1); // 降序
             }
         });
         File tempFile = File.createTempFile("sortedChunk", ".txt");
@@ -67,32 +90,34 @@ public class LocalIndexService {
         return tempFile;
     }
 
-    private static double parseFieldAsDouble(String[] fields, int index) {
-    if (fields == null || fields.length <= index) {
-        return 0.0; // 字段不足，返回 0
+    /**
+     * 解析字段为 double，如果字段不足、为空或非 double，则返回 0
+     */
+    private double parseFieldAsDouble(String[] fields, int index) {
+        if (fields == null || fields.length <= index) {
+            return 0.0; // 字段不足，返回 0
+        }
+        String field = fields[index];
+        if (field == null || field.trim().isEmpty()) {
+            return 0.0; // 字段为空，返回 0
+        }
+        try {
+            return Double.parseDouble(field); // 解析为 double
+        } catch (NumberFormatException e) {
+            return 0.0; // 字段非 double，返回 0
+        }
     }
-    String field = fields[index];
-    if (field == null || field.trim().isEmpty()) {
-        return 0.0; // 字段为空，返回 0
-    }
-    try {
-        return Double.parseDouble(field); // 解析为 double
-    } catch (NumberFormatException e) {
-        return 0.0; // 字段非 double，返回 0
-    }
-}
 
     /**
      * 合并所有排序后的临时文件
      */
-    private static void mergeSortedChunks(List<File> sortedChunks, String outputFilePath, String order) throws IOException {
+    private void mergeSortedChunks(List<File> sortedChunks, String order) throws IOException {
         PriorityQueue<BufferedLineReader> minHeap = new PriorityQueue<>(
             (br1, br2) -> {
                 double value1 = parseFieldAsDouble(br1.currentFields, 3);
                 double value2 = parseFieldAsDouble(br2.currentFields, 3);
                 if (order.equals("asc")) {
                     return Double.compare(value1, value2); // 升序
-                    
                 } else {
                     return Double.compare(value2, value1); // 降序
                 }
@@ -125,13 +150,12 @@ public class LocalIndexService {
     /**
      * 读取指定行
      *
-     * @param filePath 文件路径
-     * @param lineNum  行号（从0开始）
+     * @param lineNum 行号（从0开始）
      * @return 指定行的内容
      * @throws IOException 如果文件读写失败
      */
-    public static String getLine(String filePath, int lineNum) throws IOException {
-        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+    public String getLine(int lineNum) throws IOException {
+        try (BufferedReader reader = new BufferedReader(new FileReader(outputFilePath))) {
             String line;
             int currentLine = 0;
             while ((line = reader.readLine()) != null) {
@@ -167,11 +191,15 @@ public class LocalIndexService {
         }
     }
 
+    /**
+     * 测试方法
+     */
     public static void test() {
         try {
-            String path = com.github.catvod.utils.Path.root().getPath() + "/TV/";
-            externalSort(path + "/index.all.txt", path + "/output.txt", "desc"); 
-            String line = getLine(path + "/output.txt", 99); // 第100行的索引是99
+            String path = Path.root().getPath() + "/TV/";
+            LocalIndexService service = new LocalIndexService(path + "index.all.txt", path);
+            service.externalSort(3, "desc"); // 按第4个字段降序排序
+            String line = service.getLine(99); // 获取第100行
             Logger.log(line);
         } catch (IOException e) {
             Logger.log(e);
