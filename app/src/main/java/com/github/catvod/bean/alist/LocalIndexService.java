@@ -443,6 +443,7 @@ public class LocalIndexService {
 
             // 查询参数
             LinkedHashMap<String, String> queryParams = new LinkedHashMap<>();
+            queryParams.put("filter", "./每日更新");     // 按字段降序排序
             queryParams.put("sort", "desc");     // 按字段降序排序
             queryParams.put("limit", "100");    // 限制 100 行
 
