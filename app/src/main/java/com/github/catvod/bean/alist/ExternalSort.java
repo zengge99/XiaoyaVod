@@ -16,15 +16,15 @@ public class ExternalSort {
      * @param sortFieldIndex 排序字段的索引
      * @throws IOException 如果文件读写失败
      */
-    public static void externalSort(String inputFilePath, String outputFilePath, int sortFieldIndex) throws IOException {
-        List<File> sortedChunks = sortInChunks(inputFilePath, sortFieldIndex);
-        mergeSortedChunks(sortedChunks, outputFilePath, sortFieldIndex);
+    public static void externalSort(String inputFilePath, String outputFilePath, String order) throws IOException {
+        List<File> sortedChunks = sortInChunks(inputFilePath, order);
+        mergeSortedChunks(sortedChunks, outputFilePath, order);
     }
 
     /**
      * 将文件分块排序，返回排序后的临时文件列表
      */
-    private static List<File> sortInChunks(String inputFilePath, int sortFieldIndex) throws IOException {
+    private static List<File> sortInChunks(String inputFilePath, String order) throws IOException {
         List<File> sortedChunks = new ArrayList<>();
         try (BufferedReader reader = new BufferedReader(new FileReader(inputFilePath))) {
             List<String[]> chunk = new ArrayList<>();
@@ -33,12 +33,12 @@ public class ExternalSort {
                 String[] fields = line.split("#");
                 chunk.add(fields);
                 if (chunk.size() >= MAX_LINES_IN_MEMORY) {
-                    sortedChunks.add(sortAndWriteChunk(chunk, sortFieldIndex));
+                    sortedChunks.add(sortAndWriteChunk(chunk, order));
                     chunk.clear();
                 }
             }
             if (!chunk.isEmpty()) {
-                sortedChunks.add(sortAndWriteChunk(chunk, sortFieldIndex));
+                sortedChunks.add(sortAndWriteChunk(chunk, order));
             }
         }
         return sortedChunks;
@@ -47,8 +47,16 @@ public class ExternalSort {
     /**
      * 对内存中的块进行排序并写入临时文件
      */
-    private static File sortAndWriteChunk(List<String[]> chunk, int sortFieldIndex) throws IOException {
-        chunk.sort(Comparator.comparing(o -> o[sortFieldIndex]));
+    private static File sortAndWriteChunk(List<String[]> chunk, String order) throws IOException {
+        chunk.sort((o1, o2) -> {
+            double value1 = parseFieldAsDouble(o1, 3); // 解析 o1 的第 4 个字段（索引 3）
+            double value2 = parseFieldAsDouble(o2, 3); // 解析 o2 的第 4 个字段（索引 3）
+            if (order.equals("asc")) {
+                return Double.compare(value1, value2);
+            } else {
+                return Double.compare(value2, value1);
+            }
+        });
         File tempFile = File.createTempFile("sortedChunk", ".txt");
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile))) {
             for (String[] fields : chunk) {
@@ -58,6 +66,21 @@ public class ExternalSort {
         }
         return tempFile;
     }
+
+    private double parseFieldAsDouble(String[] fields, int index) {
+    if (fields == null || fields.length <= index) {
+        return 0.0; // 字段不足，返回 0
+    }
+    String field = fields[index];
+    if (field == null || field.trim().isEmpty()) {
+        return 0.0; // 字段为空，返回 0
+    }
+    try {
+        return Double.parseDouble(field); // 解析为 double
+    } catch (NumberFormatException e) {
+        return 0.0; // 字段非 double，返回 0
+    }
+}
 
     /**
      * 合并所有排序后的临时文件
