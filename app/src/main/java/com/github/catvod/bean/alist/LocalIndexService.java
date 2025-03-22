@@ -261,7 +261,7 @@ public class LocalIndexService {
      * @param order      排序顺序（"asc" 或 "desc"")
      * @throws IOException 如果文件读写失败
      */
-    private void sortByField(String inputFile, String outputFile, String order) throws IOException {
+    private void sortByDouban(String inputFile, String outputFile, String order) throws IOException {
         externalSort(inputFile, outputFile, order);
         Logger.log("Sorted by field: " + order);
     }
@@ -297,15 +297,15 @@ public class LocalIndexService {
             boolean reserveFile = false;
             // 执行查询方法
             switch (method) {
-                case "filter":
-                    filterByField(currentInputFile, tempOutputFile, param);
+                case "subpath":
+                    filterByPath(currentInputFile, tempOutputFile, param);
                     break;
                 case "save":
                     this.inputFilePath = currentInputFile;
                     reserveFile = true;
                     break;
-                case "sort":
-                    sortByField(currentInputFile, tempOutputFile, param);
+                case "doubansort":
+                    sortByDouban(currentInputFile, tempOutputFile, param);
                     break;
                 case "limit":
                     limitRows(currentInputFile, tempOutputFile, Integer.parseInt(param));
@@ -356,7 +356,7 @@ public class LocalIndexService {
      * @param fieldValue 字段值
      * @throws IOException 如果文件读写失败
      */
-    private void filterByField(String inputFile, String outputFile, String fieldValue) throws IOException {
+    private void filterByPath(String inputFile, String outputFile, String fieldValue) throws IOException {
         try (BufferedReader reader = new BufferedReader(new FileReader(inputFile));
              BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile))) {
             String line;
@@ -425,14 +425,14 @@ public class LocalIndexService {
 
             // 第一次查询
             LinkedHashMap<String, String> queryParams = new LinkedHashMap<>();
-            queryParams.put("filter", "每日更新");     // 按字段降序排序
+            queryParams.put("subpath", "每日更新");     // 按字段降序排序
             queryParams.put("save", ""); 
             String resultFile = service.query(queryParams);
             Logger.log("Query result file1: " + resultFile);
 
             // 第二次查询
             queryParams = new LinkedHashMap<>();
-            queryParams.put("sort", "desc");     // 按字段降序排序
+            queryParams.put("doubansort", "desc");     // 按字段降序排序
             queryParams.put("limit", "100");    // 限制 100 行
             resultFile = service.query(queryParams);
             Logger.log("Query result file2: " + resultFile);
