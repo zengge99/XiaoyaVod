@@ -291,6 +291,7 @@ public class LocalIndexService {
                         break;
                     case "save":
                         this.inputFilePath = currentInputFile;
+                        tempOutputFile = currentInputFile;
                         reserveFile = true;
                         break;
                     case "doubansort":
