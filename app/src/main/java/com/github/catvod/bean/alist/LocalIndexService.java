@@ -104,7 +104,7 @@ public class LocalIndexService {
         if (!cacheDir.exists()) {
             if (cacheDir.mkdirs()) {
                 Logger.log("Cache directory created successfully: " + cacheDirPath);
-            else {
+            } else {
                 Logger.log("Failed to create cache directory: " + cacheDirPath);
             }
         } else {
