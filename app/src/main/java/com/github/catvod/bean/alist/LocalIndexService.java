@@ -1,3 +1,4 @@
+ 
 package com.github.catvod.bean.alist;
 
 import java.io.*;
@@ -104,7 +105,7 @@ public class LocalIndexService {
         if (!cacheDir.exists()) {
             if (cacheDir.mkdirs()) {
                 Logger.log("Cache directory created successfully: " + cacheDirPath);
-            } else {
+            else {
                 Logger.log("Failed to create cache directory: " + cacheDirPath);
             }
         } else {
@@ -172,7 +173,7 @@ public class LocalIndexService {
      */
     private List<File> sortInChunks(String inputFile, String order) throws IOException {
         List<File> sortedChunks = new ArrayList<>();
-        try (BufferedReader reader = new BufferedReader(new FileReader(inputFile))) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(inputFile), "UTF-8"))) {
             List<String[]> chunk = new ArrayList<>();
             String line;
             while ((line = reader.readLine()) != null) {
@@ -182,6 +183,9 @@ public class LocalIndexService {
                     sortedChunks.add(sortAndWriteChunk(chunk, order));
                     chunk.clear();
                 }
+            }
+            if (!chunk.isEmpty()) {
+                sortedChunks.add(sortAndWriteChunk(chunk, order));
             }
         }
         return sortedChunks;
@@ -198,7 +202,7 @@ public class LocalIndexService {
     private File sortAndWriteChunk(List<String[]> chunk, String order) throws IOException {
         chunk.sort(createComparator(order));
         File tempFile = File.createTempFile("sortedChunk", ".txt", new File(cacheDirPath));
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile))) {
+        try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(tempFile), "UTF-8"))) {
             for (String[] fields : chunk) {
                 writer.write(String.join("#", fields));
                 writer.newLine();
@@ -220,7 +224,7 @@ public class LocalIndexService {
         PriorityQueue<BufferedLineReader> minHeap = new PriorityQueue<>(
             Comparator.comparing(br -> br.currentFields, createComparator(order))
         );
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile))) {
+        try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputFile), "UTF-8"))) {
             // 初始化堆
             for (File file : sortedChunks) {
                 BufferedLineReader reader = new BufferedLineReader(file);
@@ -269,7 +273,7 @@ public class LocalIndexService {
         int linesPerPage = 72;
         int startLine = (pageNum - 1) * linesPerPage;
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(outputFilePath))) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(outputFilePath), "UTF-8"))) {
             String line;
             int currentLine = 0;
 
@@ -299,14 +303,14 @@ public class LocalIndexService {
         lineIndex = new ArrayList<>();
         invertedIndex = new HashMap<>();
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(outputFilePath))) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(outputFilePath), "UTF-8"))) {
             String line;
             int lineNum = 0;
             long position = 0;
             while ((line = reader.readLine()) != null) {
                 // 记录每行的起始位置
                 lineIndex.add(position);
-                position += line.length() + System.lineSeparator().length(); // 加上换行符的长度
+                position += line.getBytes("UTF-8").length + System.lineSeparator().getBytes("UTF-8").length; // 加上换行符的长度
 
                 // 构建倒排索引
                 String[] fields = line.split("#");
@@ -336,9 +340,22 @@ public class LocalIndexService {
         if (lineNum < 0 || lineNum >= lineIndex.size()) {
             throw new IllegalArgumentException("Line number out of range.");
         }
-        // 跳转到指定行的起始位置
-        randomAccessFile.seek(lineIndex.get(lineNum));
-        return randomAccessFile.readLine();
+
+        try (
+            RandomAccessFile randomAccessFile = new RandomAccessFile(outputFilePath, "r");
+            InputStreamReader reader = new InputStreamReader(new FileInputStream(randomAccessFile.getFD()), "UTF-8");
+            BufferedReader bufferedReader = new BufferedReader(reader)
+        ) {
+            long position = lineIndex.get(lineNum); // 获取指定行的起始位置
+            randomAccessFile.seek(position); // 跳转到指定位置
+
+            String line = bufferedReader.readLine(); // 读取该行内容
+            if (line != null) {
+                return line;
+            } else {
+                throw new IllegalStateException("Failed to read the specified line");
+            }
+        }
     }
 
     /**
@@ -447,7 +464,7 @@ public class LocalIndexService {
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
             String queryString = queryParams.toString();
-            byte[] hashBytes = md.digest(queryString.getBytes());
+            byte[] hashBytes = md.digest(queryString.getBytes("UTF-8"));
             StringBuilder sb = new StringBuilder();
             for (byte b : hashBytes) {
                 sb.append(String.format("%02x", b));
@@ -455,6 +472,8 @@ public class LocalIndexService {
             return sb.toString();
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("MD5 algorithm not found", e);
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException("UTF-8 encoding not supported", e);
         }
     }
 
@@ -467,8 +486,8 @@ public class LocalIndexService {
      * @throws IOException 如果文件读写失败
      */
     private void filterByPath(String inputFile, String outputFile, String fieldValue) throws IOException {
-        try (BufferedReader reader = new BufferedReader(new FileReader(inputFile));
-             BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile))) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(inputFile), "UTF-8"));
+             BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputFile), "UTF-8"))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] fields = line.split("#");
@@ -490,8 +509,8 @@ public class LocalIndexService {
      * @throws IOException 如果文件读写失败
      */
     private void limitRows(String inputFile, String outputFile, int limit) throws IOException {
-        try (BufferedReader reader = new BufferedReader(new FileReader(inputFile));
-             BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile))) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(inputFile), "UTF-8"));
+             BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputFile), "UTF-8"))) {
             String line;
             int count = 0;
             while ((line = reader.readLine()) != null && count < limit) {
@@ -511,7 +530,7 @@ public class LocalIndexService {
         private String[] currentFields;
 
         public BufferedLineReader(File file) throws FileNotFoundException {
-            this.reader = new BufferedReader(new FileReader(file));
+            this.reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
         }
 
         public boolean readLine() throws IOException {
@@ -552,7 +571,7 @@ public class LocalIndexService {
 
             // 构建索引并测试快速搜索
             service.buildIndex();
-            Logger.log("Quick search for keyword: " + service.quickSearch("漫长的季节"));
+            Logger.log("Quick search for keyword: " + service.quickSearch("exampleKeyword"));
 
             // 关闭资源
             service.close();
@@ -562,3 +581,4 @@ public class LocalIndexService {
         }
     }
 }
+ 
