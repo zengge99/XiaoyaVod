@@ -280,6 +280,7 @@ public class LocalIndexService {
         try {
             // 获取实例
             LocalIndexService service = LocalIndexService.get("example:test/1");
+            Logger.log("初始化成功");
             
             // 将 ./TV/ + "/index.all.txt" 拷贝到 BASE_DIR + sanitizedName + "/index.all.txt"
             String sanitizedName = sanitizeName("example:test/1");
