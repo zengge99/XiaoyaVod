@@ -2,6 +2,7 @@ package com.github.catvod.bean.alist;
 
 import java.io.*;
 import java.util.*;
+import com.github.catvod.spider.Logger;
 
 public class ExternalSort {
 
@@ -29,7 +30,15 @@ public class ExternalSort {
             List<String[]> chunk = new ArrayList<>();
             String line;
             while ((line = reader.readLine()) != null) {
-                String[] fields = line.split("#");
+                // 分割字段并确保至少有5个
+                String[] rawFields = line.split("#", -1); // 用 -1 保留末尾空字段
+                String[] fields = new String[5];
+                Arrays.fill(fields, ""); // 初始化为5个空字符串
+                System.arraycopy(
+                    rawFields, 0, 
+                    fields, 0, 
+                    Math.min(rawFields.length, 5) // 最多拷贝5个字段
+                );
                 chunk.add(fields);
                 if (chunk.size() >= MAX_LINES_IN_MEMORY) {
                     sortedChunks.add(sortAndWriteChunk(chunk, sortFieldIndex));
