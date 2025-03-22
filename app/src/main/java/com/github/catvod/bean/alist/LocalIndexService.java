@@ -528,7 +528,7 @@ public class LocalIndexService {
         private final BufferedReader reader;
         private String[] currentFields;
 
-        public BufferedLineReader(File file) throws FileNotFoundException {
+        public BufferedLineReader(File file) throws FileNotFoundException, UnsupportedEncodingException {
             this.reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
         }
 
