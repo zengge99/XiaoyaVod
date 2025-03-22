@@ -257,6 +257,31 @@ public class LocalIndexService {
         Logger.log("Sorted by field: " + order);
     }
 
+    public List<String> page(int pageNum) {
+        List<String> pageContent = new ArrayList<>();
+        int linesPerPage = 72;
+        int startLine = (pageNum - 1) * linesPerPage;
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(outputFilePath))) {
+            String line;
+            int currentLine = 0;
+
+            // 跳过前面的行
+            while (currentLine < startLine && (line = reader.readLine()) != null) {
+                currentLine++;
+            }
+
+            // 读取当前页的内容
+            while (currentLine < startLine + linesPerPage && (line = reader.readLine()) != null) {
+                pageContent.add(line);
+                currentLine++;
+            }
+        } catch (Exception e) {
+        }
+
+        return pageContent;
+    }
+
     /**
      * 查询方法
      *
@@ -431,6 +456,7 @@ public class LocalIndexService {
             queryParams.put("limit", "100");    // 限制 100 行
             resultFile = service.query(queryParams);
             Logger.log("Query result file2: " + resultFile);
+            Logger.log(service.page(2));
 
         } catch (IOException e) {
             Logger.log(e);
