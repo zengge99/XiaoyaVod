@@ -343,7 +343,7 @@ public class LocalIndexService {
             Logger.log(e);
         } finally {
             // 删除整个 /TV/index/ 目录
-            LocalIndexService.deleteAllIndex();
+            // LocalIndexService.deleteAllIndex();
         }
     }
 }
