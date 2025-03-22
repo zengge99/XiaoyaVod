@@ -8,20 +8,92 @@ import com.github.catvod.utils.Path;
 public class LocalIndexService {
 
     private static final int MAX_LINES_IN_MEMORY = 5000; // 每个块的最大行数
+    private static final Map<String, LocalIndexService> instances = new HashMap<>(); // 实例缓存
+    private static final String BASE_DIR = Path.root().getPath() + "/TV/index/"; // 基础目录
+
     private final String inputFilePath; // 输入文件路径
-    private final String outputDirPath; // 输出目录路径
+    private final String cacheDirPath; // 缓存目录路径
     private String outputFilePath; // 输出文件路径
 
     /**
-     * 构造函数
+     * 私有构造函数
      *
-     * @param inputFilePath 输入文件路径
-     * @param outputDirPath 输出目录路径
+     * @param name 实例唯一名字
      */
-    public LocalIndexService(String inputFilePath, String outputDirPath) {
-        this.inputFilePath = inputFilePath;
-        this.outputDirPath = outputDirPath;
+    private LocalIndexService(String name) {
+        String sanitizedName = sanitizeName(name); // 处理特殊字符
+        this.inputFilePath = BASE_DIR + sanitizedName + ".txt"; // 输入文件路径
+        this.cacheDirPath = BASE_DIR + "cache/" + sanitizedName; // 缓存目录路径
+        createCacheDir(); // 创建缓存目录
         this.outputFilePath = generateRandomOutputFilePath(); // 自动生成随机输出文件路径
+    }
+
+    /**
+     * 获取实例（单例模式）
+     *
+     * @param name 实例唯一名字
+     * @return LocalIndexService 实例
+     */
+    public static LocalIndexService get(String name) {
+        if (!instances.containsKey(name)) {
+            instances.put(name, new LocalIndexService(name));
+        }
+        return instances.get(name);
+    }
+
+    /**
+     * 删除整个 /TV/index/ 目录及其内容
+     */
+    public static void deleteAllIndex() {
+        File baseDir = new File(BASE_DIR);
+        if (baseDir.exists()) {
+            deleteDirectory(baseDir);
+            Logger.log("Deleted base directory: " + BASE_DIR);
+        } else {
+            Logger.log("Base directory does not exist: " + BASE_DIR);
+        }
+    }
+
+    /**
+     * 删除目录及其内容
+     *
+     * @param directory 目录
+     */
+    private static void deleteDirectory(File directory) {
+        File[] files = directory.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (file.isDirectory()) {
+                    deleteDirectory(file);
+                } else {
+                    if (!file.delete()) {
+                        Logger.log("Failed to delete file: " + file.getAbsolutePath());
+                    }
+                }
+            }
+        }
+        if (!directory.delete()) {
+            Logger.log("Failed to delete directory: " + directory.getAbsolutePath());
+        }
+    }
+
+    /**
+     * 处理 name 中的特殊字符（如 : 和 /），转换为 _
+     */
+    private static String sanitizeName(String name) {
+        return name.replaceAll("[:/]", "_");
+    }
+
+    /**
+     * 创建缓存目录
+     */
+    private void createCacheDir() {
+        File cacheDir = new File(cacheDirPath);
+        if (!cacheDir.exists()) {
+            if (!cacheDir.mkdirs()) {
+                Logger.log("Failed to create cache directory: " + cacheDirPath);
+            }
+        }
     }
 
     /**
@@ -29,25 +101,42 @@ public class LocalIndexService {
      */
     private String generateRandomOutputFilePath() {
         String randomFileName = "output_" + UUID.randomUUID().toString() + ".txt";
-        return outputDirPath + File.separator + randomFileName;
+        return cacheDirPath + File.separator + randomFileName;
+    }
+
+    /**
+     * 创建一个比较器，根据指定排序顺序进行比较
+     *
+     * @param order 排序顺序（"asc" 或 "desc"）
+     * @return 比较器
+     */
+    private Comparator<String[]> createComparator(String order) {
+        return (o1, o2) -> {
+            double value1 = parseFieldAsDouble(o1, 3); // 固定为第4个字段
+            double value2 = parseFieldAsDouble(o2, 3); // 固定为第4个字段
+            if (order.equals("asc")) {
+                return Double.compare(value1, value2); // 升序
+            } else {
+                return Double.compare(value2, value1); // 降序
+            }
+        };
     }
 
     /**
      * 外部排序的主方法
      *
-     * @param sortFieldIndex 排序字段的索引
-     * @param order         排序顺序（"asc" 或 "desc"）
+     * @param order 排序顺序（"asc" 或 "desc"）
      * @throws IOException 如果文件读写失败
      */
-    public void externalSort(int sortFieldIndex, String order) throws IOException {
-        List<File> sortedChunks = sortInChunks(sortFieldIndex, order);
+    public void externalSort(String order) throws IOException {
+        List<File> sortedChunks = sortInChunks(order);
         mergeSortedChunks(sortedChunks, order);
     }
 
     /**
      * 将文件分块排序，返回排序后的临时文件列表
      */
-    private List<File> sortInChunks(int sortFieldIndex, String order) throws IOException {
+    private List<File> sortInChunks(String order) throws IOException {
         List<File> sortedChunks = new ArrayList<>();
         try (BufferedReader reader = new BufferedReader(new FileReader(inputFilePath))) {
             List<String[]> chunk = new ArrayList<>();
@@ -56,12 +145,12 @@ public class LocalIndexService {
                 String[] fields = line.split("#");
                 chunk.add(fields);
                 if (chunk.size() >= MAX_LINES_IN_MEMORY) {
-                    sortedChunks.add(sortAndWriteChunk(chunk, sortFieldIndex, order));
+                    sortedChunks.add(sortAndWriteChunk(chunk, order));
                     chunk.clear();
                 }
             }
             if (!chunk.isEmpty()) {
-                sortedChunks.add(sortAndWriteChunk(chunk, sortFieldIndex, order));
+                sortedChunks.add(sortAndWriteChunk(chunk, order));
             }
         }
         return sortedChunks;
@@ -70,17 +159,9 @@ public class LocalIndexService {
     /**
      * 对内存中的块进行排序并写入临时文件
      */
-    private File sortAndWriteChunk(List<String[]> chunk, int sortFieldIndex, String order) throws IOException {
-        chunk.sort((o1, o2) -> {
-            double value1 = parseFieldAsDouble(o1, sortFieldIndex);
-            double value2 = parseFieldAsDouble(o2, sortFieldIndex);
-            if (order.equals("asc")) {
-                return Double.compare(value1, value2); // 升序
-            } else {
-                return Double.compare(value2, value1); // 降序
-            }
-        });
-        File tempFile = File.createTempFile("sortedChunk", ".txt");
+    private File sortAndWriteChunk(List<String[]> chunk, String order) throws IOException {
+        chunk.sort(createComparator(order));
+        File tempFile = File.createTempFile("sortedChunk", ".txt", new File(cacheDirPath));
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile))) {
             for (String[] fields : chunk) {
                 writer.write(String.join("#", fields));
@@ -113,15 +194,7 @@ public class LocalIndexService {
      */
     private void mergeSortedChunks(List<File> sortedChunks, String order) throws IOException {
         PriorityQueue<BufferedLineReader> minHeap = new PriorityQueue<>(
-            (br1, br2) -> {
-                double value1 = parseFieldAsDouble(br1.currentFields, 3);
-                double value2 = parseFieldAsDouble(br2.currentFields, 3);
-                if (order.equals("asc")) {
-                    return Double.compare(value1, value2); // 升序
-                } else {
-                    return Double.compare(value2, value1); // 降序
-                }
-            }
+            Comparator.comparing(br -> br.currentFields, createComparator(order))
         );
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputFilePath))) {
             // 初始化堆
@@ -196,11 +269,11 @@ public class LocalIndexService {
      */
     public static void test() {
         try {
-            String path = Path.root().getPath() + "/TV/";
-            LocalIndexService service = new LocalIndexService(path + "index.all.txt", path);
-            service.externalSort(3, "desc"); // 按第4个字段降序排序
+            LocalIndexService service = LocalIndexService.get("example:test/1");
+            service.externalSort("desc"); // 按第4个字段降序排序
             String line = service.getLine(99); // 获取第100行
             Logger.log(line);
+            LocalIndexService.deleteAllIndex(); // 删除整个 /TV/index/ 目录
         } catch (IOException e) {
             Logger.log(e);
         }
