@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.Arrays;
 import java.util.List;
 import java.util.TreeMap;
-import com.github.catvod.bean.alist.ExternalSort;
+import com.github.catvod.bean.alist.LocalIndexService;
 
 import okhttp3.Response;
 import fi.iki.elonen.NanoHTTPD;
@@ -504,7 +504,7 @@ public class XiaoyaProxyHandler {
             case "gen":
                 return genProxy(params);
             case "test":
-                ExternalSort.test();
+                LocalIndexService.test();
                 return new Object[]{200, "text/plain; charset=utf-8", new ByteArrayInputStream("ok".getBytes("UTF-8"))};
             default:
                 return null;

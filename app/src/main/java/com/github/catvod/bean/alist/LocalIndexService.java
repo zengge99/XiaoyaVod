@@ -4,7 +4,7 @@ import java.io.*;
 import java.util.*;
 import com.github.catvod.spider.Logger;
 
-public class ExternalSort {
+public class LocalIndexService {
 
     private static final int MAX_LINES_IN_MEMORY = 5000; // 每个块的最大行数
 
