@@ -314,7 +314,7 @@ public class LocalIndexService {
                     throw new IllegalArgumentException("Unknown query method: " + method);
             }
 
-            if (!reserveFile) {
+            if (!reserveFile && !currentInputFile.equals(this.inputFilePath)) {
                 new File(currentInputFile).delete();
             }
             
