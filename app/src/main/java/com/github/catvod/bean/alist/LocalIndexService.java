@@ -442,15 +442,20 @@ public class LocalIndexService {
         try {
             LocalIndexService service = LocalIndexService.get("example:test/1");
 
-            // 查询参数
+            // 第一次查询
             LinkedHashMap<String, String> queryParams = new LinkedHashMap<>();
             queryParams.put("filter", "每日更新");     // 按字段降序排序
+            queryParams.put("save", ""); 
+            String resultFile = service.query(queryParams);
+            Logger.log("Query result file1: " + resultFile);
+
+            // 第二次查询
+            queryParams = new LinkedHashMap<>();
             queryParams.put("sort", "desc");     // 按字段降序排序
             queryParams.put("limit", "100");    // 限制 100 行
+            resultFile = service.query(queryParams);
+            Logger.log("Query result file2: " + resultFile);
 
-            // 执行查询
-            String resultFile = service.query(queryParams);
-            Logger.log("Query result file: " + resultFile);
         } catch (IOException e) {
             Logger.log(e);
         }
