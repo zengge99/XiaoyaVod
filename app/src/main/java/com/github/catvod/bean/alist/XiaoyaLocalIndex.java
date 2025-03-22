@@ -65,8 +65,8 @@ public class XiaoyaLocalIndex {
             deleteFiles(saveDir, "*.tgz");
 
             long startMemory = Debug.getNativeHeapAllocatedSize();
-            List<String> lines = Files.readAllLines(Paths.get(saveDir + "/index.all.txt"));
-            // List<String> lines = new LazyFileList(saveDir + "/index.all.txt");
+            //List<String> lines = Files.readAllLines(Paths.get(saveDir + "/index.all.txt"));
+            List<String> lines = new LazyFileList(saveDir + "/index.all.txt");
             Logger.log("索引列表消耗内存：" + (Debug.getNativeHeapAllocatedSize() - startMemory));
 
             vods = toVods(drive, lines);
