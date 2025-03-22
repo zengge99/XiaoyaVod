@@ -39,6 +39,8 @@ public class XiaoyaLocalIndex {
         try {
             Notify.show("开始构建本地索引，需要数秒");
 
+            FileBasedList.clearCacheDirectory();
+
             String fileUrl = server + "/tvbox/data";
             String saveDir = com.github.catvod.utils.Path.cache().getPath() + "/TV/index/"
                     + server.split("//")[1].replace(":", "_port");

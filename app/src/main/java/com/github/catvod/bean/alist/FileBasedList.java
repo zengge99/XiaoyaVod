@@ -53,9 +53,35 @@ public class FileBasedList<T> implements List<T> {
         this(generateRandomFileName(), type);
     }
 
+    private static String getCacheDirPath() {
+        return com.github.catvod.utils.Path.cache() + "/TV/list/";
+    }
+
+    public static void clearCacheDirectory() {
+        String cacheDirPath = getCacheDirPath();
+        File cacheDir = new File(cacheDirPath);
+        if (!cacheDir.exists()) {
+            return;
+        }
+        if (!cacheDir.isDirectory()) {
+            throw new RuntimeException("Cache directory path is not a directory: " + cacheDirPath);
+        }
+        File[] files = cacheDir.listFiles((dir, name) -> name.endsWith(".list"));
+        if (files == null) {
+            return;
+        }
+        for (File file : files) {
+            try {
+                Files.delete(file.toPath());
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to delete file: " + file.getAbsolutePath(), e);
+            }
+        }
+    }
+
     // 生成随机文件名
     private static String generateRandomFileName() {
-        return com.github.catvod.utils.Path.root() + "/TV/list/" + UUID.randomUUID().toString() + ".list";
+        return getCacheDirPath() + UUID.randomUUID().toString() + ".list";
     }
 
     /**
