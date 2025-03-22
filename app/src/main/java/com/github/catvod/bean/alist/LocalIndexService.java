@@ -137,6 +137,24 @@ public class LocalIndexService {
         };
     }
 
+        /**
+     * 解析字段为 double，如果字段不足、为空或非 double，则返回 0
+     */
+    private double parseFieldAsDouble(String[] fields, int index) {
+        if (fields == null || fields.length <= index) {
+            return 0.0; // 字段不足，返回 0
+        }
+        String field = fields[index];
+        if (field == null || field.trim().isEmpty()) {
+            return 0.0; // 字段为空，返回 0
+        }
+        try {
+            return Double.parseDouble(field); // 解析为 double
+        } catch (NumberFormatException e) {
+            return 0.0; // 字段非 double，返回 0
+        }
+    }
+
     /**
      * 外部排序的主方法
      *
