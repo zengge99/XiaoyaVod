@@ -12,9 +12,7 @@ public class Proxy extends Spider {
     private static int port = -1;
 
     public static Object[] proxy(Map<String, String> params) throws Exception {
-        switch (params.get("do")) {
-                return XiaoyaProxyHandler.proxy(params);
-        }
+        return XiaoyaProxyHandler.proxy(params);
     }
 
     static void adjustPort() {
