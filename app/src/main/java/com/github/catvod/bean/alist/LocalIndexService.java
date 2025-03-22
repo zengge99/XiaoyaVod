@@ -27,7 +27,7 @@ public class LocalIndexService {
     private LocalIndexService(String name) {
         String sanitizedName = sanitizeName(name); // 处理特殊字符
         //this.inputFilePath = BASE_DIR + sanitizedName + "/index.all.txt"; // 输入文件路径
-        this.inputFilePath = com.github.catvod.utils.Path.root().getPath() + "/TV/ + "/index.all.txt"; // 输入文件路径
+        this.inputFilePath = com.github.catvod.utils.Path.root().getPath() + "/TV/" + "/index.all.txt"; // 输入文件路径
         this.cacheDirPath = BASE_DIR + "cache/" + sanitizedName; // 缓存目录路径
         Logger.log("Input file path: " + inputFilePath);
         Logger.log("Cache directory path: " + cacheDirPath);
