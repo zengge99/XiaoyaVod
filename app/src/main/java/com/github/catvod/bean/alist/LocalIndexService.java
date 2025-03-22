@@ -26,8 +26,11 @@ public class LocalIndexService {
         String sanitizedName = sanitizeName(name); // 处理特殊字符
         this.inputFilePath = BASE_DIR + sanitizedName + "/index.all.txt"; // 输入文件路径
         this.cacheDirPath = BASE_DIR + "cache/" + sanitizedName; // 缓存目录路径
+        Logger.log("Input file path: " + inputFilePath);
+        Logger.log("Cache directory path: " + cacheDirPath);
         createCacheDir(); // 创建缓存目录
         this.outputFilePath = generateRandomOutputFilePath(); // 自动生成随机输出文件路径
+        Logger.log("Output file path: " + outputFilePath);
     }
 
     /**
@@ -37,9 +40,12 @@ public class LocalIndexService {
      * @return LocalIndexService 实例
      */
     public static LocalIndexService get(String name) {
+        Logger.log("Getting instance for name: " + name);
         if (!instances.containsKey(name)) {
+            Logger.log("Creating new instance for name: " + name);
             instances.put(name, new LocalIndexService(name));
         }
+        Logger.log("Instance retrieved successfully for name: " + name);
         return instances.get(name);
     }
 
@@ -91,10 +97,15 @@ public class LocalIndexService {
      */
     private void createCacheDir() {
         File cacheDir = new File(cacheDirPath);
+        Logger.log("Attempting to create cache directory: " + cacheDirPath);
         if (!cacheDir.exists()) {
-            if (!cacheDir.mkdirs()) {
+            if (cacheDir.mkdirs()) {
+                Logger.log("Cache directory created successfully: " + cacheDirPath);
+            } else {
                 Logger.log("Failed to create cache directory: " + cacheDirPath);
             }
+        } else {
+            Logger.log("Cache directory already exists: " + cacheDirPath);
         }
     }
 
