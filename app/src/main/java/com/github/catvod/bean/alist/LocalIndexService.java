@@ -281,16 +281,42 @@ public class LocalIndexService {
             // 获取实例
             LocalIndexService service = LocalIndexService.get("example:test/1");
             
-            // 将 BASE_DIR + "/index.all.txt" 拷贝到 BASE_DIR + sanitizedName + "/index.all.txt"
+            // 将 ./TV/ + "/index.all.txt" 拷贝到 BASE_DIR + sanitizedName + "/index.all.txt"
             String sanitizedName = sanitizeName("example:test/1");
-            Path sourcePath = Path.of(com.github.catvod.utils.Path.root().getPath() + "/TV/", "index.all.txt");
+            Path sourcePath = Path.of(com.github.catvod.utils.Path.root().getPath(), "TV", "index.all.txt");
             Path destPath = Path.of(BASE_DIR, sanitizedName, "index.all.txt");
-            
+
             // 确保目标目录存在
-            Files.createDirectories(destPath.getParent());
-            
+            Path parentDir = destPath.getParent();
+            if (parentDir != null) {
+                try {
+                    Files.createDirectories(parentDir);
+                    Logger.log("Created parent directory: " + parentDir);
+                } catch (IOException e) {
+                    Logger.log("Failed to create parent directory: " + parentDir);
+                    Logger.log(e);
+                    return; // 或抛出明确的异常
+                }
+            } else {
+                Logger.log("Destination path has no parent directory: " + destPath);
+                return; // 或抛出明确的异常
+            }
+
+            // 检查源文件是否存在
+            if (!Files.exists(sourcePath)) {
+                Logger.log("Source file does not exist: " + sourcePath);
+                return; // 或抛出明确的异常
+            }
+
             // 执行文件拷贝（高效方式）
-            Files.copy(sourcePath, destPath, StandardCopyOption.REPLACE_EXISTING);
+            try {
+                Files.copy(sourcePath, destPath, StandardCopyOption.REPLACE_EXISTING);
+                Logger.log("Copied file from " + sourcePath + " to " + destPath);
+            } catch (IOException e) {
+                Logger.log("Failed to copy file from " + sourcePath + " to " + destPath);
+                Logger.log(e);
+                return; // 或抛出明确的异常
+            }
             
             // 按第4个字段降序排序，并获取合并后的文件路径
             String mergedFilePath = service.externalSort("desc");
