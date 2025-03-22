@@ -29,7 +29,7 @@ jobs:
         run: |
           rm -rf project
           rm -rf jar/xiaoya_proxy.jar
-          git clone --recurse-submodules https://github.com/zengge99/XiaoyaVod project
+          git clone --recurse-submodules https://github.com/zengge99/XiaoyaVod/blob/dev project
       - name: Download baksmali
         working-directory: ./project
         run: |
