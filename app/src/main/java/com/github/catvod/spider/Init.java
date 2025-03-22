@@ -35,19 +35,19 @@ public class Init {
     public Init() {
         this.handler = new Handler(Looper.getMainLooper());
         this.executor = Executors.newFixedThreadPool(5);
-        Thread serverThread = new Thread(() -> {
-            try {
-                XiaoyaProxyServer.get().start();
-            } catch (Exception e) {
-                return;
-            }
-        });
+        // Thread serverThread = new Thread(() -> {
+        //     try {
+        //         XiaoyaProxyServer.get().start();
+        //     } catch (Exception e) {
+        //         return;
+        //     }
+        // });
 
-        serverThread.setUncaughtExceptionHandler((Thread thread, Throwable throwable) -> {
-            //Logger.log("未捕获异常：" + throwable.getMessage(), true);
-        });
+        // serverThread.setUncaughtExceptionHandler((Thread thread, Throwable throwable) -> {
+        //     //Logger.log("未捕获异常：" + throwable.getMessage(), true);
+        // });
         
-        serverThread.start();
+        // serverThread.start();
     }
 
     public static Application context() {
