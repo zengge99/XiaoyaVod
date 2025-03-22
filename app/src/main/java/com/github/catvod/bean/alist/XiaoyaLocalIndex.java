@@ -72,22 +72,22 @@ public class XiaoyaLocalIndex {
             List<String> lines = new LazyFileList(saveDir + "/index.all.txt");
             Logger.log("索引列表消耗内存：" + (Debug.getNativeHeapAllocatedSize() - startMemory));
 
-            vods = toVods(drive, lines);
+            // vods = toVods(drive, lines);
 
-            // 构建倒排索引，用于快速查找
-            Map<String, List<Integer>> invertedIndex = new HashMap<>();
-            //for (int i = 0; i < vods.size(); i++) {
-            //    String word = vods.get(i).getVodName();
-            //    invertedIndex.computeIfAbsent(word, k -> new ArrayList<>()).add(i);
-            //}
-            int i = 0;
-            for (Vod vod : vods) {
-                String word = vod.getVodName();
-                invertedIndex.computeIfAbsent(word, k -> new ArrayList<>()).add(i++);
-            }
+            // // 构建倒排索引，用于快速查找
+            // Map<String, List<Integer>> invertedIndex = new HashMap<>();
+            // //for (int i = 0; i < vods.size(); i++) {
+            // //    String word = vods.get(i).getVodName();
+            // //    invertedIndex.computeIfAbsent(word, k -> new ArrayList<>()).add(i);
+            // //}
+            // int i = 0;
+            // for (Vod vod : vods) {
+            //     String word = vod.getVodName();
+            //     invertedIndex.computeIfAbsent(word, k -> new ArrayList<>()).add(i++);
+            // }
 
-            invertedIndexMap.put(server, invertedIndex);
-            cacheMap.put(server, vods);
+            // invertedIndexMap.put(server, invertedIndex);
+            // cacheMap.put(server, vods);
 
             Notify.show("本地索引构建完成");
 
