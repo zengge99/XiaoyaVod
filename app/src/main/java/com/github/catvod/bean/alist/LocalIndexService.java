@@ -128,11 +128,12 @@ public class LocalIndexService {
      * 外部排序的主方法
      *
      * @param order 排序顺序（"asc" 或 "desc"）
+     * @return 合并后的临时文件路径
      * @throws IOException 如果文件读写失败
      */
-    public void externalSort(String order) throws IOException {
+    public String externalSort(String order) throws IOException {
         List<File> sortedChunks = sortInChunks(order);
-        mergeSortedChunks(sortedChunks, order);
+        return mergeSortedChunks(sortedChunks, order);
     }
 
     /**
@@ -193,8 +194,13 @@ public class LocalIndexService {
 
     /**
      * 合并所有排序后的临时文件
+     *
+     * @param sortedChunks 排序后的临时文件列表
+     * @param order 排序顺序（"asc" 或 "desc"）
+     * @return 合并后的临时文件路径
+     * @throws IOException 如果文件读写失败
      */
-    private void mergeSortedChunks(List<File> sortedChunks, String order) throws IOException {
+    private String mergeSortedChunks(List<File> sortedChunks, String order) throws IOException {
         PriorityQueue<BufferedLineReader> minHeap = new PriorityQueue<>(
             Comparator.comparing(br -> br.currentFields, createComparator(order))
         );
@@ -220,6 +226,7 @@ public class LocalIndexService {
         for (File file : sortedChunks) {
             file.delete();
         }
+        return outputFilePath; // 返回合并后的文件路径
     }
 
     /**
@@ -285,8 +292,9 @@ public class LocalIndexService {
             // 执行文件拷贝（高效方式）
             Files.copy(sourcePath, destPath, StandardCopyOption.REPLACE_EXISTING);
             
-            // 按第4个字段降序排序
-            service.externalSort("desc");
+            // 按第4个字段降序排序，并获取合并后的文件路径
+            String mergedFilePath = service.externalSort("desc");
+            Logger.log("Merged file path: " + mergedFilePath);
             
             // 获取第100行
             String line = service.getLine(99);
