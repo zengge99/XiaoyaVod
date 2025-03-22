@@ -15,6 +15,7 @@ public class LocalIndexService {
     private final String inputFilePath; // 输入文件路径
     private final String cacheDirPath; // 缓存目录路径
     private String outputFilePath; // 输出文件路径
+    private HashMap<String, String> queryCache = new HashMap<>();
 
     /**
      * 私有构造函数
@@ -275,13 +276,9 @@ public class LocalIndexService {
     public String query(LinkedHashMap<String, String> queryParams) throws IOException {
         // 生成缓存键
         String cacheKey = generateCacheKey(queryParams);
-        String cacheFilePath = cacheDirPath + File.separator + cacheKey + ".txt";
-
-        // 如果缓存文件存在，直接返回
-        File cacheFile = new File(cacheFilePath);
-        if (cacheFile.exists()) {
+        if (queryCache.get(cacheKey) != null) {
             Logger.log("Cache hit for query: " + cacheKey);
-            return cacheFilePath;
+            return queryCache.get(cacheKey);
         }
 
         Logger.log("Cache miss for query: " + cacheKey);
@@ -297,10 +294,15 @@ public class LocalIndexService {
             // 生成临时文件路径
             String tempOutputFile = cacheDirPath + File.separator + "temp_" + UUID.randomUUID() + ".txt";
 
+            boolean reserveFile = false;
             // 执行查询方法
             switch (method) {
                 case "filter":
                     filterByField(currentInputFile, tempOutputFile, param);
+                    break;
+                case "save":
+                    this.inputFilePath = currentInputFile;
+                    reserveFile = true;
                     break;
                 case "sort":
                     sortByField(currentInputFile, tempOutputFile, param);
@@ -312,18 +314,17 @@ public class LocalIndexService {
                     throw new IllegalArgumentException("Unknown query method: " + method);
             }
 
+            if (!reserveFile) {
+                new File(currentInputFile).delete();
+            }
+            
             // 更新当前输入文件
             currentInputFile = tempOutputFile;
         }
 
-        // 将最终结果保存到缓存文件
-        copyFile(currentInputFile, cacheFilePath);
-        Logger.log("Query result saved to cache: " + cacheFilePath);
+        queryCache.put(cacheKey, currentInputFile);
 
-        // 删除临时文件
-        new File(currentInputFile).delete();
-
-        return cacheFilePath;
+        return currentInputFile;
     }
 
     /**
