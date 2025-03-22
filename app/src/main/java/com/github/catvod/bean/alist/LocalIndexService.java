@@ -328,25 +328,6 @@ public class LocalIndexService {
     }
 
     /**
-     * 将文件内容从源文件复制到目标文件
-     *
-     * @param sourceFile 源文件路径
-     * @param targetFile 目标文件路径
-     * @throws IOException 如果文件读写失败
-     */
-    private void copyFile(String sourceFile, String targetFile) throws IOException {
-        try (FileInputStream fis = new FileInputStream(sourceFile);
-             FileOutputStream fos = new FileOutputStream(targetFile)) {
-            byte[] buffer = new byte[1024];
-            int length;
-            while ((length = fis.read(buffer)) > 0) {
-                fos.write(buffer, 0, length);
-            }
-        }
-        Logger.log("File copied from " + sourceFile + " to " + targetFile);
-    }
-
-    /**
      * 生成缓存键（MD5 哈希）
      *
      * @param queryParams 查询参数
