@@ -210,7 +210,7 @@ public class AList extends Spider {
                 Thread.sleep(500);
             } catch (InterruptedException e) {
             }
-            //XiaoyaLocalIndex.downlodadAndUnzip(tmpDrive);
+            XiaoyaLocalIndex.downlodadAndUnzip(tmpDrive);
         });
         thread.start();
         
