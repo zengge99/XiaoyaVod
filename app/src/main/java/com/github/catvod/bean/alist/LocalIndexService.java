@@ -292,8 +292,11 @@ public class LocalIndexService {
             
             // 将 ./TV/ + "/index.all.txt" 拷贝到 BASE_DIR + sanitizedName + "/index.all.txt"
             String sanitizedName = sanitizeName("example:test/1");
+            Logger.log("初始化成功1");
             Path sourcePath = Path.of(com.github.catvod.utils.Path.root().getPath(), "TV", "index.all.txt");
+            Logger.log("初始化成功2");
             Path destPath = Path.of(BASE_DIR, sanitizedName, "index.all.txt");
+            Logger.log("初始化成功3");
 
             // 确保目标目录存在
             Path parentDir = destPath.getParent();
