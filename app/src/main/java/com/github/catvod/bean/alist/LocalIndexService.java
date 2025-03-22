@@ -570,7 +570,7 @@ public class LocalIndexService {
 
             // 构建索引并测试快速搜索
             service.buildIndex();
-            Logger.log("Quick search for keyword: " + service.quickSearch("exampleKeyword"));
+            Logger.log("Quick search for keyword: " + service.quickSearch("漫长的季节"));
 
             // 关闭资源
             service.close();
