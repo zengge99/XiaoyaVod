@@ -298,30 +298,37 @@ public class LocalIndexService {
             // 确保目标目录存在
             Path parentDir = destPath.getParent();
             if (parentDir != null) {
+                Logger.log("parentDir正常");
                 try {
                     Files.createDirectories(parentDir);
+                    Logger.log("创建目录成功");
                     Logger.log("Created parent directory: " + parentDir);
                 } catch (IOException e) {
+                    Logger.log("创建目录失败");
                     Logger.log("Failed to create parent directory: " + parentDir);
                     Logger.log(e);
                     return; // 或抛出明确的异常
                 }
             } else {
+                Logger.log("父目录错误");
                 Logger.log("Destination path has no parent directory: " + destPath);
                 return; // 或抛出明确的异常
             }
 
             // 检查源文件是否存在
             if (!Files.exists(sourcePath)) {
+                Logger.log("源文件不存在");
                 Logger.log("Source file does not exist: " + sourcePath);
                 return; // 或抛出明确的异常
             }
 
             // 执行文件拷贝（高效方式）
             try {
+                Logger.log("拷贝文件");
                 Files.copy(sourcePath, destPath, StandardCopyOption.REPLACE_EXISTING);
                 Logger.log("Copied file from " + sourcePath + " to " + destPath);
             } catch (IOException e) {
+                Logger.log("拷贝文件失败");
                 Logger.log("Failed to copy file from " + sourcePath + " to " + destPath);
                 Logger.log(e);
                 return; // 或抛出明确的异常
