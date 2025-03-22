@@ -6,6 +6,8 @@ import com.github.catvod.spider.Logger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 public class LocalIndexService {
 
@@ -138,212 +140,287 @@ public class LocalIndexService {
     /**
      * 外部排序的主方法
      *
-     * @param order 排序顺序（"asc" 或 "desc"）
+     * @param inputFile  输入文件路径
+     * @param outputFile 输出文件路径
+     * @param order      排序顺序（"asc" 或 "desc"）
      * @return 合并后的临时文件路径
      * @throws IOException 如果文件读写失败
      */
-    public String externalSort(String order) throws IOException {
-        List<File> sortedChunks = sortInChunks(order);
-        return mergeSortedChunks(sortedChunks, order);
+    public String externalSort(String inputFile, String outputFile, String order) throws IOException {
+        List<File> sortedChunks = sortInChunks(inputFile, order);
+        return mergeSortedChunks(sortedChunks, outputFile, order);
     }
 
     /**
      * 将文件分块排序，返回排序后的临时文件列表
+     *
+     * @param inputFile 输入文件路径
+     * @param order     排序顺序
+     * @return 排序后的临时文件列表
+     * @throws IOException 如果文件读写失败
      */
-    private List<File> sortInChunks(String order) throws IOException {
+    private List<File> sortInChunks(String inputFile, String order) throws IOException {
         List<File> sortedChunks = new ArrayList<>();
-        try (BufferedReader reader = new BufferedReader(new FileReader(inputFilePath))) {
-            List<String[]> chunk = new ArrayList<>();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String[] fields = line.split("#");
-                chunk.add(fields);
-                if (chunk.size() >= MAX_LINES_IN_MEMORY) {
-                    sortedChunks.add(sortAndWriteChunk(chunk, order));
-                    chunk.clear();
-                }
-            }
-            if (!chunk.isEmpty()) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(inputFile))) {
+        List<String[]> chunk = new ArrayList<>();
+        String line;
+        while ((line = reader.readLine()) != null) {
+            String[] fields = line.split("#");
+            chunk.add(fields);
+            if (chunk.size() >= MAX_LINES_IN_MEMORY) {
                 sortedChunks.add(sortAndWriteChunk(chunk, order));
+                chunk.clear();
             }
         }
-        return sortedChunks;
-    }
-
-    /**
-     * 对内存中的块进行排序并写入临时文件
-     */
-    private File sortAndWriteChunk(List<String[]> chunk, String order) throws IOException {
-        chunk.sort(createComparator(order));
-        File tempFile = File.createTempFile("sortedChunk", ".txt", new File(cacheDirPath));
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile))) {
-            for (String[] fields : chunk) {
-                writer.write(String.join("#", fields));
-                writer.newLine();
-            }
-        }
-        return tempFile;
-    }
-
-    /**
-     * 解析字段为 double，如果字段不足、为空或非 double，则返回 0
-     */
-    private double parseFieldAsDouble(String[] fields, int index) {
-        if (fields == null || fields.length <= index) {
-            return 0.0; // 字段不足，返回 0
-        }
-        String field = fields[index];
-        if (field == null || field.trim().isEmpty()) {
-            return 0.0; // 字段为空，返回 0
-        }
-        try {
-            return Double.parseDouble(field); // 解析为 double
-        } catch (NumberFormatException e) {
-            return 0.0; // 字段非 double，返回 0
+        if (!chunk.isEmpty()) {
+            sortedChunks.add(sortAndWriteChunk(chunk, order));
         }
     }
+    return sortedChunks;
+}
 
-    /**
-     * 合并所有排序后的临时文件
-     *
-     * @param sortedChunks 排序后的临时文件列表
-     * @param order 排序顺序（"asc" 或 "desc"）
-     * @return 合并后的临时文件路径
-     * @throws IOException 如果文件读写失败
-     */
-    private String mergeSortedChunks(List<File> sortedChunks, String order) throws IOException {
-        PriorityQueue<BufferedLineReader> minHeap = new PriorityQueue<>(
-            Comparator.comparing(br -> br.currentFields, createComparator(order))
-        );
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputFilePath))) {
-            // 初始化堆
-            for (File file : sortedChunks) {
-                BufferedLineReader reader = new BufferedLineReader(file);
-                if (reader.readLine()) {
-                    minHeap.add(reader);
-                }
-            }
-            // 多路归并
-            while (!minHeap.isEmpty()) {
-                BufferedLineReader reader = minHeap.poll();
-                writer.write(String.join("#", reader.currentFields));
-                writer.newLine();
-                if (reader.readLine()) {
-                    minHeap.add(reader);
-                }
-            }
+/**
+ * 对内存中的块进行排序并写入临时文件
+ *
+ * @param chunk 内存中的数据块
+ * @param order 排序顺序
+ * @return 临时文件
+ * @throws IOException 如果文件读写失败
+ */
+private File sortAndWriteChunk(List<String[]> chunk, String order) throws IOException {
+    chunk.sort(createComparator(order));
+    File tempFile = File.createTempFile("sortedChunk", ".txt", new File(cacheDirPath));
+    try (BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile))) {
+        for (String[] fields : chunk) {
+            writer.write(String.join("#", fields));
+            writer.newLine();
         }
-        // 删除临时文件
+    }
+    return tempFile;
+}
+
+/**
+ * 合并所有排序后的临时文件
+ *
+ * @param sortedChunks 排序后的临时文件列表
+ * @param outputFile   输出文件路径
+ * @param order        排序顺序
+ * @return 合并后的文件路径
+ * @throws IOException 如果文件读写失败
+ */
+private String mergeSortedChunks(List<File> sortedChunks, String outputFile, String order) throws IOException {
+    PriorityQueue<BufferedLineReader> minHeap = new PriorityQueue<>(
+        Comparator.comparing(br -> br.currentFields, createComparator(order))
+    );
+    try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile))) {
+        // 初始化堆
         for (File file : sortedChunks) {
-            file.delete();
-        }
-        return outputFilePath; // 返回合并后的文件路径
-    }
-
-    /**
-     * 读取指定行
-     *
-     * @param lineNum 行号（从0开始）
-     * @return 指定行的内容
-     * @throws IOException 如果文件读写失败
-     */
-    public String getLine(int lineNum) throws IOException {
-        try (BufferedReader reader = new BufferedReader(new FileReader(outputFilePath))) {
-            String line;
-            int currentLine = 0;
-            while ((line = reader.readLine()) != null) {
-                if (currentLine == lineNum) {
-                    return line;
-                }
-                currentLine++;
+            BufferedLineReader reader = new BufferedLineReader(file);
+            if (reader.readLine()) {
+                minHeap.add(reader);
             }
         }
-        throw new IllegalArgumentException("Line number out of bounds");
-    }
-
-    /**
-     * 用于读取文件行的辅助类
-     */
-    private static class BufferedLineReader {
-        private final BufferedReader reader;
-        private String[] currentFields;
-
-        public BufferedLineReader(File file) throws FileNotFoundException {
-            this.reader = new BufferedReader(new FileReader(file));
-        }
-
-        public boolean readLine() throws IOException {
-            String line = reader.readLine();
-            if (line != null) {
-                currentFields = line.split("#");
-                return true;
-            } else {
-                reader.close();
-                return false;
+        // 多路归并
+        while (!minHeap.isEmpty()) {
+            BufferedLineReader reader = minHeap.poll();
+            writer.write(String.join("#", reader.currentFields));
+            writer.newLine();
+            if (reader.readLine()) {
+                minHeap.add(reader);
             }
         }
     }
+    // 删除临时文件
+    for (File file : sortedChunks) {
+        file.delete();
+    }
+    return outputFile; // 返回合并后的文件路径
+}
 
-    public static void test() {
-        try {
-            // 获取实例
-            LocalIndexService service = LocalIndexService.get("example:test/1");
-            Logger.log("初始化成功");
+/**
+ * 按字段排序（使用外部排序）
+ *
+ * @param inputFile  输入文件路径
+ * @param outputFile 输出文件路径
+ * @param order      排序顺序（"asc" 或 "desc"）
+ * @throws IOException 如果文件读写失败
+ */
+private void sortByField(String inputFile, String outputFile, String order) throws IOException {
+    externalSort(inputFile, outputFile, order);
+    Logger.log("Sorted by field: " + order);
+}
 
-            // 将 ./TV/ + "/index.all.txt" 拷贝到 BASE_DIR + sanitizedName + "/index.all.txt"
-            String sanitizedName = sanitizeName("example:test/1");
-            File sourceFile = new File(com.github.catvod.utils.Path.root().getPath() + "/TV/index.all.txt");
-            File destFile = new File(BASE_DIR + sanitizedName + "/index.all.txt");
-            Logger.log("Source file: " + sourceFile.getAbsolutePath());
-            Logger.log("Destination file: " + destFile.getAbsolutePath());
+/**
+ * 查询方法
+ *
+ * @param queryParams 查询参数，key 是查询方法，value 是查询参数
+ * @return 最终结果文件名
+ * @throws IOException 如果文件读写失败
+ */
+public String query(HashMap<String, String> queryParams) throws IOException {
+    // 生成缓存键
+    String cacheKey = generateCacheKey(queryParams);
+    String cacheFilePath = cacheDirPath + File.separator + cacheKey + ".txt";
 
-            // 确保目标目录存在
-            File parentDir = destFile.getParentFile();
-            if (parentDir != null) {
-                if (parentDir.mkdirs()) {
-                    Logger.log("Created parent directory: " + parentDir.getAbsolutePath());
-                } else {
-                    Logger.log("Failed to create parent directory: " + parentDir.getAbsolutePath());
-                    return; // 或抛出明确的异常
-                }
-            } else {
-                Logger.log("Destination path has no parent directory: " + destFile.getAbsolutePath());
-                return; // 或抛出明确的异常
+    // 如果缓存文件存在，直接返回
+    File cacheFile = new File(cacheFilePath);
+    if (cacheFile.exists()) {
+        Logger.log("Cache hit for query: " + cacheKey);
+        return cacheFilePath;
+    }
+
+    Logger.log("Cache miss for query: " + cacheKey);
+
+    // 初始输入文件
+    String currentInputFile = inputFilePath;
+
+    // 依次处理查询方法
+    for (Map.Entry<String, String> entry : queryParams.entrySet()) {
+        String method = entry.getKey();
+        String param = entry.getValue();
+
+        // 生成临时文件路径
+        String tempOutputFile = cacheDirPath + File.separator + "temp_" + UUID.randomUUID() + ".txt";
+
+        // 执行查询方法
+        switch (method) {
+            case "filter":
+                filterByField(currentInputFile, tempOutputFile, param);
+                break;
+            case "sort":
+                sortByField(currentInputFile, tempOutputFile, param);
+                break;
+            case "limit":
+                limitRows(currentInputFile, tempOutputFile, Integer.parseInt(param));
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown query method: " + method);
+        }
+
+        // 更新当前输入文件
+        currentInputFile = tempOutputFile;
+    }
+
+    // 将最终结果保存到缓存文件
+    Files.copy(Path.of(currentInputFile), Path.of(cacheFilePath), StandardCopyOption.REPLACE_EXISTING);
+    Logger.log("Query result saved to cache: " + cacheFilePath);
+
+    // 删除临时文件
+    new File(currentInputFile).delete();
+
+    return cacheFilePath;
+}
+
+/**
+ * 生成缓存键（MD5 哈希）
+ *
+ * @param queryParams 查询参数
+ * @return 缓存键
+ */
+private String generateCacheKey(HashMap<String, String> queryParams) {
+    try {
+        MessageDigest md = MessageDigest.getInstance("MD5");
+        String queryString = queryParams.toString();
+        byte[] hashBytes = md.digest(queryString.getBytes());
+        StringBuilder sb = new StringBuilder();
+        for (byte b : hashBytes) {
+            sb.append(String.format("%02x", b));
+        }
+        return sb.toString();
+    } catch (NoSuchAlgorithmException e) {
+        throw new RuntimeException("MD5 algorithm not found", e);
+    }
+}
+
+/**
+ * 按字段过滤
+ *
+ * @param inputFile  输入文件路径
+ * @param outputFile 输出文件路径
+ * @param fieldValue 字段值
+ * @throws IOException 如果文件读写失败
+ */
+private void filterByField(String inputFile, String outputFile, String fieldValue) throws IOException {
+    try (BufferedReader reader = new BufferedReader(new FileReader(inputFile));
+         BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile))) {
+        String line;
+        while ((line = reader.readLine()) != null) {
+            String[] fields = line.split("#");
+            if (fields.length > 0 && fields[0].equals(fieldValue)) {
+                writer.write(line);
+                writer.newLine();
             }
-
-            // 检查源文件是否存在
-            if (!sourceFile.exists()) {
-                Logger.log("Source file does not exist: " + sourceFile.getAbsolutePath());
-                return; // 或抛出明确的异常
-            }
-
-            // 执行文件拷贝（传统方式）
-            try (InputStream is = new FileInputStream(sourceFile);
-                OutputStream os = new FileOutputStream(destFile)) {
-                byte[] buffer = new byte[1024];
-                int length;
-                while ((length = is.read(buffer)) > 0) {
-                    os.write(buffer, 0, length);
-                }
-                Logger.log("Copied file from " + sourceFile.getAbsolutePath() + " to " + destFile.getAbsolutePath());
-            } catch (IOException e) {
-                Logger.log("Failed to copy file from " + sourceFile.getAbsolutePath() + " to " + destFile.getAbsolutePath());
-                Logger.log(e);
-                return; // 或抛出明确的异常
-            }
-
-            // 按第4个字段降序排序，并获取合并后的文件路径
-            String mergedFilePath = service.externalSort("desc");
-            Logger.log("Merged file path: " + mergedFilePath);
-
-            // 获取第100行
-            String line = service.getLine(99);
-            Logger.log(line);
-        } catch (IOException e) {
-            Logger.log(e);
-        } finally {
-            // 删除整个 /TV/index/ 目录
-            // LocalIndexService.deleteAllIndex();
         }
     }
+    Logger.log("Filtered by field: " + fieldValue);
+}
+
+/**
+ * 限制行数
+ *
+ * @param inputFile  输入文件路径
+ * @param outputFile 输出文件路径
+ * @param limit      行数限制
+ * @throws IOException 如果文件读写失败
+ */
+private void limitRows(String inputFile, String outputFile, int limit) throws IOException {
+    try (BufferedReader reader = new BufferedReader(new FileReader(inputFile));
+         BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile))) {
+        String line;
+        int count = 0;
+        while ((line = reader.readLine()) != null && count < limit) {
+            writer.write(line);
+            writer.newLine();
+            count++;
+        }
+    }
+    Logger.log("Limited rows: " + limit);
+}
+
+/**
+ * 用于读取文件行的辅助类
+ */
+private static class BufferedLineReader {
+    private final BufferedReader reader;
+    private String[] currentFields;
+
+    public BufferedLineReader(File file) throws FileNotFoundException {
+        this.reader = new BufferedReader(new FileReader(file));
+    }
+
+    public boolean readLine() throws IOException {
+        String line = reader.readLine();
+        if (line != null) {
+            currentFields = line.split("#");
+            return true;
+        } else {
+            reader.close();
+            return false;
+        }
+    }
+}
+
+/**
+ * 测试方法
+ */
+public static void test() {
+    try {
+        LocalIndexService service = LocalIndexService.get("example:test/1");
+
+        // 查询参数
+        HashMap<String, String> queryParams = new HashMap<>();
+        //queryParams.put("filter", "value1"); // 过滤字段值为 "value1" 的行
+        queryParams.put("sort", "desc");     // 按字段降序排序
+        queryParams.put("limit", "100");     // 限制 100 行
+
+        // 执行查询
+        String resultFile = service.query(queryParams);
+        Logger.log("Query result file: " + resultFile);
+    } catch (IOException e) {
+        Logger.log(e);
+    } finally {
+        // 删除整个 /TV/index/ 目录
+        LocalIndexService.deleteAllIndex();
+    }
+}
 }
