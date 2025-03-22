@@ -132,14 +132,14 @@ public class ExternalSort {
         }
     }
 
-    public static void main(String[] args) {
+    public static void test() {
         try {
-            // 示例：对 "input.txt" 按第2个字段排序，输出到 "output.txt"，获取第100行
-            externalSort("input.txt", "output.txt", 1); // 字段索引从0开始
+            String path = com.github.catvod.utils.Path.cache().getPath() + "/TV/";
+            externalSort(path + "/index.all.txt", path + "/output.txt", 0); // 字段索引从0开始
             String line = getLine("output.txt", 99); // 第100行的索引是99
-            System.out.println("第100行的内容: " + line);
+            Logger.log(line);
         } catch (IOException e) {
-            e.printStackTrace();
+            Logger.log(e);
         }
     }
 }
