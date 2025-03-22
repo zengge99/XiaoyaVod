@@ -12,8 +12,8 @@ public class LocalIndexService {
     private static final Map<String, LocalIndexService> instances = new HashMap<>(); // 实例缓存
     private static final String BASE_DIR = com.github.catvod.utils.Path.root().getPath() + "/TV/index/"; // 基础目录
 
-    private final String inputFilePath; // 输入文件路径
-    private final String cacheDirPath; // 缓存目录路径
+    private String inputFilePath; // 输入文件路径
+    private String cacheDirPath; // 缓存目录路径
     private String outputFilePath; // 输出文件路径
     private HashMap<String, String> queryCache = new HashMap<>();
 
