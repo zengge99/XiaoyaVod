@@ -284,9 +284,6 @@ public class LocalIndexService {
         }
     }
 
-    /**
-     * 测试方法
-     */
     public static void test() {
         try {
             // 获取实例
@@ -337,11 +334,11 @@ public class LocalIndexService {
             // 获取第100行
             String line = service.getLine(99);
             Logger.log(line);
-            
-            // 删除整个 /TV/index/ 目录
-            LocalIndexService.deleteAllIndex();
         } catch (IOException e) {
             Logger.log(e);
+        } finally {
+            // 删除整个 /TV/index/ 目录
+            LocalIndexService.deleteAllIndex();
         }
     }
 }
