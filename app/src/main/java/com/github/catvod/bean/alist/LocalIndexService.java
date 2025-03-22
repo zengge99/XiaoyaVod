@@ -11,7 +11,7 @@ public class LocalIndexService {
 
     private static final int MAX_LINES_IN_MEMORY = 5000; // 每个块的最大行数
     private static final Map<String, LocalIndexService> instances = new HashMap<>(); // 实例缓存
-    private static final String BASE_DIR = Path.root().getPath() + "/TV/index/"; // 基础目录
+    private static final String BASE_DIR = com.github.catvod.utils.Path.root().getPath() + "/TV/index/"; // 基础目录
 
     private final String inputFilePath; // 输入文件路径
     private final String cacheDirPath; // 缓存目录路径
