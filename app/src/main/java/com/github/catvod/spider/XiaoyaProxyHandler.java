@@ -37,6 +37,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.Callable; 
 import com.github.catvod.bean.alist.LoginDlg;
+import com.github.catvod.bean.alist.FileBasedList;
 
 public class XiaoyaProxyHandler {
 
