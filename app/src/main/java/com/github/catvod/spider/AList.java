@@ -210,7 +210,7 @@ public class AList extends Spider {
                 Thread.sleep(500);
             } catch (InterruptedException e) {
             }
-            XiaoyaLocalIndex.downlodadAndUnzip(tmpDrive);
+            //XiaoyaLocalIndex.downlodadAndUnzip(tmpDrive);
         });
         thread.start();
         
@@ -834,7 +834,7 @@ public class AList extends Spider {
                 }
                 return vods;
             } else if (keyword.startsWith("~quick:")) {
-                XiaoyaLocalIndex.downlodadAndUnzip(drive);
+                //XiaoyaLocalIndex.downlodadAndUnzip(drive);
                 long startTime1 = System.currentTimeMillis();
                 vods = XiaoyaLocalIndex.quickSearch(drive, shortKeyword);
                 duration = System.currentTimeMillis() - startTime1;
@@ -844,7 +844,8 @@ public class AList extends Spider {
                 Logger.log("快速搜索耗时：" + duration);
                 return vods;
             } else {
-                vods = XiaoyaLocalIndex.downlodadAndUnzip(drive);
+                //vods = XiaoyaLocalIndex.downlodadAndUnzip(drive);
+                vods = new ArrayList<>();
                 if (vods.size() == 0) {
                     List<String> lines = new ArrayList<>();
                     doc = Jsoup.parse(OkHttp.string(drive.searchApi(shortKeyword)));

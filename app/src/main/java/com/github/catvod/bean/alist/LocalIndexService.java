@@ -26,7 +26,7 @@ public class LocalIndexService {
      * @param name 实例唯一名字
      */
     private LocalIndexService(String name) {
-        inputList = new FileBasedList<String>(com.github.catvod.utils.Path.root().getPath() + "/TV/index.all.txt", String.class);
+        inputList = LocalIndexService.downlodadAndUnzip(name);
         outputList = new FileBasedList<String>(String.class);
     }
 
@@ -64,9 +64,6 @@ public class LocalIndexService {
         };
     }
 
-    /**
-     * 解析字段为 double，如果字段不足、为空或非 double，则返回 0
-     */
     private double parseFieldAsDouble(String[] fields, int index) {
         if (fields == null || fields.length <= index) {
             return 0.0; // 字段不足，返回 0
@@ -79,6 +76,17 @@ public class LocalIndexService {
             return Double.parseDouble(field); // 解析为 double
         } catch (NumberFormatException e) {
             return 0.0; // 字段非 double，返回 0
+        }
+    }
+
+    private double parseStringAsDouble(String input) {
+        if (TextUtils.isEmpty(input)) {
+            return 0.0; 
+        }
+        try {
+            return Double.parseDouble(input); 
+        } catch (NumberFormatException e) {
+            return 0.0;
         }
     }
 
@@ -152,16 +160,13 @@ public class LocalIndexService {
         return outputList.get(lineNum);
     }
 
-    /**
-     * 查询方法
-     *
-     * @param queryParams 查询参数，key 是查询方法，value 是查询参数
-     * @return 最终结果文件名
-     * @throws IOException 如果文件读写失败
-     */
     public List<String> query(LinkedHashMap<String, String> queryParams) throws IOException {
         List<String> currentInputList = inputList;
         try {
+            if (queryParams.containsKey("random")) {
+                queryParams.remove("random");
+            }
+
             String cacheKey = generateCacheKey(queryParams);
             if (queryCache.get(cacheKey) != null) {
                 Logger.log("Cache hit for query: " + cacheKey);
@@ -182,12 +187,11 @@ public class LocalIndexService {
                     case "subpath":
                         filterByPath(currentInputList, tempOutputList, param);
                         break;
-                    case "save":
-                        this.inputList = currentInputList;
-                        tempOutputList = currentInputList;
-                        break;
                     case "doubansort":
                         sortByDouban(currentInputList, tempOutputList, param);
+                        break;
+                    case "douban":
+                        filterByDouban(currentInputList, tempOutputList, param);
                         break;
                     default:
                         throw new IllegalArgumentException("Unknown query method: " + method);
@@ -229,14 +233,6 @@ public class LocalIndexService {
         }
     }
 
-    /**
-     * 按字段过滤
-     *
-     * @param inputFile  输入文件路径
-     * @param outputFile 输出文件路径
-     * @param fieldValue 字段值
-     * @throws IOException 如果文件读写失败
-     */
     private void filterByPath(List<String> inputSortList, List<String> outputSortList, String fieldValue) throws IOException {
         for (String line : inputSortList) {
             String[] fields = line.split("#");
@@ -245,6 +241,16 @@ public class LocalIndexService {
             }
         }
         Logger.log("Filtered by field: " + fieldValue);
+    }
+
+    private void filterByDouban(List<String> inputSortList, List<String> outputSortList, String fieldValue) throws IOException {
+        double filterValue = parseStringAsDouble(fieldValue);
+        for (String line : inputSortList) {
+            double actualValue = parseFieldAsDouble(line.split("#"), 3);
+            if (actualValue >= filterValue) {
+                outputSortList.add(line);
+            }
+        }
     }
 
     /**
@@ -276,7 +282,7 @@ public class LocalIndexService {
      */
     public static void test() {
         try {
-            LocalIndexService service = LocalIndexService.get("example:test/1");
+            LocalIndexService service = LocalIndexService.get("http://zengge99.f3322.org:5678/");
 
             // 第一次查询
             LinkedHashMap<String, String> queryParams = new LinkedHashMap<>();
