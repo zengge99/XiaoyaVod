@@ -140,7 +140,12 @@ public class FileBasedList<T> implements List<T> {
                 @Override
                 public T next() {
                     try {
-                        T item = gson.fromJson(nextLine, type); // 反序列化为对象
+                        T item;
+                        if (type == String.class) {
+                            item = (T) nextLine; // 直接返回字符串
+                        } else {
+                            item = gson.fromJson(nextLine, type); // 反序列化为对象
+                        }
                         nextLine = reader.readLine(); // 读取下一行
                         return item;
                     } catch (IOException e) {
@@ -194,9 +199,14 @@ public class FileBasedList<T> implements List<T> {
 
             for (T item : buffer) {
                 linePositions.add(currentPosition); // 记录新行的起始位置
-                String json = gson.toJson(item) + "\n";
-                writer.write(json);
-                currentPosition += json.getBytes(StandardCharsets.UTF_8).length; // 更新当前位置
+                String line;
+                if (type == String.class) {
+                    line = (String) item + "\n"; // 直接写入字符串
+                } else {
+                    line = gson.toJson(item) + "\n"; // 序列化为 JSON 字符串
+                }
+                writer.write(line);
+                currentPosition += line.getBytes(StandardCharsets.UTF_8).length; // 更新当前位置
             }
 
             writer.flush(); // 最终确保所有缓冲的数据都已写入文件
@@ -234,7 +244,7 @@ public class FileBasedList<T> implements List<T> {
             return true;
         }
     }
-    
+
     /**
      * 合并两个 FileBasedList 的文件内容
      * @param other 另一个 FileBasedList
@@ -245,12 +255,12 @@ public class FileBasedList<T> implements List<T> {
         if (other != this) {
             other.flushBuffer(); // 确保另一个文件的缓存数据写入文件
         }
-    
+
         try (BufferedWriter writer = new BufferedWriter(
                 new OutputStreamWriter(new FileOutputStream(file, true), StandardCharsets.UTF_8));
              BufferedReader reader = new BufferedReader(
                      new InputStreamReader(new FileInputStream(other.file), StandardCharsets.UTF_8))) {
-    
+
             long currentPosition = file.length(); // 获取当前文件长度作为初始位置
             String line;
             while ((line = reader.readLine()) != null) {
@@ -311,7 +321,11 @@ public class FileBasedList<T> implements List<T> {
 
             String line;
             while ((line = bufferedReader.readLine()) != null) {
-                return gson.fromJson(line, type); // 反序列化为对象
+                if (type == String.class) {
+                    return (T) line; // 直接返回字符串
+                } else {
+                    return gson.fromJson(line, type); // 反序列化为对象
+                }
             }
 
             throw new IllegalStateException("Failed to read the specified line");
@@ -420,7 +434,12 @@ public class FileBasedList<T> implements List<T> {
                         @Override
                         public IndexedItem<T> next() {
                             try {
-                                T item = gson.fromJson(nextLine, type); // 反序列化为对象
+                                T item;
+                                if (type == String.class) {
+                                    item = (T) nextLine; // 直接返回字符串
+                                } else {
+                                    item = gson.fromJson(nextLine, type); // 反序列化为对象
+                                }
                                 IndexedItem<T> indexedItem = new IndexedItem<>(item, currentLineNumber);
                                 nextLine = reader.readLine(); // 读取下一行
                                 currentLineNumber++; // 行号增加

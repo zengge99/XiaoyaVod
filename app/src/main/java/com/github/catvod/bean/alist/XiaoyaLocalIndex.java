@@ -48,7 +48,7 @@ public class XiaoyaLocalIndex {
             Logger.log(saveDir);
 
             // 0. 清空目录
-            deleteFiles(saveDir, null); // 删除 saveDir 中的所有文件
+            //deleteFiles(saveDir, null); // 删除 saveDir 中的所有文件
 
             // 1. 确保目录存在
             createDirectoryIfNotExists(saveDir);

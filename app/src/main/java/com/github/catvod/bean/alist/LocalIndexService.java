@@ -579,4 +579,40 @@ public class LocalIndexService {
             Logger.log(e);
         }
     }
+
+    /**
+     * 测试方法
+     */
+    public static void test() {
+        try {
+            LocalIndexService service = LocalIndexService.get("example:test/1");
+
+            // 第一次查询
+            LinkedHashMap<String, String> queryParams = new LinkedHashMap<>();
+            queryParams.put("subpath", "每日更新");     // 按字段降序排序
+            queryParams.put("save", ""); 
+            String resultFile = service.query(queryParams);
+            Logger.log("Query result file1: " + resultFile);
+
+            // 第二次查询
+            queryParams = new LinkedHashMap<>();
+            queryParams.put("doubansort", "desc");     // 按字段降序排序
+            queryParams.put("limit", "100");    // 限制 100 行
+            resultFile = service.query(queryParams);
+            Logger.log("Query result file2: " + resultFile);
+
+            // 测试分页
+            Logger.log("Page 1: " + service.page(1));
+
+            // 构建索引并测试快速搜索
+            service.buildIndex();
+            Logger.log("Quick search for keyword: " + service.quickSearch("漫长的季节"));
+
+            // 关闭资源
+            service.close();
+
+        } catch (IOException e) {
+            Logger.log(e);
+        }
+    }
 }
