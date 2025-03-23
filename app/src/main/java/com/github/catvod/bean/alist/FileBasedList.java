@@ -464,7 +464,7 @@ public class FileBasedList<T> implements List<T> {
         try {
             // 记录初始化开始时间
             startTime = System.currentTimeMillis();
-            List<String> list = new FileBasedList<String>(com.github.catvod.utils.Path.root().getPath() + "/TV/index/index.all.txt", String.class);
+            List<String> list = new FileBasedList<String>(com.github.catvod.utils.Path.root().getPath() + "/TV/index.all.txt", String.class);
             endTime = System.currentTimeMillis();
             Logger.log("初始化 FileBasedList 耗时: " + (endTime - startTime) + " 毫秒");
 
