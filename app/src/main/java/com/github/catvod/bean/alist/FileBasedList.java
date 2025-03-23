@@ -20,12 +20,18 @@ public class FileBasedList<T> implements List<T> {
     private final List<T> buffer; // 内存缓存
     private static final int BUFFER_SIZE = 1000; // 缓存大小
 
+    private final Map<Integer, T> cache; // 缓存最近访问的行数据
+    private int lastAccessedIndex = -1; // 上一次访问的行号
+    private RandomAccessFile lastAccessedFile; // 上一次访问的 RandomAccessFile
+    private BufferedReader lastAccessedReader; // 上一次访问的 BufferedReader
+
     public FileBasedList(String filePath, Class<T> type) {
         this.file = new File(filePath);
         this.gson = new Gson();
         this.type = type;
         this.linePositions = new ArrayList<>();
         this.buffer = new ArrayList<>(BUFFER_SIZE);
+        this.cache = new HashMap<>(); // 初始化缓存
 
         // 确保文件的父目录存在，如果不存在则创建所有缺失的父目录
         File parentDir = file.getParentFile();
@@ -311,28 +317,56 @@ public class FileBasedList<T> implements List<T> {
         if (index < 0 || index >= size) {
             throw new IndexOutOfBoundsException("Index " + index + " is out of bounds");
         }
-        flushBuffer();
-        try (
-                RandomAccessFile randomAccessFile = new RandomAccessFile(file, "r");
-                InputStreamReader reader = new InputStreamReader(new FileInputStream(randomAccessFile.getFD()), StandardCharsets.UTF_8);
-                BufferedReader bufferedReader = new BufferedReader(reader)
-        ) {
-            long position = linePositions.get(index); // 获取指定行的起始位置
-            randomAccessFile.seek(position); // 跳转到指定位置
 
-            String line;
-            while ((line = bufferedReader.readLine()) != null) {
-                if (type == String.class) {
-                    return (T) line; // 直接返回字符串
-                } else {
-                    return gson.fromJson(line, type); // 反序列化为对象
+        // 检查缓存
+        if (cache.containsKey(index)) {
+            return cache.get(index);
+        }
+
+        flushBuffer();
+        try {
+            // 如果是顺序访问（当前行号的下一个），则直接读取下一行
+            if (index == lastAccessedIndex + 1 && lastAccessedReader != null) {
+                String line = lastAccessedReader.readLine();
+                if (line != null) {
+                    T item = parseLine(line);
+                    cache.put(index, item); // 更新缓存
+                    lastAccessedIndex = index; // 更新最后访问的行号
+                    return item;
                 }
             }
 
-            throw new IllegalStateException("Failed to read the specified line");
+            // 否则，重新定位文件指针
+            if (lastAccessedFile == null) {
+                lastAccessedFile = new RandomAccessFile(file, "r");
+                lastAccessedReader = new BufferedReader(new InputStreamReader(new FileInputStream(lastAccessedFile.getFD()), StandardCharsets.UTF_8));
+            }
 
+            long position = linePositions.get(index); // 获取指定行的起始位置
+            lastAccessedFile.seek(position); // 跳转到指定位置
+
+            String line = lastAccessedReader.readLine();
+            if (line != null) {
+                T item = parseLine(line);
+                cache.put(index, item); // 更新缓存
+                lastAccessedIndex = index; // 更新最后访问的行号
+                return item;
+            }
+
+            throw new IllegalStateException("Failed to read the specified line");
         } catch (IOException e) {
             throw new RuntimeException("Failed to read from file", e);
+        }
+    }
+
+    /**
+     * 解析一行数据
+     */
+    private T parseLine(String line) {
+        if (type == String.class) {
+            return (T) line; // 直接返回字符串
+        } else {
+            return gson.fromJson(line, type); // 反序列化为对象
         }
     }
 
