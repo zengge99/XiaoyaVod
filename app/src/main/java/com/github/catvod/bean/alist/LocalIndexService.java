@@ -157,10 +157,6 @@ public class LocalIndexService {
         return outputList.subList(startLine, endLine);
     }
 
-    public String getLine(int lineNum) throws IOException {
-        return outputList.get(lineNum);
-    }
-
     public List<String> query(LinkedHashMap<String, String> queryParams) throws IOException {
         List<String> currentInputList = inputList;
         try {
@@ -293,8 +289,8 @@ public class LocalIndexService {
             Logger.log("Query result1: " + result.get(0));
 
             // 测试分页
-            Logger.log("Page 1: ");
-            Logger.log(service.page(1));
+            Pagger pagger = new Pager(result, 1000, true);
+            Logger.log("Query result2: " + pagger.page(1));
 
         } catch (IOException e) {
             Logger.log(e);
