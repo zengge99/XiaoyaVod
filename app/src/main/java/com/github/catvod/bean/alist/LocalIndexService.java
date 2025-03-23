@@ -289,7 +289,7 @@ public class LocalIndexService {
             LinkedHashMap<String, String> queryParams = new LinkedHashMap<>();
             queryParams.put("subpath", "每日更新");     // 按字段降序排序
             queryParams.put("doubansort", "desc");     // 按字段降序排序
-            result = service.query(queryParams);
+            List<String> result = service.query(queryParams);
             Logger.log("Query result1: " + result.get(0));
 
             // 测试分页
