@@ -27,7 +27,7 @@ public class LocalIndexService {
      * @param name 实例唯一名字
      */
     private LocalIndexService(String name) {
-        inputList = IndexDownloader.downlodadAndUnzip(name);
+        inputList = new FileBasedList<String>(IndexDownloader.downlodadAndUnzip(name), String.class);
         outputList = new FileBasedList<String>(String.class);
     }
 
