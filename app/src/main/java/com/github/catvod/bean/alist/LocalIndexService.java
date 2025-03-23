@@ -288,15 +288,9 @@ public class LocalIndexService {
             // 第一次查询
             LinkedHashMap<String, String> queryParams = new LinkedHashMap<>();
             queryParams.put("subpath", "每日更新");     // 按字段降序排序
-            queryParams.put("save", ""); 
-            List<String> result = service.query(queryParams);
-            Logger.log("Query result1: " + result.get(0));
-
-            // 第二次查询
-            queryParams = new LinkedHashMap<>();
             queryParams.put("doubansort", "desc");     // 按字段降序排序
             result = service.query(queryParams);
-            Logger.log("Query result2: " + result.get(0));
+            Logger.log("Query result1: " + result.get(0));
 
             // 测试分页
             Logger.log("Page 1: ");
