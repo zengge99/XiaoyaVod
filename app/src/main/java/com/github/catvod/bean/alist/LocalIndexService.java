@@ -5,6 +5,7 @@ import java.util.*;
 import com.github.catvod.spider.Logger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import android.text.TextUtils;
 
 public class LocalIndexService {
 
@@ -26,7 +27,7 @@ public class LocalIndexService {
      * @param name 实例唯一名字
      */
     private LocalIndexService(String name) {
-        inputList = LocalIndexService.downlodadAndUnzip(name);
+        inputList = IndexDownloader.downlodadAndUnzip(name);
         outputList = new FileBasedList<String>(String.class);
     }
 
