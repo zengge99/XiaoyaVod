@@ -454,4 +454,29 @@ public class FileBasedList<T> implements List<T> {
             throw new RuntimeException("Failed to initialize indexed stream", e);
         }
     }
+
+    /**
+     * 测试方法
+     */
+    public static void test() {
+        long startTime, endTime;
+        try {
+            // 记录初始化开始时间
+            startTime = System.currentTimeMillis();
+            List<String> list = new FileBasedList<String>(com.github.catvod.utils.Path.root().getPath() + "/TV/index/index.all.txt", String.class);
+            endTime = System.currentTimeMillis();
+            Logger.log("初始化 FileBasedList 耗时: " + (endTime - startTime) + " 毫秒");
+
+            // 记录获取元素开始时间
+            startTime = System.currentTimeMillis();
+            String item = list.get(1000);
+            endTime = System.currentTimeMillis();
+            Logger.log("获取第 1000 个元素耗时: " + (endTime - startTime) + " 毫秒");
+
+            Logger.log(item);
+
+        } catch (IOException e) {
+            Logger.log(e);
+        }
+    }
 }
