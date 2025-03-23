@@ -476,7 +476,7 @@ public class FileBasedList<T> implements List<T> {
 
             Logger.log(item);
 
-        } catch (IOException e) {
+        } catch (Exception e) {
             Logger.log(e);
         }
     }
