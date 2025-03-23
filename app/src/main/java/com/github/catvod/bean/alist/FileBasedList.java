@@ -472,9 +472,20 @@ public class FileBasedList<T> implements List<T> {
             startTime = System.currentTimeMillis();
             String item = list.get(1000);
             endTime = System.currentTimeMillis();
-            Logger.log("获取第 1000 个元素耗时: " + (endTime - startTime) + " 毫秒");
-
             Logger.log(item);
+            Logger.log("获取第 1000 个元素耗时: " + (endTime - startTime) + " 毫秒");
+            
+            List<String> filteredList = new FileBasedList<String>(String.class);
+
+            startTime = System.currentTimeMillis();
+            for (String s : list)
+            {
+                if (s.startsWith("电影")) {
+                    filteredList.add(s);
+                }
+            }
+            endTime = System.currentTimeMillis();
+            Logger.log("过滤列表耗时: " + (endTime - startTime) + " 毫秒");
 
         } catch (Exception e) {
             Logger.log(e);
