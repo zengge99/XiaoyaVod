@@ -289,7 +289,7 @@ public class LocalIndexService {
             Logger.log("Query result1: " + result.get(0));
 
             // 测试分页
-            Pagger pagger = new Pager(result, 1000, true);
+            Pager pagger = new Pager(result, 1000, true);
             Logger.log("Query result2: " + pagger.page(1));
 
         } catch (IOException e) {

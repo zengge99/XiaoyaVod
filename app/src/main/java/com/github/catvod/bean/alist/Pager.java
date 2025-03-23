@@ -1,3 +1,5 @@
+package com.github.catvod.bean.alist;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
