@@ -82,7 +82,7 @@ public class LocalIndexService {
         }
     }
 
-    public String externalSort(List<String> inputSortList, List<String> outputSortList, String order) throws IOException {
+    public List<String> externalSort(List<String> inputSortList, List<String> outputSortList, String order) throws IOException {
         List<List<String>> sortedChunks = sortInChunks(inputSortList, order);
         return mergeSortedChunks(sortedChunks, outputSortList, order);
     }
