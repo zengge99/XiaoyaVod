@@ -26,7 +26,6 @@ public class LocalIndexService {
      * @param name 实例唯一名字
      */
     private LocalIndexService(String name) {
-        String sanitizedName = sanitizeName(name); // 处理特殊字符
         inputList = new FileBasedList<String>(com.github.catvod.utils.Path.root().getPath() + "/TV/index.all.txt", String.class);
         outputList = new FileBasedList<String>(String.class);
     }
@@ -83,7 +82,7 @@ public class LocalIndexService {
         }
     }
 
-    public String externalSort(List<String> inputSortList, String outputSortList, String order) throws IOException {
+    public String externalSort(List<String> inputSortList, List<String> outputSortList, String order) throws IOException {
         List<List<String>> sortedChunks = sortInChunks(inputSortList, order);
         return mergeSortedChunks(sortedChunks, outputSortList, order);
     }
@@ -184,7 +183,7 @@ public class LocalIndexService {
                         filterByPath(currentInputList, tempOutputList, param);
                         break;
                     case "save":
-                        this.inputFilePath = currentInputList;
+                        this.inputList = currentInputList;
                         tempOutputList = currentInputList;
                         break;
                     case "doubansort":
@@ -203,7 +202,7 @@ public class LocalIndexService {
             return currentInputList;
 
         } finally {
-            this.outputFilePath = currentInputList;
+            this.outputList = currentInputList;
         }
     }
 
