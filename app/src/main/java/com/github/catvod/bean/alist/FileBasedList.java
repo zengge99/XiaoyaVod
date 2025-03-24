@@ -319,9 +319,9 @@ public class FileBasedList<T> implements List<T> {
         }
 
         // 检查缓存
-        //if (cache.containsKey(index)) {
-        //    return cache.get(index);
-        //}
+        if (cache.containsKey(index)) {
+            return cache.get(index);
+        }
 
         flushBuffer();
         try {
@@ -330,7 +330,7 @@ public class FileBasedList<T> implements List<T> {
                 String line = lastAccessedReader.readLine();
                 if (line != null) {
                     T item = parseLine(line);
-                    //cache.put(index, item); // 更新缓存
+                    cache.put(index, item); // 更新缓存
                     lastAccessedIndex = index; // 更新最后访问的行号
                     return item;
                 }
@@ -348,7 +348,7 @@ public class FileBasedList<T> implements List<T> {
             String line = lastAccessedReader.readLine();
             if (line != null) {
                 T item = parseLine(line);
-                //cache.put(index, item); // 更新缓存
+                cache.put(index, item); // 更新缓存
                 lastAccessedIndex = index; // 更新最后访问的行号
                 return item;
             }
