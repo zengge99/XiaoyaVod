@@ -6,6 +6,8 @@ import com.github.catvod.spider.Logger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import android.text.TextUtils;
+import com.github.catvod.net.OkHttp;
+import org.jsoup.nodes.Document;
 
 public class LocalIndexService {
 
@@ -15,18 +17,35 @@ public class LocalIndexService {
     private List<String> inputList;
     private HashMap<String, List<String>> queryCache = new HashMap<>();
 
-    private LocalIndexService(String name) {
-        inputList = new FileBasedList<String>(IndexDownloader.downlodadAndUnzip(name), String.class);
+    private LocalIndexService(String url) {
+        if (isOnline(url)) {
+            inputList = new FileBasedList<String>(String.class);
+            Document doc = Jsoup.parse(OkHttp.string(url));
+            for (Element a : doc.select("ul > a")) {
+                String line = a.text();
+                if (!line.contains("/"))
+                    continue;
+                inputList.add(a.text());
+            }
+            return;
+        }
+
+        inputList = new FileBasedList<String>(IndexDownloader.downlodadAndUnzip(url), String.class);
     }
 
-    public static LocalIndexService get(String name) {
-        Logger.log("Getting instance for name: " + name);
-        if (!instances.containsKey(name)) {
-            Logger.log("Creating new instance for name: " + name);
-            instances.put(name, new LocalIndexService(name));
+    private boolean isOnline(String path) {
+        return path.contains("/sou?");
+    }
+
+    public static LocalIndexService get(String url) {
+        if (isOnline(url)) {
+            return new LocalIndexService(url);
         }
-        Logger.log("Instance retrieved successfully for name: " + name);
-        return instances.get(name);
+
+        if (!instances.containsKey(url)) {
+            instances.put(url, new LocalIndexService(url));
+        }
+        return instances.get(url);
     }
 
     public List<String> externalSort(List<String> inputSortList, List<String> outputSortList, String order)

@@ -26,8 +26,8 @@ import android.os.Debug;
 public class IndexDownloader {
     private static Map<String, String> cacheMap = new HashMap<>();
 
-    public static synchronized String downlodadAndUnzip(String server) {
-        String filePath = cacheMap.get(server);
+    public static synchronized String downlodadAndUnzip(String url) {
+        String filePath = cacheMap.get(url);
         if (filePath != null) {
             return filePath;
         }
@@ -35,9 +35,9 @@ public class IndexDownloader {
         try {
             FileBasedList.clearCacheDirectory();
 
-            String fileUrl = server + "/tvbox/data";
+            String fileUrl = url + "/tvbox/data";
             String saveDir = com.github.catvod.utils.Path.root().getPath() + "/TV/index/"
-                     + server.replace(":", "_").replace("/", "_");
+                     + url.replace(":", "_").replace("/", "_");
 
             // 0. 清空目录
             deleteFiles(saveDir, null); // 删除 saveDir 中的所有文件
@@ -60,7 +60,7 @@ public class IndexDownloader {
             deleteFiles(saveDir, "*.tgz");
 
             filePath = saveDir + "/index.all.txt";
-            cacheMap.put(server, filePath);
+            cacheMap.put(url, filePath);
 
             Notify.show("本地索引下载完成");
             
