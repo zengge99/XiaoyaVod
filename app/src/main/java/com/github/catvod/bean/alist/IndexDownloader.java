@@ -33,7 +33,7 @@ public class IndexDownloader {
         }
 
         try {
-            Notify.show("开始下载本地索引");
+            //Notify.show("开始下载本地索引");
 
             FileBasedList.clearCacheDirectory();
 
@@ -64,17 +64,17 @@ public class IndexDownloader {
             filePath = saveDir + "/index.all.txt";
             cacheMap.put(url, filePath);
 
-            Notify.show("本地索引下载完成");
+            //Notify.show("本地索引下载完成");
             
         } catch (IOException e) {
-            Notify.show("本地索引下载失败");
+            //Notify.show("本地索引下载失败");
         }
 
         return filePath;
     }
     
     private static String getCacheDirPath() {
-        return com.github.catvod.utils.Path.root().getPath() + "/TV/index/";
+        return com.github.catvod.utils.Path.cache().getPath() + "/TV/index/";
     }
 
     public static void clearCacheDirectory() {
