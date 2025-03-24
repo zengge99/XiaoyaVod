@@ -24,19 +24,30 @@ public class LocalIndexService {
     private boolean slimed = false;
 
     private LocalIndexService(String url) {
+        List<String> tmpInputList = new FileBasedList<String>(String.class);
+        inputList = new FileBasedList<String>(String.class);
+        List<String> noPicList = new FileBasedList<String>(String.class);
         if (isOnline(url)) {
-            inputList = new FileBasedList<String>(String.class);
             Document doc = Jsoup.parse(OkHttp.string(url));
             for (Element a : doc.select("ul > a")) {
                 String line = a.text();
                 if (!line.contains("/"))
                     continue;
-                inputList.add(a.text());
+                tmpInputList.add(a.text());
             }
-            return;
+        } else {
+            tmpInputList = new FileBasedList<String>(IndexDownloader.downlodadAndUnzip(url), String.class);
         }
 
-        inputList = new FileBasedList<String>(IndexDownloader.downlodadAndUnzip(url), String.class);
+        for (String line : tmpInputList) {
+            String[] splits = line.split("#");
+            if (splits.length < 5 || splits[4].isEmpty()) {
+                noPicList.add(line);
+            } else {
+                inputList.add(line);
+            } 
+        }
+        inputList.addAll(noPicList);
     }
 
     private static boolean isOnline(String path) {

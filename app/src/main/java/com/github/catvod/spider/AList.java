@@ -531,6 +531,10 @@ public class AList extends Spider {
         return result;
     }
 
+    private List<String> doFilter(List<String> lines, HashMap<String, String> fl) {
+        return lines;
+    }
+
     private String alistCategoryContent(String tid, String pg, boolean filter, HashMap<String, String> extend)
             throws Exception {
         Logger.log(tid);
