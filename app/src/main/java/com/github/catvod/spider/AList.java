@@ -837,7 +837,7 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
             } else if (keyword.startsWith("~search:")) {
                 return LocalIndexService.get(drive.getName() + "/"+ drive.searchApi(shortKeyword)).query(new LinkedHashMap<String, String>());
             } else if (keyword.startsWith("~quick:")) {
-                return new ArrayList<>();
+                return LocalIndexService.get(drive).quickSearch(shortKeyword);
             } else {
                 LocalIndexService service = LocalIndexService.get(drive);
                 service.slim(drive.getPath());
