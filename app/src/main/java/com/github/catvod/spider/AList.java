@@ -370,14 +370,9 @@ public class AList extends Spider {
         } else {
             walkFolder(drive, path, from, url, false);
         }
-        Vod vod = vodMap.get(id);
-        //if (vod == null && id.endsWith("~soulist")) {
-        if (vod == null && id.endsWith("~xiaoya")) {
-            String keyword = path.substring(path.indexOf("/") + 1);
-            //小雅在线搜索按照路径搜索不可靠，有可能搜不到，直接用本地索引查找海报
-            //(new Job(drive.check(), "~search:" + keyword)).call();
-            (new Job(drive.check(), keyword)).call();
-            vod = vodMap.get(id);
+        Vod vod = null;
+        if (id.endsWith("~xiaoya")) {
+            vod = LocalIndexService.get(drive).findVodByPath(drive, path.substring(path.indexOf("/") + 1));
         }
         if (vod == null) {
             vod = new Vod();
@@ -421,12 +416,9 @@ public class AList extends Spider {
         String path = id.substring(0, id.lastIndexOf("/"));
         String name = path.substring(path.lastIndexOf("/") + 1);
         Drive drive = getDrive(key);
-        Vod vod = vodMap.get(id);
-        //if (vod == null && id.endsWith("~soufile")) {
-        if (vod == null && id.endsWith("~xiaoya")) {
-            String keyword = path.substring(path.indexOf("/") + 1);
-            (new Job(drive.check(), keyword)).call();
-            vod = vodMap.get(id);
+        Vod vod = null;
+        if (id.endsWith("~xiaoya")) {
+            vod = LocalIndexService.get(drive).findVodByPath(drive, path.substring(path.indexOf("/") + 1));
         }
         if (vod == null) {
             vod = new Vod();
@@ -441,7 +433,6 @@ public class AList extends Spider {
             vod.setVodPlayUrl(name + "$" + path);
         }
         
-        //if (id.endsWith("~soufile") && vod.doubanInfo.getYear().isEmpty() && !vod.doubanInfo.getId().isEmpty()) {
         if (id.endsWith("~xiaoya") && vod.doubanInfo.getYear().isEmpty() && !vod.doubanInfo.getId().isEmpty()) {
             vod.doubanInfo = DoubanParser.getDoubanInfo(vod.doubanInfo.getId(), vod.doubanInfo);
             vod.setVodContent(vod.doubanInfo.getPlot() + "\r\n\r\n文件路径: " + path.substring(path.indexOf("/") + 1));

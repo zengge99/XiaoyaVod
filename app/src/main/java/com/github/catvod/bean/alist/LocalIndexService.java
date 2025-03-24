@@ -305,7 +305,7 @@ public class LocalIndexService {
         if (input.size() > 0) {
             return toVods(drive, input).get(0);
         }
-        return new Vod();
+        return null;
     }
 
     public static List<Vod> toVods(Drive drive, List<String> lines) {
