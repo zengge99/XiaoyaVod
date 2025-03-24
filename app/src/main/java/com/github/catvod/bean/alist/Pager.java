@@ -9,21 +9,21 @@ public class Pager {
     private List<String> inputList; // 存储输入的列表
     private List<Integer> randomIndices; // 存储随机选择的索引
     private static final int PAGE_SIZE = 72; // 每页固定大小为 72
-    public int limit;
-    public int total;
-    public int count;
+    public int limit = 0;
+    public int total = 0;
+    public int count = 0;
 
     public Pager(List<String> inputList, int randomOutputSize, boolean isKeepOrder) {
-
-        limit = PAGE_SIZE;
-        total = this.inputList.size();
-        count = (total + limit - 1) / limit;
 
         if (inputList == null || inputList.isEmpty()) {
             this.inputList = new ArrayList<>();
             this.randomIndices = new ArrayList<>();
             return;
         }
+
+        limit = PAGE_SIZE;
+        total = this.inputList.size();
+        count = (total + limit - 1) / limit;
 
         this.inputList = new ArrayList<>(inputList);
 
