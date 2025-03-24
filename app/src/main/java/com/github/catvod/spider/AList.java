@@ -776,7 +776,7 @@ public class AList extends Spider {
         return sub;
     }
 
-    class Job implements Callable<List<Vod>> {
+    class Job implements Callable<List<String>> {
 
         private final Drive drive;
         private final String keyword;
