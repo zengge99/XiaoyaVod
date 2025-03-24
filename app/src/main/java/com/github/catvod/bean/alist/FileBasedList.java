@@ -1,4 +1,4 @@
- package com.github.catvod.bean.alist;
+package com.github.catvod.bean.alist;
 
 import com.google.gson.Gson;
 import java.io.*;
