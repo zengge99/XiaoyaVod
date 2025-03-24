@@ -65,6 +65,7 @@ public class AList extends Spider {
     private String xiaoyaAlistToken;
     private Map<String, Vod> vodMap = new HashMap<>();
     private Map<String, List<String>> driveLinesMap = new HashMap<>();
+    private Map<String, Pager> drivePagerMap = new HashMap<>();
     private ExecutorService executor = Executors.newCachedThreadPool();
 
     private List<Filter> getFilter(String tid) {
@@ -517,31 +518,33 @@ public class AList extends Spider {
         HashMap<String, String> fl = extend;
         drive.fl = fl;
         List<String> lines = driveLinesMap.get(drive.getName());
+        Pager pager = drivePagerMap.get(drive.getName());;
         if(lines == null || pg.equals("1")) {
             if (drive.getName().equals("每日更新")) {
                 lines = (new Job(drive.check(), "~daily:100000")).call();
             } else {
                 lines = (new Job(drive.check(), drive.getPath())).call();
             }
-        }
 
-        Pager pager;
-        boolean keepOrder = false;
-        String doubansort = fl.get("doubansort");
-        if (doubansort != null && !doubansort.equals("0")) {
-            keepOrder = true;
-        }
+            boolean keepOrder = false;
+            String doubansort = fl.get("doubansort");
+            if (doubansort != null && !doubansort.equals("0")) {
+                keepOrder = true;
+            }
 
-        String random = fl.get("random");
-        if (random != null && !random.equals("0")) {
-            pager = new Pager(lines, random, keepOrder);
-        } else {
-            pager = new Pager(lines, 0, false);
+            String random = fl.get("random");
+            if (random != null && !random.equals("0")) {
+                pager = new Pager(lines, Integer.parseInt(random), keepOrder);
+            } else {
+                pager = new Pager(lines, 0, false);
+            }
+
         }
 
         List<Vod> list = LocalIndexService.toVods(drive, pager.page(Integer.parseInt(pg)));
 
         driveLinesMap.put(drive.getName(), lines);
+        drivePagerMap.put(drive.getName(), pager);
         result = Result.get().vod(list).page(Integer.parseInt(pg), pager.count, pager.limit, pager.count).string();
         Logger.log(result);
         return result;
