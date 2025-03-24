@@ -170,7 +170,7 @@ public class LocalIndexService {
             filterByPath(inputList, outputSortList, path);
             inputList = outputSortList;
         } catch (Exception e) {
-            Logge.log(e);
+            Logger.log(e);
         }
     }
 
