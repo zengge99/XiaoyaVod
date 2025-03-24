@@ -21,6 +21,7 @@ import com.github.catvod.crawler.SpiderDebug;
 import com.github.catvod.net.OkHttp;
 import com.github.catvod.utils.Util;
 import com.github.catvod.utils.Notify;
+import com.github.catvod.bean.alist.FileBasedList;
 import com.github.catvod.bean.alist.LocalIndexService;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -199,8 +200,8 @@ public class AList extends Spider {
 
         List<Vod> list = new ArrayList<>();
         if (defaultDrive != null) {
-            List<String> result = (new Job(defaultDrive.check(), "~daily:1000")).call();
-            list = LocalIndexService.toVods(drive, result);
+            List<String> lines = (new Job(defaultDrive.check(), "~daily:1000")).call();
+            list = LocalIndexService.toVods(drive, lines);
         }
 
         String result = Result.string(classes, list, filters);
@@ -278,7 +279,7 @@ public class AList extends Spider {
 
         for (Drive drive : drives) {
             if (drive.search()) {
-                Future<List<Vod>> future;
+                Future<List<String>> future;
                 if (quick) {
                     future = executor.submit(new Job(drive.check(), "~quick:" + keyword));
                 } else {
@@ -289,15 +290,13 @@ public class AList extends Spider {
         }
 
         // 处理每个Future的结果，并为每个Vod设置正确的vodDrive
-        for (AbstractMap.SimpleEntry<Future<List<Vod>>, String> entry : futuresWithDrives) {
-            Future<List<Vod>> future = entry.getKey();
+        for (AbstractMap.SimpleEntry<Future<List<String>>, String> entry : futuresWithDrives) {
+            Future<List<String>> future = entry.getKey();
             String driveName = entry.getValue();
             try {
-                List<Vod> vods = future.get(15, TimeUnit.SECONDS);
-                for (Vod vod : vods) {
-                    vod.setVodDrive(driveName); // 设置vodDrive
-                }
-                list.addAll(vods);
+                List<String> tmpLines = future.get(15, TimeUnit.SECONDS);
+                Drive tmpDrive = drives.get(drives.indexOf(new Drive(driveName))).check();
+                list.addAll(LocalIndexService.toVods(tmpDrive, tmpLines));
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
                 e.printStackTrace();
             }
@@ -520,16 +519,13 @@ public class AList extends Spider {
             return result;
         }
 
-        list = new ArrayList<>();
+        List<String> lines;
         if (drive.getName().equals("每日更新")) {
-            list = (new Job(drive.check(), "~daily:100000")).call();
+            lines = (new Job(drive.check(), "~daily:100000")).call();
         } else {
-            list = (new Job(drive.check(), drive.getPath())).call();
+            lines = (new Job(drive.check(), drive.getPath())).call();
         }
-
-        if (filter) {
-            list = VodSorter.sortVods(list, extend);
-        }
+        list = LocalIndexService.toVods(drive, lines);
 
         driveVodsMap.put(drive.getName(), list);
         result = Result.get().vod(list).page(pg).vodDrive(drive.getName()).string();
