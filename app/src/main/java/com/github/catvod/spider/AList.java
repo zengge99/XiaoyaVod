@@ -514,7 +514,8 @@ public class AList extends Spider {
         fetchRule();
         String key = tid.contains("/") ? tid.substring(0, tid.indexOf("/")) : tid;
         Drive drive = getDrive(key);
-        drive.fl = extend;
+        HashMap<String, String> fl = extend;
+        drive.fl = fl;
         List<String> lines = driveLinesMap.get(drive.getName());
         if(lines == null || pg.equals("1")) {
             if (drive.getName().equals("每日更新")) {
