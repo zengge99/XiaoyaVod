@@ -289,6 +289,21 @@ public class LocalIndexService {
         }
     }
 
+    public Vod findVodByPath(Drive drive, String path) {
+        List<String> input = new ArrayList<>();
+        for (String line : inputList) {
+            String[] splits = line.split("#");
+            if (splits[0].equals(path)) {
+                input.add(line);
+                break;
+            }
+        }
+        if (input.size() > 0) {
+            return toVods(drive, input)[0];
+        }
+        return new Vod();
+    }
+
     public static List<Vod> toVods(Drive drive, List<String> lines) {
         List<Vod> list = new ArrayList<>();
         List<Vod> noPicList = new ArrayList<>();
