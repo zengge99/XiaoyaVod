@@ -21,6 +21,7 @@ import com.github.catvod.crawler.SpiderDebug;
 import com.github.catvod.net.OkHttp;
 import com.github.catvod.utils.Util;
 import com.github.catvod.utils.Notify;
+import com.github.catvod.bean.alist.LocalIndexService;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -198,7 +199,8 @@ public class AList extends Spider {
 
         List<Vod> list = new ArrayList<>();
         if (defaultDrive != null) {
-            list = (new Job(defaultDrive.check(), "~daily:1000")).call();
+            List<String> result = (new Job(defaultDrive.check(), "~daily:1000")).call();
+            list = LocalIndexService.toVods(drive, result);
         }
 
         String result = Result.string(classes, list, filters);
@@ -210,7 +212,7 @@ public class AList extends Spider {
                 Thread.sleep(500);
             } catch (InterruptedException e) {
             }
-            //XiaoyaLocalIndex.downlodadAndUnzip(tmpDrive);
+            LocalIndexService.get(tmpDrive.getServer()).slim(tmpDrive.getPath());
         });
         thread.start();
         
@@ -789,89 +791,28 @@ public class AList extends Spider {
         }
 
         @Override
-        public List<Vod> call() {
+        public List<String> call() {
             return xiaoya();
         }
 
-        private List<Vod> xiaoya() {
+        private List<String> xiaoya() {
             Logger.log("xiaoya:" + keyword + "drive:" + drive.getName());
-            long startTime = System.currentTimeMillis();
-            long duration = 0;
-            List<Vod> list = new ArrayList<>();
             String shortKeyword = keyword;
             if (keyword.contains(":")) {
                 shortKeyword = keyword.split(":")[1];
             }
             shortKeyword = shortKeyword.length() < 30 ? shortKeyword : shortKeyword.substring(0, 30);
-            Document doc;
-            List<Vod> vods = new ArrayList<>();
             if (keyword.startsWith("~daily:")) {
-                List<String> lines = new ArrayList<>();
-                doc = Jsoup.parse(OkHttp.string(drive.dailySearchApi(shortKeyword)));
-                for (Element a : doc.select("ul > a")) {
-                    String line = a.text();
-                    if (!line.contains("/"))
-                        continue;
-                    lines.add(a.text());
-                }
-                vods = XiaoyaLocalIndex.toVods(drive, lines);
-                for (Vod vod : vods) {
-                    vodMap.put(drive.getName() + vod.getVodIdWithoutDrivePrefix(), vod);
-                }
-                return vods;
+                return LocalIndexService.get(drive.dailySearchApi(shortKeyword)).query(new LinkedHashMap<String, String>());
             } else if (keyword.startsWith("~search:")) {
-                List<String> lines = new ArrayList<>();
-                doc = Jsoup.parse(OkHttp.string(drive.searchApi(shortKeyword)));
-                for (Element a : doc.select("ul > a")) {
-                    String line = a.text();
-                    if (!line.contains("/"))
-                        continue;
-                    lines.add(a.text());
-                }
-                vods = XiaoyaLocalIndex.toVods(drive, lines);
-                for (Vod vod : vods) {
-                    vodMap.put(drive.getName() + vod.getVodIdWithoutDrivePrefix(), vod);
-                }
-                return vods;
+                return LocalIndexService.get(drive.searchApi(shortKeyword)).query(new LinkedHashMap<String, String>());
             } else if (keyword.startsWith("~quick:")) {
-                //XiaoyaLocalIndex.downlodadAndUnzip(drive);
-                long startTime1 = System.currentTimeMillis();
-                vods = XiaoyaLocalIndex.quickSearch(drive, shortKeyword);
-                duration = System.currentTimeMillis() - startTime1;
-                for (Vod vod : vods) {
-                    vodMap.put(drive.getName() + vod.getVodIdWithoutDrivePrefix(), vod);
-                }
-                Logger.log("快速搜索耗时：" + duration);
-                return vods;
+                return new ArrayList<>();
             } else {
-                //vods = XiaoyaLocalIndex.downlodadAndUnzip(drive);
-                vods = new ArrayList<>();
-                if (vods.size() == 0) {
-                    List<String> lines = new ArrayList<>();
-                    doc = Jsoup.parse(OkHttp.string(drive.searchApi(shortKeyword)));
-                    for (Element a : doc.select("ul > a")) {
-                        String line = a.text();
-                        if (!line.contains("/"))
-                            continue;
-                        lines.add(a.text());
-                    }
-                    vods = XiaoyaLocalIndex.toVods(drive, lines);
-                }
+                LocalIndexService service = LocalIndexService.get(drive.getServer());
+                return service.slim(drive.getPath());
             }
-
-            List<Vod> filteredVods = new ArrayList<>();
-            for (Vod vod : vods) {
-                if (!vod.getVodIdWithoutDrivePrefix().startsWith(drive.getPath())) {
-                    continue;
-                }
-
-                filteredVods.add(vod);
-                vodMap.put(drive.getName() + vod.getVodIdWithoutDrivePrefix(), vod);
-            }
-            duration = System.currentTimeMillis() - startTime;
-            Logger.log("搜索耗时：" + duration);
-
-            return filteredVods;
+            retur new ArrayList<>();
         }
     }
 }

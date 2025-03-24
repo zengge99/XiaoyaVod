@@ -164,14 +164,19 @@ public class LocalIndexService {
         }
     }
 
-    public void slim(String path) {
+    public List<String> slim(String path) {
         try {
+            if (path.startsWith("/")) {
+                path = path.substring(1);
+            }
             List<String> outputSortList = new FileBasedList<String>(String.class);
             filterByPath(inputList, outputSortList, path);
             inputList = outputSortList;
+            return inputList;
         } catch (Exception e) {
             Logger.log(e);
         }
+        return new ArrayList<>();
     }
 
     private void sortByDouban(List<String> inputSortList, List<String> outputSortList, String order)

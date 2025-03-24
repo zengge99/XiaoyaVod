@@ -33,6 +33,8 @@ public class IndexDownloader {
         }
 
         try {
+            Notify.show("开始下载本地索引");
+
             FileBasedList.clearCacheDirectory();
 
             String fileUrl = url + "/tvbox/data";
