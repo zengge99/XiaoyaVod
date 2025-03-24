@@ -208,13 +208,14 @@ public class AList extends Spider {
         String result = Result.string(classes, list, filters);
         Logger.log(result);
 
-        Drive tmpDrive = defaultDrive;
         Thread thread = new Thread(() -> {
             try {
                 Thread.sleep(500);
             } catch (InterruptedException e) {
             }
-            LocalIndexService.get(tmpDrive.getName() + "/" + tmpDrive.getServer()).slim(tmpDrive.getPath());
+            for (Drive d : drives) {
+                LocalIndexService.get(d.getName() + "/" + d.getServer()).slim(d.getPath());
+            }
         });
         thread.start();
         
