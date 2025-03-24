@@ -532,7 +532,7 @@ public class AList extends Spider {
         list = LocalIndexService.toVods(drive, pager.page(Integer.parseInt(pg)));
 
         driveVodsMap.put(drive.getName(), list);
-        result = Result.get().vod(list).page(Integer.parseInt(pg), pager.count, pager.limit, pager.count).vodDrive(drive.getName()).string();
+        result = Result.get().vod(list).page(Integer.parseInt(pg), pager.count, pager.limit, pager.count).string();
         Logger.log(result);
         return result;
     }
