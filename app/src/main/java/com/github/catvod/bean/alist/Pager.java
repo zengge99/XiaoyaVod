@@ -9,15 +9,16 @@ public class Pager {
     private List<String> inputList; // 存储输入的列表
     private List<Integer> randomIndices; // 存储随机选择的索引
     private static final int PAGE_SIZE = 72; // 每页固定大小为 72
+    public int limit;
+    public int total;
+    public int count;
 
-    /**
-     * 构造函数
-     *
-     * @param inputList        输入的列表
-     * @param randomOutputSize 随机结果个数（0 表示不随机化）
-     * @param isKeepOrder      是否保持顺序（true 为保序，false 为乱序）
-     */
     public Pager(List<String> inputList, int randomOutputSize, boolean isKeepOrder) {
+
+        limit = PAGE_SIZE;
+        total = this.inputList.size();
+        count = (total + limit - 1) / limit;
+
         if (inputList == null || inputList.isEmpty()) {
             this.inputList = new ArrayList<>();
             this.randomIndices = new ArrayList<>();
@@ -50,13 +51,6 @@ public class Pager {
         }
     }
 
-    /**
-     * 随机选择 randomOutputSize 个索引，顺序随机
-     *
-     * @param totalSize        输入列表的大小
-     * @param randomOutputSize 随机结果个数
-     * @return 返回选中的索引列表
-     */
     private List<Integer> randomlySelectIndices(int totalSize, int randomOutputSize) {
         List<Integer> indices = new ArrayList<>();
         for (int i = 0; i < totalSize; i++) {
@@ -66,13 +60,6 @@ public class Pager {
         return indices.subList(0, randomOutputSize);
     }
 
-    /**
-     * 随机选择 randomOutputSize 个索引，但保持相对顺序
-     *
-     * @param totalSize        输入列表的大小
-     * @param randomOutputSize 随机结果个数
-     * @return 返回选中的索引列表
-     */
     private List<Integer> randomlySelectIndicesWithOrder(int totalSize, int randomOutputSize) {
         List<Integer> indices = new ArrayList<>();
         for (int i = 0; i < totalSize; i++) {
@@ -84,12 +71,6 @@ public class Pager {
         return selectedIndices;
     }
 
-    /**
-     * 获取指定页的内容
-     *
-     * @param pageNum 页码（从 1 开始）
-     * @return 返回当前页的数据列表
-     */
     public List<String> page(int pageNum) {
         if (pageNum < 1 || randomIndices.isEmpty()) {
             return new ArrayList<>();
@@ -108,14 +89,5 @@ public class Pager {
         }
 
         return pageContent;
-    }
-
-    /**
-     * 获取总页数
-     *
-     * @return 总页数
-     */
-    public int getTotalPages() {
-        return (int) Math.ceil((double) randomIndices.size() / PAGE_SIZE);
     }
 }
