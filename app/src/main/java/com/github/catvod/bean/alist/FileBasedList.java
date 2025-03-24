@@ -62,7 +62,7 @@ public class FileBasedList<T> implements List<T> {
     }
 
     private static String getCacheDirPath() {
-        return com.github.catvod.utils.Path.root() + "/TV/list/";
+        return com.github.catvod.utils.Path.cache() + "/TV/list/";
     }
 
     public static void clearCacheDirectory() {
