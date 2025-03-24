@@ -808,7 +808,6 @@ public class AList extends Spider {
                 LocalIndexService service = LocalIndexService.get(drive.getServer());
                 return service.slim(drive.getPath());
             }
-            return new ArrayList<>();
         }
     }
 }
