@@ -24,30 +24,18 @@ public class LocalIndexService {
     private boolean slimed = false;
 
     private LocalIndexService(String url) {
-        List<String> tmpInputList = new FileBasedList<String>(String.class);
         inputList = new FileBasedList<String>(String.class);
-        List<String> noPicList = new FileBasedList<String>(String.class);
         if (isOnline(url)) {
             Document doc = Jsoup.parse(OkHttp.string(url));
             for (Element a : doc.select("ul > a")) {
                 String line = a.text();
                 if (!line.contains("/"))
                     continue;
-                tmpInputList.add(a.text());
+                inputList.add(a.text());
             }
         } else {
-            tmpInputList = new FileBasedList<String>(IndexDownloader.downlodadAndUnzip(url), String.class);
+            inputList = new FileBasedList<String>(IndexDownloader.downlodadAndUnzip(url), String.class);
         }
-
-        for (String line : tmpInputList) {
-            String[] splits = line.split("#");
-            if (splits.length < 5 || splits[4].isEmpty()) {
-                noPicList.add(line);
-            } else {
-                inputList.add(line);
-            } 
-        }
-        inputList.addAll(noPicList);
     }
 
     private static boolean isOnline(String path) {
@@ -275,12 +263,18 @@ public class LocalIndexService {
 
     private void filterByPath(List<String> inputSortList, List<String> outputSortList, String fieldValue)
             throws IOException {
+        List<String> noPicList = new FileBasedList<String>(String.class);
         for (String line : inputSortList) {
             String[] fields = line.split("#");
             if (fields.length > 0 && fields[0].startsWith(fieldValue)) {
-                outputSortList.add(line);
+                if (fields.length < 5 || fields[4].isEmpty()) {
+                    noPicList.add(line);
+                } else {
+                    outputSortList.add(line);
+                } 
             }
         }
+        outputSortList.addAll(noPicList);
         Logger.log("Filtered by field: " + fieldValue);
     }
 
