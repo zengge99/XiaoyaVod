@@ -523,7 +523,20 @@ public class AList extends Spider {
             }
         }
 
-        Pager pager = new Pager(lines, 0, false);
+        Pager pager;
+        boolean keepOrder = false;
+        String doubansort = fl.get("doubansort");
+        if (doubansort != null && !doubansort.equals("0")) {
+            keepOrder = true;
+        }
+
+        String random = fl.get("random");
+        if (random != null && !random.equals("0")) {
+            pager = new Pager(lines, random, keepOrder);
+        } else {
+            pager = new Pager(lines, 0, false);
+        }
+
         List<Vod> list = LocalIndexService.toVods(drive, pager.page(Integer.parseInt(pg)));
 
         driveLinesMap.put(drive.getName(), lines);
