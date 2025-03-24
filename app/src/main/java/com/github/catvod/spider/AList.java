@@ -215,7 +215,7 @@ public class AList extends Spider {
             } catch (InterruptedException e) {
             }
             for (Drive d : drives) {
-                if (!d.noPoster()) {
+                if (!d.noPoster() || d.search()) {
                     LocalIndexService.get(d).slim(d.getPath());
                 }
             }
