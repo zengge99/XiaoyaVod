@@ -64,7 +64,7 @@ public class AList extends Spider {
     private String ext;
     private String xiaoyaAlistToken;
     private Map<String, Vod> vodMap = new HashMap<>();
-    private Map<String, List<Vod>> driveVodsMap = new HashMap<>();
+    private Map<String, List<String>> driveLinesMap = new HashMap<>();
     private ExecutorService executor = Executors.newCachedThreadPool();
 
     private List<Filter> getFilter(String tid) {
@@ -513,25 +513,19 @@ public class AList extends Spider {
         fetchRule();
         String key = tid.contains("/") ? tid.substring(0, tid.indexOf("/")) : tid;
         Drive drive = getDrive(key);
-        List<Vod> list = driveVodsMap.get(drive.getName());
-        if(list != null && !pg.equals("1")) {
-            result = Result.get().vod(list).page(pg).vodDrive(drive.getName()).string();
-            Logger.log(result);
-            return result;
-        }
-
-        List<String> lines;
-        if (drive.getName().equals("每日更新")) {
-            lines = (new Job(drive.check(), "~daily:100000")).call();
-        } else {
-            lines = (new Job(drive.check(), drive.getPath())).call();
+        List<String> lines = driveLinesMap.get(drive.getName());
+        if(lines == null || pg.equals("1")) {
+            if (drive.getName().equals("每日更新")) {
+                lines = (new Job(drive.check(), "~daily:100000")).call();
+            } else {
+                lines = (new Job(drive.check(), drive.getPath())).call();
+            }
         }
 
         Pager pager = new Pager(lines, 0, false);
+        List<Vod> list = LocalIndexService.toVods(drive, pager.page(Integer.parseInt(pg)));
 
-        list = LocalIndexService.toVods(drive, pager.page(Integer.parseInt(pg)));
-
-        driveVodsMap.put(drive.getName(), list);
+        driveLinesMap.put(drive.getName(), lines);
         result = Result.get().vod(list).page(Integer.parseInt(pg), pager.count, pager.limit, pager.count).string();
         Logger.log(result);
         return result;
