@@ -250,13 +250,15 @@ public class FileBasedList<T> implements List<T> {
         if (index < 0 || index >= size) {
             throw new IndexOutOfBoundsException("Index " + index + " is out of bounds");
         }
-
+    
+        // 检查缓存
         if (cache.containsKey(index)) {
             return cache.get(index);
         }
-
+    
         flushBuffer();
         try {
+            // 如果是顺序访问（当前行号的下一个），则直接读取下一行
             if (index == lastAccessedIndex + 1 && lastAccessedReader != null) {
                 String line = lastAccessedReader.readLine();
                 if (line != null) {
@@ -266,14 +268,16 @@ public class FileBasedList<T> implements List<T> {
                     return item;
                 }
             }
-
+    
+            // 否则，重新定位文件指针并初始化 BufferedReader
             if (lastAccessedFile == null) {
                 lastAccessedFile = new RandomAccessFile(file, "r");
-                lastAccessedReader = new BufferedReader(new InputStreamReader(new FileInputStream(lastAccessedFile.getFD()), StandardCharsets.UTF_8));
             }
-
+    
             long position = linePositions.get(index);
             lastAccessedFile.seek(position);
+            lastAccessedReader = new BufferedReader(new InputStreamReader(new FileInputStream(lastAccessedFile.getFD()), StandardCharsets.UTF_8));
+    
             String line = lastAccessedReader.readLine();
             if (line != null) {
                 T item = parseLine(line);
@@ -286,7 +290,7 @@ public class FileBasedList<T> implements List<T> {
             throw new RuntimeException("Failed to read from file", e);
         }
     }
-
+    
     private T parseLine(String line) {
         return type == String.class ? (T) line : gson.fromJson(line, type);
     }
