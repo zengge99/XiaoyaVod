@@ -22,6 +22,7 @@ public class LocalIndexService {
     private List<String> inputList;
     private HashMap<String, List<String>> queryCache = new HashMap<>();
     private boolean slimed = false;
+    private Map<String, List<Integer>> invertedIndex; // 倒排索引，保存行号
 
     private LocalIndexService(String url) {
         inputList = new FileBasedList<String>(String.class);
@@ -186,12 +187,37 @@ public class LocalIndexService {
             List<String> outputSortList = new FileBasedList<String>(String.class);
             filterByPath(inputList, outputSortList, path);
             inputList = outputSortList;
+            buildInvertedIndex();
             slimed = true;
             return inputList;
         } catch (Exception e) {
             Logger.log(e);
         }
         return new ArrayList<>();
+    }
+
+    public List<String> quickSearch(String keyword) {
+        if (invertedIndex == null) {
+            throw new IllegalStateException("Inverted index not built. Call slim() first.");
+        }
+        List<Integer> lineNumbers = invertedIndex.getOrDefault(keyword, Collections.emptyList());
+        List<String> result = new ArrayList<>();
+        for (int lineNumber : lineNumbers) {
+            result.add(inputList.get(lineNumber)); // 根据行号获取原始数据
+        }
+        return result;
+    }
+
+    private void buildInvertedIndex() {
+        invertedIndex = new HashMap<>();
+        for (int i = 0; i < inputList.size(); i++) {
+            String line = inputList.get(i);
+            String[] fields = line.split("#");
+            if (fields.length >= 2) {
+                String keyword = fields[1].trim(); // 第二个字段作为关键字
+                invertedIndex.computeIfAbsent(keyword, k -> new ArrayList<>()).add(i); // 保存行号
+            }
+        }
     }
 
     private void sortByDouban(List<String> inputSortList, List<String> outputSortList, String order)
