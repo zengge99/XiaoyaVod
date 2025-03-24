@@ -294,18 +294,40 @@ public class LocalIndexService {
     }
 
     public Vod findVodByPath(Drive drive, String path) {
+        String normalizedPath = normalizePath(path);
+
         List<String> input = new ArrayList<>();
         for (String line : inputList) {
             String[] splits = line.split("#");
-            if (splits[0].equals(path)) {
+            String normalizedTargetPath = normalizePath(splits[0]);
+
+            if (normalizedTargetPath.equals(normalizedPath)) {
                 input.add(line);
                 break;
             }
         }
+
         if (input.size() > 0) {
             return toVods(drive, input).get(0);
         }
         return null;
+    }
+
+
+    private String normalizePath(String path) {
+        if (path == null || path.isEmpty()) {
+            return path;
+        }
+
+        if (path.startsWith("/")) {
+            path = path.substring(1);
+        }
+
+        if (path.endsWith("/")) {
+            path = path.substring(0, path.length() - 1);
+        }
+
+        return path;
     }
 
     public static List<Vod> toVods(Drive drive, List<String> lines) {
