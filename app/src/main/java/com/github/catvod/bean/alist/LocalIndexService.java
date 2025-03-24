@@ -12,6 +12,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.Jsoup;
 import com.github.catvod.bean.alist.Drive;
 import com.github.catvod.bean.alist.Item;
+import com.github.catvod.bean.Vod;
 
 public class LocalIndexService {
 
@@ -163,10 +164,14 @@ public class LocalIndexService {
         }
     }
 
-    public void slim(String path) throws IOException {
-        List<String> outputSortList = new FileBasedList<String>(String.class);
-        filterByPath(inputList, outputSortList, path);
-        inputList = outputSortList;
+    public void slim(String path) {
+        try {
+            List<String> outputSortList = new FileBasedList<String>(String.class);
+            filterByPath(inputList, outputSortList, path);
+            inputList = outputSortList;
+        } catch (Exception e) {
+            Logge.log(e);
+        }
     }
 
     private void sortByDouban(List<String> inputSortList, List<String> outputSortList, String order)
@@ -175,50 +180,52 @@ public class LocalIndexService {
         Logger.log("Sorted by field: " + order);
     }
 
-    public List<String> query(LinkedHashMap<String, String> queryParams) throws IOException {
-        List<String> currentInputList = inputList;
-        if (queryParams.containsKey("random")) {
-            queryParams.remove("random");
-        }
-
-        String cacheKey = generateCacheKey(queryParams);
-        if (queryCache.get(cacheKey) != null) {
-            Logger.log("Cache hit for query: " + cacheKey);
-            currentInputList = queryCache.get(cacheKey);
-            return currentInputList;
-        }
-        Logger.log("Cache miss for query: " + cacheKey);
-
-        // 依次处理查询方法
-        for (Map.Entry<String, String> entry : queryParams.entrySet()) {
-            String method = entry.getKey();
-            String param = entry.getValue();
-
-            List<String> tempOutputList = new FileBasedList<String>(String.class);
-
-            // 执行查询方法
-            switch (method) {
-                case "subpath":
-                    filterByPath(currentInputList, tempOutputList, param);
-                    break;
-                case "doubansort":
-                    sortByDouban(currentInputList, tempOutputList, param);
-                    break;
-                case "douban":
-                    filterByDouban(currentInputList, tempOutputList, param);
-                    break;
-                default:
-                    throw new IllegalArgumentException("Unknown query method: " + method);
+    public List<String> query(LinkedHashMap<String, String> queryParams) {
+        try {
+            List<String> currentInputList = inputList;
+            if (queryParams.containsKey("random")) {
+                queryParams.remove("random");
             }
 
-            // 更新当前输入文件
-            currentInputList = tempOutputList;
+            String cacheKey = generateCacheKey(queryParams);
+            if (queryCache.get(cacheKey) != null) {
+                Logger.log("Cache hit for query: " + cacheKey);
+                currentInputList = queryCache.get(cacheKey);
+                return currentInputList;
+            }
+            Logger.log("Cache miss for query: " + cacheKey);
+
+            // 依次处理查询方法
+            for (Map.Entry<String, String> entry : queryParams.entrySet()) {
+                String method = entry.getKey();
+                String param = entry.getValue();
+
+                List<String> tempOutputList = new FileBasedList<String>(String.class);
+
+                // 执行查询方法
+                switch (method) {
+                    case "subpath":
+                        filterByPath(currentInputList, tempOutputList, param);
+                        break;
+                    case "doubansort":
+                        sortByDouban(currentInputList, tempOutputList, param);
+                        break;
+                    case "douban":
+                        filterByDouban(currentInputList, tempOutputList, param);
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Unknown query method: " + method);
+                }
+
+                // 更新当前输入文件
+                currentInputList = tempOutputList;
+            }
+            queryCache.put(cacheKey, currentInputList);
+            return currentInputList;
+        } catch (Exception e) {
+            Logger.log(e);
+            return new ArrayList<>();
         }
-
-        queryCache.put(cacheKey, currentInputList);
-
-        return currentInputList;
-
     }
 
     private String generateCacheKey(LinkedHashMap<String, String> queryParams) {
@@ -266,14 +273,14 @@ public class LocalIndexService {
         for (String line : lines) {
             String[] splits = line.split("#");
             int index = splits[0].lastIndexOf("/");
-            //boolean file = Util.isMedia(splits[0]);
+            // boolean file = Util.isMedia(splits[0]);
             if (splits[0].endsWith("/")) {
-                //file = false;
+                // file = false;
                 splits[0] = splits[0].substring(0, index);
                 index = splits[0].lastIndexOf("/");
             }
             Item item = new Item();
-            item.setType(0); 
+            item.setType(0);
             item.doubanInfo.setId(splits.length >= 3 ? splits[2] : "");
             item.doubanInfo.setRating(splits.length >= 4 ? splits[3] : "");
             item.setThumb(splits.length >= 5 ? splits[4] : "");
@@ -297,28 +304,25 @@ public class LocalIndexService {
     }
 
     public static void test() {
-        try {
-            // 第一次查询
-            LocalIndexService service = LocalIndexService.get("http://zengge99.f3322.org:5678/");
-            LinkedHashMap<String, String> queryParams = new LinkedHashMap<>();
-            queryParams.put("subpath", "每日更新");
-            queryParams.put("doubansort", "desc");
-            List<String> result = service.query(queryParams);
-            Logger.log("Query result1: " + result.get(0));
 
-            // 测试分页
-            Pager pagger = new Pager(result, 1000, true);
-            Logger.log("Query result2: " + pagger.page(1));
+        // 第一次查询
+        LocalIndexService service = LocalIndexService.get("http://zengge99.f3322.org:5678/");
+        LinkedHashMap<String, String> queryParams = new LinkedHashMap<>();
+        queryParams.put("subpath", "每日更新");
+        queryParams.put("doubansort", "desc");
+        List<String> result = service.query(queryParams);
+        Logger.log("Query result1: " + result.get(0));
 
-            service = LocalIndexService.get("http://zengge99.1996999.xyz:5678/sou?box=%E6%AF%8F%E6%97%A5%E6%9B%B4%E6%96%B0&url=&type=video");
-            queryParams = new LinkedHashMap<>();
-            queryParams.put("doubansort", "desc");
-            service.slim("每日更新/电视剧/国产剧");
-            result = service.query(queryParams);
-            Logger.log("Query result3: " + result.get(0));
-            
-        } catch (IOException e) {
-            Logger.log(e);
-        }
+        // 测试分页
+        Pager pagger = new Pager(result, 1000, true);
+        Logger.log("Query result2: " + pagger.page(1));
+
+        service = LocalIndexService.get(
+                "http://zengge99.1996999.xyz:5678/sou?box=%E6%AF%8F%E6%97%A5%E6%9B%B4%E6%96%B0&url=&type=video");
+        queryParams = new LinkedHashMap<>();
+        queryParams.put("doubansort", "desc");
+        service.slim("每日更新/电视剧/国产剧");
+        result = service.query(queryParams);
+        Logger.log("Query result3: " + result.get(0));
     }
 }
