@@ -513,6 +513,7 @@ public class AList extends Spider {
         fetchRule();
         String key = tid.contains("/") ? tid.substring(0, tid.indexOf("/")) : tid;
         Drive drive = getDrive(key);
+        drive.fl = extend;
         List<String> lines = driveLinesMap.get(drive.getName());
         if(lines == null || pg.equals("1")) {
             if (drive.getName().equals("每日更新")) {
@@ -825,7 +826,8 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
                 return new ArrayList<>();
             } else {
                 LocalIndexService service = LocalIndexService.get(drive.getName() + "/"+ drive.getServer());
-                return service.slim(drive.getPath());
+                service.slim(drive.getPath());
+                return doFilter(service, drive.fl);
             }
         }
     }
