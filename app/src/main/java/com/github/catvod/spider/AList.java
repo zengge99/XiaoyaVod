@@ -24,6 +24,7 @@ import com.github.catvod.utils.Notify;
 import com.github.catvod.bean.alist.FileBasedList;
 import com.github.catvod.bean.alist.LocalIndexService;
 import com.github.catvod.bean.alist.Pager;
+import com.github.catvod.bean.alist.IndexDownloader;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -186,6 +187,7 @@ public class AList extends Spider {
             ext = extend;
             fetchRule();
             FileBasedList.clearCacheDirectory();
+            IndexDownloader.clearCacheDirectory();
         } catch (Exception ignored) {
         }
     }
