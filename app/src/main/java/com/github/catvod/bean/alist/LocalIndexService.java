@@ -43,10 +43,9 @@ public class LocalIndexService {
 
     private List<List<String>> sortInChunks(List<String> inputSortList, String order) throws IOException {
         List<List<String>> sortedChunks = new ArrayList<>();
-        List<String[]> chunk = new ArrayList<>();
+        List<String> chunk = new ArrayList<>();
         for (String line : inputSortList) {
-            String[] fields = line.split("#");
-            chunk.add(fields);
+            chunk.add(line);
             if (chunk.size() >= MAX_LINES_IN_MEMORY) {
                 sortedChunks.add(sortAndWriteChunk(chunk, order));
                 chunk.clear();
@@ -58,18 +57,18 @@ public class LocalIndexService {
         return sortedChunks;
     }
 
-    private List<String> sortAndWriteChunk(List<String[]> chunk, String order) throws IOException {
+    private List<String> sortAndWriteChunk(List<String> chunk, String order) throws IOException {
         chunk.sort(createComparator(order));
         List<String> tempList = new FileBasedList<String>(String.class);
-        for (String[] fields : chunk) {
-            tempList.add(String.join("#", fields));
+        for (String line : chunk) {
+            tempList.add(line);
         }
         return tempList;
     }
 
     private List<String> mergeSortedChunks(List<List<String>> sortedChunks, List<String> outputSortList, String order) throws IOException {
         PriorityQueue<ListReader> minHeap = new PriorityQueue<>(
-            Comparator.comparing(lr -> lr.currentFields, createComparator(order))
+            Comparator.comparing(lr -> lr.currentLine, createComparator(order))
         );
             // 初始化堆
             for (List<String> trunk : sortedChunks) {
@@ -81,7 +80,7 @@ public class LocalIndexService {
             // 多路归并
             while (!minHeap.isEmpty()) {
                 ListReader reader = minHeap.poll();
-                outputSortList.add(String.join("#", reader.currentFields));
+                outputSortList.add(reader.currentLine);
                 if (reader.readLine()) {
                     minHeap.add(reader);
                 }
@@ -92,8 +91,8 @@ public class LocalIndexService {
 
     private Comparator<String[]> createComparator(String order) {
         return (o1, o2) -> {
-            double value1 = parseFieldAsDouble(o1, 3); // 固定为第4个字段
-            double value2 = parseFieldAsDouble(o2, 3); // 固定为第4个字段
+            double value1 = parseFieldAsDouble(o1.split("#"), 3); 
+            double value2 = parseFieldAsDouble(o2.split("#"), 3); 
             if (order.equals("asc")) {
                 return Double.compare(value1, value2); // 升序
             } else {
@@ -130,18 +129,17 @@ public class LocalIndexService {
 
     private static class ListReader {
         private final List<String> list;
-        private String[] currentFields;
-        private int currentLine = 0;
+        private String currentLine;
+        private int currentLineIndex = 0;
 
         public ListReader(List<String> list) throws FileNotFoundException, UnsupportedEncodingException {
             this.list = list;
         }
 
         public boolean readLine() throws IOException {
-            if (currentLine < list.size()) 
+            if (currentLineIndex < list.size()) 
             {
-                String line = list.get(currentLine++);
-                currentFields = line.split("#");
+                currentLine = list.get(currentLineIndex++);
                 return true;
             } else {
                 return false;
