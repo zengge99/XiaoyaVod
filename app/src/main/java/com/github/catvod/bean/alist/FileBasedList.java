@@ -1,4 +1,4 @@
-package com.github.catvod.bean.alist;
+ package com.github.catvod.bean.alist;
 
 import com.google.gson.Gson;
 import java.io.*;
@@ -21,6 +21,7 @@ public class FileBasedList<T> implements List<T> {
     private RandomAccessFile lastAccessedFile;
     private BufferedReader lastAccessedReader;
 
+    // 带文件路径的构造函数
     public FileBasedList(String filePath, Class<T> type) {
         this.file = new File(filePath);
         this.gson = new Gson();
@@ -38,6 +39,45 @@ public class FileBasedList<T> implements List<T> {
         initializeLinePositions();
     }
 
+    // 不带文件路径的构造函数，自动生成随机文件名
+    public FileBasedList(Class<T> type) {
+        this(generateRandomFileName(), type);
+    }
+
+    // 生成随机文件名
+    private static String generateRandomFileName() {
+        return getCacheDirPath() + UUID.randomUUID().toString() + ".list";
+    }
+
+    // 获取缓存目录路径
+    private static String getCacheDirPath() {
+        return com.github.catvod.utils.Path.cache() + "/TV/list/";
+    }
+
+    // 清空缓存目录
+    public static void clearCacheDirectory() {
+        String cacheDirPath = getCacheDirPath();
+        File cacheDir = new File(cacheDirPath);
+        if (!cacheDir.exists()) {
+            return;
+        }
+        if (!cacheDir.isDirectory()) {
+            throw new RuntimeException("Cache directory path is not a directory: " + cacheDirPath);
+        }
+        File[] files = cacheDir.listFiles((dir, name) -> name.endsWith(".list"));
+        if (files == null) {
+            return;
+        }
+        for (File file : files) {
+            try {
+                Files.delete(file.toPath());
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to delete file: " + file.getAbsolutePath(), e);
+            }
+        }
+    }
+
+    // 确保文件存在
     private void ensureFileExists() {
         File parentDir = file.getParentFile();
         if (parentDir != null && !parentDir.exists()) {
@@ -57,6 +97,7 @@ public class FileBasedList<T> implements List<T> {
         }
     }
 
+    // 初始化行位置
     private void initializeLinePositions() {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {
             long position = 0;
@@ -148,6 +189,7 @@ public class FileBasedList<T> implements List<T> {
         return true;
     }
 
+    // 将缓存中的数据写入文件
     private void flushBuffer() {
         if (buffer.size() == 0) {
             return;
@@ -194,6 +236,7 @@ public class FileBasedList<T> implements List<T> {
         }
     }
 
+    // 合并两个 FileBasedList 的文件内容
     private boolean mergeFileBasedList(FileBasedList<? extends T> other) {
         flushBuffer();
         if (other != this) {
@@ -250,12 +293,12 @@ public class FileBasedList<T> implements List<T> {
         if (index < 0 || index >= size) {
             throw new IndexOutOfBoundsException("Index " + index + " is out of bounds");
         }
-    
+
         // 检查缓存
         if (cache.containsKey(index)) {
             return cache.get(index);
         }
-    
+
         flushBuffer();
         try {
             // 如果是顺序访问（当前行号的下一个），则直接读取下一行
@@ -268,16 +311,16 @@ public class FileBasedList<T> implements List<T> {
                     return item;
                 }
             }
-    
+
             // 否则，重新定位文件指针并初始化 BufferedReader
             if (lastAccessedFile == null) {
                 lastAccessedFile = new RandomAccessFile(file, "r");
             }
-    
+
             long position = linePositions.get(index);
             lastAccessedFile.seek(position);
             lastAccessedReader = new BufferedReader(new InputStreamReader(new FileInputStream(lastAccessedFile.getFD()), StandardCharsets.UTF_8));
-    
+
             String line = lastAccessedReader.readLine();
             if (line != null) {
                 T item = parseLine(line);
@@ -290,7 +333,8 @@ public class FileBasedList<T> implements List<T> {
             throw new RuntimeException("Failed to read from file", e);
         }
     }
-    
+
+    // 解析一行数据
     private T parseLine(String line) {
         return type == String.class ? (T) line : gson.fromJson(line, type);
     }
