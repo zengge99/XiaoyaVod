@@ -42,6 +42,10 @@ public class LocalIndexService {
         return path.contains("/sou?");
     }
 
+    public static LocalIndexService get(Drive drive) {
+        return LocalIndexService.get(drive.getName() + "/"+ drive.getServer());
+    }
+
     public static LocalIndexService get(String url) {
 
         String realUrl = url;

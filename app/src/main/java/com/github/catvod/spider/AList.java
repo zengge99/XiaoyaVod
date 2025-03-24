@@ -216,7 +216,7 @@ public class AList extends Spider {
             }
             for (Drive d : drives) {
                 if (!d.noPoster()) {
-                    LocalIndexService.get(d.getName() + "/" + d.getServer()).slim(d.getPath());
+                    LocalIndexService.get(d).slim(d.getPath());
                 }
             }
         });
@@ -845,7 +845,7 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
             } else if (keyword.startsWith("~quick:")) {
                 return new ArrayList<>();
             } else {
-                LocalIndexService service = LocalIndexService.get(drive.getName() + "/"+ drive.getServer());
+                LocalIndexService service = LocalIndexService.get(drive);
                 service.slim(drive.getPath());
                 return doFilter(service, drive.fl);
             }
