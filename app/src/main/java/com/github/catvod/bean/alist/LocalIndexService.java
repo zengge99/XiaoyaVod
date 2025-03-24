@@ -299,7 +299,7 @@ public class LocalIndexService {
             }
         }
         if (input.size() > 0) {
-            return toVods(drive, input)[0];
+            return toVods(drive, input).get(0);
         }
         return new Vod();
     }
