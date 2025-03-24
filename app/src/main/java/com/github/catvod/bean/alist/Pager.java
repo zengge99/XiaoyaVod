@@ -25,7 +25,7 @@ public class Pager {
         total = this.inputList.size();
         count = (total + limit - 1) / limit;
 
-        this.inputList = new ArrayList<>(inputList);
+        //this.inputList = new ArrayList<>(inputList);
 
         // 如果 randomOutputSize 为 0，直接使用整个输入列表的索引
         if (randomOutputSize == 0) {
