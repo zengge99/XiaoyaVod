@@ -254,9 +254,8 @@ public class LocalIndexService {
 
     public static void test() {
         try {
-            LocalIndexService service = LocalIndexService.get("http://zengge99.f3322.org:5678/");
-
             // 第一次查询
+            LocalIndexService service = LocalIndexService.get("http://zengge99.f3322.org:5678/");
             LinkedHashMap<String, String> queryParams = new LinkedHashMap<>();
             queryParams.put("subpath", "每日更新");
             queryParams.put("doubansort", "desc");
@@ -267,6 +266,12 @@ public class LocalIndexService {
             Pager pagger = new Pager(result, 1000, true);
             Logger.log("Query result2: " + pagger.page(1));
 
+            service = LocalIndexService.get("http://zengge99.1996999.xyz:5678/sou?box=%E6%AF%8F%E6%97%A5%E6%9B%B4%E6%96%B0&url=&type=video");
+            queryParams = new LinkedHashMap<>();
+            queryParams.put("doubansort", "desc");
+            result = service.query(queryParams);
+            Logger.log("Query result3: " + result.get(0));
+            
         } catch (IOException e) {
             Logger.log(e);
         }
