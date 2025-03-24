@@ -23,6 +23,7 @@ import com.github.catvod.utils.Util;
 import com.github.catvod.utils.Notify;
 import com.github.catvod.bean.alist.FileBasedList;
 import com.github.catvod.bean.alist.LocalIndexService;
+import com.github.catvod.bean.alist.Pager;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -525,10 +526,13 @@ public class AList extends Spider {
         } else {
             lines = (new Job(drive.check(), drive.getPath())).call();
         }
-        list = LocalIndexService.toVods(drive, lines);
+
+        Pager pager = new Pager(lines, 0, false);
+
+        list = LocalIndexService.toVods(drive, pager.page(Integer.parseInt(pg)));
 
         driveVodsMap.put(drive.getName(), list);
-        result = Result.get().vod(list).page(pg).vodDrive(drive.getName()).string();
+        result = Result.get().vod(list).page(pg, pager.count, pager.limit, pager.count).vodDrive(drive.getName()).string();
         Logger.log(result);
         return result;
     }
