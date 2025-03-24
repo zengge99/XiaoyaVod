@@ -21,22 +21,11 @@ public class LocalIndexService {
     private Map<String, List<Integer>> invertedIndex; // 倒排索引：关键字 -> 行号列表
     private RandomAccessFile randomAccessFile; // 用于随机访问文件
 
-    /**
-     * 私有构造函数
-     *
-     * @param name 实例唯一名字
-     */
     private LocalIndexService(String name) {
         inputList = new FileBasedList<String>(IndexDownloader.downlodadAndUnzip(name), String.class);
         outputList = new FileBasedList<String>(String.class);
     }
 
-    /**
-     * 获取实例（单例模式）
-     *
-     * @param name 实例唯一名字
-     * @return LocalIndexService 实例
-     */
     public static LocalIndexService get(String name) {
         Logger.log("Getting instance for name: " + name);
         if (!instances.containsKey(name)) {
@@ -47,12 +36,6 @@ public class LocalIndexService {
         return instances.get(name);
     }
 
-    /**
-     * 创建一个比较器，根据指定排序顺序进行比较
-     *
-     * @param order 排序顺序（"asc" 或 "desc"）
-     * @return 比较器
-     */
     private Comparator<String[]> createComparator(String order) {
         return (o1, o2) -> {
             double value1 = parseFieldAsDouble(o1, 3); // 固定为第4个字段
@@ -207,12 +190,6 @@ public class LocalIndexService {
         }
     }
 
-    /**
-     * 生成缓存键（MD5 哈希）
-     *
-     * @param queryParams 查询参数
-     * @return 缓存键
-     */
     private String generateCacheKey(LinkedHashMap<String, String> queryParams) {
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
@@ -250,9 +227,6 @@ public class LocalIndexService {
         }
     }
 
-    /**
-     * 用于读取文件行的辅助类
-     */
     private static class ListReader {
         private final List<String> list;
         private String[] currentFields;
@@ -274,9 +248,6 @@ public class LocalIndexService {
         }
     }
 
-    /**
-     * 测试方法
-     */
     public static void test() {
         try {
             LocalIndexService service = LocalIndexService.get("http://zengge99.f3322.org:5678/");
