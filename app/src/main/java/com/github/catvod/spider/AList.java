@@ -185,6 +185,7 @@ public class AList extends Spider {
         try {
             ext = extend;
             fetchRule();
+            FileBasedList.clearCacheDirectory();
         } catch (Exception ignored) {
         }
     }
