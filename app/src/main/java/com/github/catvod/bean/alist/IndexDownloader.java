@@ -114,35 +114,6 @@ public class IndexDownloader {
         }
     }
 
-    // 删除指定目录中的文件
-    private static void deleteFiles(String dirPath, String pattern) throws IOException {
-        Path path = Paths.get(dirPath);
-
-        // 如果目录不存在，直接返回
-        if (!Files.exists(path)) {
-            return;
-        }
-
-        // 如果路径不是目录，抛出异常
-        if (!Files.isDirectory(path)) {
-            throw new IOException("路径不是目录: " + dirPath);
-        }
-
-        try (var stream = pattern == null ? Files.newDirectoryStream(path) : Files.newDirectoryStream(path, pattern)) {
-            for (Path file : stream) {
-                if (Files.isDirectory(file)) {
-                    // 如果是目录，递归删除
-                    deleteFiles(file.toString(), null);
-                    Files.delete(file); // 删除空目录
-                } else {
-                    Files.delete(file);
-                }
-            }
-        } catch (IOException e) {
-            throw new IOException("删除文件失败: " + dirPath, e);
-        }
-    }
-
     private static void createDirectoryIfNotExists(String dirPath) throws IOException {
         Path path = Paths.get(dirPath);
         if (!Files.exists(path)) {
