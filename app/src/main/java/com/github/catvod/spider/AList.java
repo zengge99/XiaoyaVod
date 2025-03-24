@@ -531,8 +531,25 @@ public class AList extends Spider {
         return result;
     }
 
-    private List<String> doFilter(List<String> lines, HashMap<String, String> fl) {
-        return lines;
+public static List<String> doFilter(LocalIndexService service, HashMap<String, String> fl) {
+        LinkedHashMap<String, String> queryParams = new LinkedHashMap<>();
+    
+        String subpath = fl.get("subpath");
+        if (subpath != null && !subpath.endsWith("~all")) {
+            queryParams.put("subpath", subpath);
+        }
+
+        String douban = fl.get("douban");
+        if (douban != null && !douban.equals("0")) {
+            queryParams.put("douban", douban);
+        }
+
+        String doubansort = fl.get("doubansort");
+        if (doubansort != null && !doubansort.equals("0")) {
+            queryParams.put("doubansort", doubansort);
+        }
+
+        return service.query(queryParams);
     }
 
     private String alistCategoryContent(String tid, String pg, boolean filter, HashMap<String, String> extend)
