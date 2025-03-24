@@ -21,6 +21,7 @@ public class LocalIndexService {
 
     private List<String> inputList;
     private HashMap<String, List<String>> queryCache = new HashMap<>();
+    private boolean slimed = false;
 
     private LocalIndexService(String url) {
         if (isOnline(url)) {
@@ -172,6 +173,9 @@ public class LocalIndexService {
     }
 
     public List<String> slim(String path) {
+        if (slimed) {
+            return inputList;
+        }
         try {
             if (path.startsWith("/")) {
                 path = path.substring(1);
@@ -179,6 +183,7 @@ public class LocalIndexService {
             List<String> outputSortList = new FileBasedList<String>(String.class);
             filterByPath(inputList, outputSortList, path);
             inputList = outputSortList;
+            slimed = true;
             return inputList;
         } catch (Exception e) {
             Logger.log(e);
