@@ -89,7 +89,7 @@ public class LocalIndexService {
         return outputSortList; // 返回合并后的文件路径
     }
 
-    private Comparator<String[]> createComparator(String order) {
+    private Comparator<String> createComparator(String order) {
         return (o1, o2) -> {
             double value1 = parseFieldAsDouble(o1.split("#"), 3); 
             double value2 = parseFieldAsDouble(o2.split("#"), 3); 
