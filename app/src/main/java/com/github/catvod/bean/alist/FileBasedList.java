@@ -7,6 +7,7 @@ import java.util.*;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import com.github.catvod.spider.Logger;
+import java.nio.file.Files;
 
 public class FileBasedList<T> implements List<T> {
     private final File file;
