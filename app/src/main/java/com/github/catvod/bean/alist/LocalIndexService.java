@@ -11,19 +11,12 @@ public class LocalIndexService {
 
     private static final int MAX_LINES_IN_MEMORY = 5000; // 每个块的最大行数
     private static final Map<String, LocalIndexService> instances = new HashMap<>(); // 实例缓存
-    private static final String BASE_DIR = com.github.catvod.utils.Path.root().getPath() + "/TV/index/"; // 基础目录
 
     private List<String> inputList;
-    private List<String> outputList;
     private HashMap<String, List<String>> queryCache = new HashMap<>();
-
-    private List<Long> lineIndex; // 存储每行的起始位置
-    private Map<String, List<Integer>> invertedIndex; // 倒排索引：关键字 -> 行号列表
-    private RandomAccessFile randomAccessFile; // 用于随机访问文件
 
     private LocalIndexService(String name) {
         inputList = new FileBasedList<String>(IndexDownloader.downlodadAndUnzip(name), String.class);
-        outputList = new FileBasedList<String>(String.class);
     }
 
     public static LocalIndexService get(String name) {
@@ -36,7 +29,8 @@ public class LocalIndexService {
         return instances.get(name);
     }
 
-    public List<String> externalSort(List<String> inputSortList, List<String> outputSortList, String order) throws IOException {
+    public List<String> externalSort(List<String> inputSortList, List<String> outputSortList, String order)
+            throws IOException {
         List<List<String>> sortedChunks = sortInChunks(inputSortList, order);
         return mergeSortedChunks(sortedChunks, outputSortList, order);
     }
@@ -66,33 +60,33 @@ public class LocalIndexService {
         return tempList;
     }
 
-    private List<String> mergeSortedChunks(List<List<String>> sortedChunks, List<String> outputSortList, String order) throws IOException {
+    private List<String> mergeSortedChunks(List<List<String>> sortedChunks, List<String> outputSortList, String order)
+            throws IOException {
         PriorityQueue<ListReader> minHeap = new PriorityQueue<>(
-            Comparator.comparing(lr -> lr.currentLine, createComparator(order))
-        );
-            // 初始化堆
-            for (List<String> trunk : sortedChunks) {
-                ListReader reader = new ListReader(trunk);
-                if (reader.readLine()) {
-                    minHeap.add(reader);
-                }
+                Comparator.comparing(lr -> lr.currentLine, createComparator(order)));
+        // 初始化堆
+        for (List<String> trunk : sortedChunks) {
+            ListReader reader = new ListReader(trunk);
+            if (reader.readLine()) {
+                minHeap.add(reader);
             }
-            // 多路归并
-            while (!minHeap.isEmpty()) {
-                ListReader reader = minHeap.poll();
-                outputSortList.add(reader.currentLine);
-                if (reader.readLine()) {
-                    minHeap.add(reader);
-                }
+        }
+        // 多路归并
+        while (!minHeap.isEmpty()) {
+            ListReader reader = minHeap.poll();
+            outputSortList.add(reader.currentLine);
+            if (reader.readLine()) {
+                minHeap.add(reader);
             }
+        }
 
         return outputSortList; // 返回合并后的文件路径
     }
 
     private Comparator<String> createComparator(String order) {
         return (o1, o2) -> {
-            double value1 = parseFieldAsDouble(o1.split("#"), 3); 
-            double value2 = parseFieldAsDouble(o2.split("#"), 3); 
+            double value1 = parseFieldAsDouble(o1.split("#"), 3);
+            double value2 = parseFieldAsDouble(o2.split("#"), 3);
             if (order.equals("asc")) {
                 return Double.compare(value1, value2); // 升序
             } else {
@@ -118,10 +112,10 @@ public class LocalIndexService {
 
     private double parseStringAsDouble(String input) {
         if (TextUtils.isEmpty(input)) {
-            return 0.0; 
+            return 0.0;
         }
         try {
-            return Double.parseDouble(input); 
+            return Double.parseDouble(input);
         } catch (NumberFormatException e) {
             return 0.0;
         }
@@ -137,8 +131,7 @@ public class LocalIndexService {
         }
 
         public boolean readLine() throws IOException {
-            if (currentLineIndex < list.size()) 
-            {
+            if (currentLineIndex < list.size()) {
                 currentLine = list.get(currentLineIndex++);
                 return true;
             } else {
@@ -147,66 +140,56 @@ public class LocalIndexService {
         }
     }
 
-    private void sortByDouban(List<String> inputSortList, List<String> outputSortList, String order) throws IOException {
+    private void sortByDouban(List<String> inputSortList, List<String> outputSortList, String order)
+            throws IOException {
         externalSort(inputSortList, outputSortList, order);
         Logger.log("Sorted by field: " + order);
     }
 
-    public List<String> page(int pageNum) {
-        int linesPerPage = 72;
-        int startLine = (pageNum - 1) * linesPerPage;
-        int endLine = Math.min(startLine + 72, outputList.size());
-        return outputList.subList(startLine, endLine);
-    }
-
     public List<String> query(LinkedHashMap<String, String> queryParams) throws IOException {
         List<String> currentInputList = inputList;
-        try {
-            if (queryParams.containsKey("random")) {
-                queryParams.remove("random");
-            }
-
-            String cacheKey = generateCacheKey(queryParams);
-            if (queryCache.get(cacheKey) != null) {
-                Logger.log("Cache hit for query: " + cacheKey);
-                currentInputList = queryCache.get(cacheKey);
-                return currentInputList;
-            }
-            Logger.log("Cache miss for query: " + cacheKey);
-
-            // 依次处理查询方法
-            for (Map.Entry<String, String> entry : queryParams.entrySet()) {
-                String method = entry.getKey();
-                String param = entry.getValue();
-
-                List<String> tempOutputList = new FileBasedList<String>(String.class);
-
-                // 执行查询方法
-                switch (method) {
-                    case "subpath":
-                        filterByPath(currentInputList, tempOutputList, param);
-                        break;
-                    case "doubansort":
-                        sortByDouban(currentInputList, tempOutputList, param);
-                        break;
-                    case "douban":
-                        filterByDouban(currentInputList, tempOutputList, param);
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Unknown query method: " + method);
-                }
-                
-                // 更新当前输入文件
-                currentInputList = tempOutputList;
-            }
-
-            queryCache.put(cacheKey, currentInputList);
-
-            return currentInputList;
-
-        } finally {
-            this.outputList = currentInputList;
+        if (queryParams.containsKey("random")) {
+            queryParams.remove("random");
         }
+
+        String cacheKey = generateCacheKey(queryParams);
+        if (queryCache.get(cacheKey) != null) {
+            Logger.log("Cache hit for query: " + cacheKey);
+            currentInputList = queryCache.get(cacheKey);
+            return currentInputList;
+        }
+        Logger.log("Cache miss for query: " + cacheKey);
+
+        // 依次处理查询方法
+        for (Map.Entry<String, String> entry : queryParams.entrySet()) {
+            String method = entry.getKey();
+            String param = entry.getValue();
+
+            List<String> tempOutputList = new FileBasedList<String>(String.class);
+
+            // 执行查询方法
+            switch (method) {
+                case "subpath":
+                    filterByPath(currentInputList, tempOutputList, param);
+                    break;
+                case "doubansort":
+                    sortByDouban(currentInputList, tempOutputList, param);
+                    break;
+                case "douban":
+                    filterByDouban(currentInputList, tempOutputList, param);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unknown query method: " + method);
+            }
+
+            // 更新当前输入文件
+            currentInputList = tempOutputList;
+        }
+
+        queryCache.put(cacheKey, currentInputList);
+
+        return currentInputList;
+
     }
 
     private String generateCacheKey(LinkedHashMap<String, String> queryParams) {
@@ -226,7 +209,8 @@ public class LocalIndexService {
         }
     }
 
-    private void filterByPath(List<String> inputSortList, List<String> outputSortList, String fieldValue) throws IOException {
+    private void filterByPath(List<String> inputSortList, List<String> outputSortList, String fieldValue)
+            throws IOException {
         for (String line : inputSortList) {
             String[] fields = line.split("#");
             if (fields.length > 0 && fields[0].startsWith(fieldValue)) {
@@ -236,7 +220,8 @@ public class LocalIndexService {
         Logger.log("Filtered by field: " + fieldValue);
     }
 
-    private void filterByDouban(List<String> inputSortList, List<String> outputSortList, String fieldValue) throws IOException {
+    private void filterByDouban(List<String> inputSortList, List<String> outputSortList, String fieldValue)
+            throws IOException {
         double filterValue = parseStringAsDouble(fieldValue);
         for (String line : inputSortList) {
             double actualValue = parseFieldAsDouble(line.split("#"), 3);
