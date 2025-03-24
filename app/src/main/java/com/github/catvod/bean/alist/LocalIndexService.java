@@ -8,6 +8,8 @@ import java.security.NoSuchAlgorithmException;
 import android.text.TextUtils;
 import com.github.catvod.net.OkHttp;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.Jsoup;
 
 public class LocalIndexService {
 
@@ -33,7 +35,7 @@ public class LocalIndexService {
         inputList = new FileBasedList<String>(IndexDownloader.downlodadAndUnzip(url), String.class);
     }
 
-    private boolean isOnline(String path) {
+    private static boolean isOnline(String path) {
         return path.contains("/sou?");
     }
 
