@@ -10,6 +10,8 @@ import com.github.catvod.net.OkHttp;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.Jsoup;
+import com.github.catvod.bean.alist.Drive;
+import com.github.catvod.bean.alist.Item;
 
 public class LocalIndexService {
 
@@ -161,7 +163,7 @@ public class LocalIndexService {
         }
     }
 
-    public void slim(String path) {
+    public void slim(String path) throws IOException {
         List<String> outputSortList = new FileBasedList<String>(String.class);
         filterByPath(inputList, outputSortList, path);
         inputList = outputSortList;
@@ -256,6 +258,42 @@ public class LocalIndexService {
                 outputSortList.add(line);
             }
         }
+    }
+
+    public static List<Vod> toVods(Drive drive, List<String> lines) {
+        List<Vod> list = new ArrayList<>();
+        List<Vod> noPicList = new ArrayList<>();
+        for (String line : lines) {
+            String[] splits = line.split("#");
+            int index = splits[0].lastIndexOf("/");
+            //boolean file = Util.isMedia(splits[0]);
+            if (splits[0].endsWith("/")) {
+                //file = false;
+                splits[0] = splits[0].substring(0, index);
+                index = splits[0].lastIndexOf("/");
+            }
+            Item item = new Item();
+            item.setType(0); 
+            item.doubanInfo.setId(splits.length >= 3 ? splits[2] : "");
+            item.doubanInfo.setRating(splits.length >= 4 ? splits[3] : "");
+            item.setThumb(splits.length >= 5 ? splits[4] : "");
+            item.setPath("/" + splits[0].substring(0, index));
+            String fileName = splits[0].substring(index + 1);
+            item.setName(fileName);
+            item.doubanInfo.setName(splits.length >= 2 ? splits[1] : fileName);
+            Vod vod = item.getVod(drive.getName(), drive.getVodPic());
+            vod.setVodRemarks(item.doubanInfo.getRating());
+            vod.setVodName(item.doubanInfo.getName());
+            vod.doubanInfo = item.doubanInfo;
+            vod.setVodId(vod.getVodId() + "/~xiaoya");
+            if (TextUtils.isEmpty(item.getThumb())) {
+                noPicList.add(vod);
+            } else {
+                list.add(vod);
+            }
+        }
+        list.addAll(noPicList);
+        return list;
     }
 
     public static void test() {
