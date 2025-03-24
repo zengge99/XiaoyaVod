@@ -38,7 +38,7 @@ public class IndexDownloader {
             FileBasedList.clearCacheDirectory();
 
             String fileUrl = url + "/tvbox/data";
-            String saveDir = com.github.catvod.utils.Path.root().getPath() + "/TV/index/"
+            String saveDir = getCacheDirPath()
                      + url.replace(":", "_").replace("/", "_");
 
             // 0. 清空目录
@@ -71,6 +71,76 @@ public class IndexDownloader {
         }
 
         return filePath;
+    }
+    
+    private static String getCacheDirPath() {
+        return com.github.catvod.utils.Path.root().getPath() + "/TV/index/";
+    }
+
+    public static void clearCacheDirectory() {
+        String cacheDirPath = getCacheDirPath();
+        File cacheDir = new File(cacheDirPath);
+
+        // 如果缓存目录不存在，直接返回
+        if (!cacheDir.exists()) {
+            return;
+        }
+
+        // 如果路径不是一个目录，直接返回
+        if (!cacheDir.isDirectory()) {
+            return;
+        }
+
+        // 获取缓存目录中的所有文件
+        File[] files = cacheDir.listFiles();
+
+        // 如果文件数组为空，直接返回
+        if (files == null) {
+            return;
+        }
+
+        // 遍历并删除文件，静默处理所有错误
+        for (File file : files) {
+            try {
+                if (file.isDirectory()) {
+                    // 如果是目录，递归删除
+                    deleteFiles(file.getAbsolutePath(), null);
+                }
+                Files.delete(file.toPath());
+            } catch (IOException e) {
+                // 静默处理错误，可以记录日志（可选）
+                Logger.log("Failed to delete file: " + file.getAbsolutePath() + ", error: " + e.getMessage());
+            }
+        }
+    }
+
+    // 删除指定目录中的文件
+    private static void deleteFiles(String dirPath, String pattern) throws IOException {
+        Path path = Paths.get(dirPath);
+
+        // 如果目录不存在，直接返回
+        if (!Files.exists(path)) {
+            return;
+        }
+
+        // 如果路径不是目录，抛出异常
+        if (!Files.isDirectory(path)) {
+            throw new IOException("路径不是目录: " + dirPath);
+        }
+
+        try (var stream = pattern == null ? Files.newDirectoryStream(path) : Files.newDirectoryStream(path, pattern)) {
+            for (Path file : stream) {
+                if (Files.isDirectory(file)) {
+                    // 如果是目录，递归删除
+                    deleteFiles(file.toString(), null);
+                    Files.delete(file); // 删除空目录
+                } else {
+                    Files.delete(file);
+                }
+            }
+        } catch (IOException e) {
+            throw new IOException("删除文件失败: " + dirPath, e);
+        }
     }
 
     private static void createDirectoryIfNotExists(String dirPath) throws IOException {
