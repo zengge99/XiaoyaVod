@@ -293,6 +293,9 @@ public class LocalIndexService {
 
     private void filterByPath(List<String> inputSortList, List<String> outputSortList, String fieldValue)
             throws IOException {
+        if (fieldValue.startsWith("/")) {
+            fieldValue = fieldValue.substring(1);
+        }
         List<String> noPicList = new FileBasedList<String>(String.class);
         for (String line : inputSortList) {
             String[] fields = line.split("#");
