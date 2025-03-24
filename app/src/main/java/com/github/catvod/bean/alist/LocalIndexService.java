@@ -43,9 +43,10 @@ public class LocalIndexService {
     }
 
     public static LocalIndexService get(String url) {
+
         String realUrl = url;
-        if (!url.startsWith("http") && url.contains("/")) {
-            realUrl = url.substring(url.indexOf("/"));
+        if (!url.startsWith("http")) {
+            realUrl = url.substring(url.indexOf("/") + 1);
         }
 
         if (isOnline(realUrl)) {
@@ -55,7 +56,7 @@ public class LocalIndexService {
         if (!instances.containsKey(url)) {
             instances.put(url, new LocalIndexService(realUrl));
         }
-        
+
         return instances.get(url);
     }
 
