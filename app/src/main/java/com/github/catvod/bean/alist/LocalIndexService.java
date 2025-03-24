@@ -275,7 +275,7 @@ public class LocalIndexService {
             service = LocalIndexService.get("http://zengge99.1996999.xyz:5678/sou?box=%E6%AF%8F%E6%97%A5%E6%9B%B4%E6%96%B0&url=&type=video");
             queryParams = new LinkedHashMap<>();
             queryParams.put("doubansort", "desc");
-            service.slim("每日更新/电视剧/国产剧")
+            service.slim("每日更新/电视剧/国产剧");
             result = service.query(queryParams);
             Logger.log("Query result3: " + result.get(0));
             
