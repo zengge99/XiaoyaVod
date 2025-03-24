@@ -18,7 +18,7 @@ public class FileBasedList<T> implements List<T> {
     private int size; // 当前列表的大小
     private final List<Long> linePositions; // 记录每一行的文件位置
     private final List<T> buffer; // 内存缓存
-    private static final int BUFFER_SIZE = 5000; // 缓存大小
+    private static final int BUFFER_SIZE = 20000; // 缓存大小
 
     private final Map<Integer, T> cache; // 缓存最近访问的行数据
     private int lastAccessedIndex = -1; // 上一次访问的行号
