@@ -201,7 +201,7 @@ public class AList extends Spider {
         List<Vod> list = new ArrayList<>();
         if (defaultDrive != null) {
             List<String> lines = (new Job(defaultDrive.check(), "~daily:1000")).call();
-            list = LocalIndexService.toVods(drive, lines);
+            list = LocalIndexService.toVods(defaultDrive, lines);
         }
 
         String result = Result.string(classes, list, filters);
@@ -275,7 +275,7 @@ public class AList extends Spider {
         Logger.log(keyword);
         Logger.log(quick);
         List<Vod> list = new ArrayList<>();
-        List<AbstractMap.SimpleEntry<Future<List<Vod>>, String>> futuresWithDrives = new ArrayList<>();
+        List<AbstractMap.SimpleEntry<Future<List<String>>, String>> futuresWithDrives = new ArrayList<>();
 
         for (Drive drive : drives) {
             if (drive.search()) {
