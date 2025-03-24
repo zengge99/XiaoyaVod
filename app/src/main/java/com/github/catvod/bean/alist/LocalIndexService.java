@@ -23,6 +23,10 @@ public class LocalIndexService {
     private HashMap<String, List<String>> queryCache = new HashMap<>();
 
     private LocalIndexService(String url) {
+        if (!url.startsWith("http") && url.contains("/")) {
+            url = url.substring(url.indexOf("/"));
+        }
+        
         if (isOnline(url)) {
             inputList = new FileBasedList<String>(String.class);
             Document doc = Jsoup.parse(OkHttp.string(url));

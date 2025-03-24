@@ -213,7 +213,7 @@ public class AList extends Spider {
                 Thread.sleep(500);
             } catch (InterruptedException e) {
             }
-            LocalIndexService.get(tmpDrive.getServer()).slim(tmpDrive.getPath());
+            LocalIndexService.get(tmpDrive.getName() + "/" + tmpDrive.getServer()).slim(tmpDrive.getPath());
         });
         thread.start();
         
@@ -799,13 +799,13 @@ public class AList extends Spider {
             }
             shortKeyword = shortKeyword.length() < 30 ? shortKeyword : shortKeyword.substring(0, 30);
             if (keyword.startsWith("~daily:")) {
-                return LocalIndexService.get(drive.dailySearchApi(shortKeyword)).query(new LinkedHashMap<String, String>());
+                return LocalIndexService.get(drive.getName() + "/"+ drive.dailySearchApi(shortKeyword)).query(new LinkedHashMap<String, String>());
             } else if (keyword.startsWith("~search:")) {
-                return LocalIndexService.get(drive.searchApi(shortKeyword)).query(new LinkedHashMap<String, String>());
+                return LocalIndexService.get(drive.getName() + "/"+ drive.searchApi(shortKeyword)).query(new LinkedHashMap<String, String>());
             } else if (keyword.startsWith("~quick:")) {
                 return new ArrayList<>();
             } else {
-                LocalIndexService service = LocalIndexService.get(drive.getServer());
+                LocalIndexService service = LocalIndexService.get(drive.getName() + "/"+ drive.getServer());
                 return service.slim(drive.getPath());
             }
         }
