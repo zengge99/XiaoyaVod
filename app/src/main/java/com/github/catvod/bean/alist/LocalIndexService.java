@@ -163,7 +163,7 @@ public class LocalIndexService {
 
     public void slim(String path) {
         List<String> outputSortList = new FileBasedList<String>(String.class);
-        filterByPath(inputList, outputSortList, param);
+        filterByPath(inputList, outputSortList, path);
         inputList = outputSortList;
     }
 
