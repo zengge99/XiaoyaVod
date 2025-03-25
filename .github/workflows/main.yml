@@ -72,6 +72,7 @@ jobs:
 
       - name: Clean up temporary files
         run: |
+          ls -l
           rm -rf spider.jar/build
           rm -rf spider.jar/smali
           rm -rf spider.jar/dist
