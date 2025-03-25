@@ -20,7 +20,7 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
-          java-version: '11'
+          java-version: '17'  # 将 Java 版本从 11 改为 17
           distribution: 'temurin'
 
       - name: Install dependencies
