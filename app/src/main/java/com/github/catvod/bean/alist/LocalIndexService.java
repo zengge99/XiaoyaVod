@@ -16,7 +16,7 @@ import com.github.catvod.bean.Vod;
 
 public class LocalIndexService {
 
-    private static final int MAX_LINES_IN_MEMORY = 20000; // 每个块的最大行数
+    private static final int MAX_LINES_IN_MEMORY = 10000; // 每个块的最大行数
     private static final Map<String, LocalIndexService> instances = new HashMap<>(); // 实例缓存
 
     private List<String> inputList;

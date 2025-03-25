@@ -16,7 +16,7 @@ public class FileBasedList<T> implements List<T> {
     private int size;
     private final List<Long> linePositions;
     private final List<T> buffer;
-    private static final int BUFFER_SIZE = 20000;
+    private static final int BUFFER_SIZE = 5000;
     private final Map<Integer, T> cache;
     private int lastAccessedIndex = -1;
     private RandomAccessFile lastAccessedFile;
