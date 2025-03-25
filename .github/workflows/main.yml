@@ -30,6 +30,10 @@ jobs:
           mkdir -p 3rd
           wget https://bitbucket.org/iBotPeaches/apktool/downloads/apktool_2.11.0.jar -O 3rd/apktool_2.11.0.jar
 
+      - name: Build APK
+        run: |
+          ./gradlew assembleRelease
+
       - name: Clean up previous build artifacts
         run: |
           rm -f custom_spider.jar
