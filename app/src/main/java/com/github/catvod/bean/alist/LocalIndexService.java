@@ -47,11 +47,15 @@ public class LocalIndexService {
                 Logger.log("文件下载解压耗时: " + (System.currentTimeMillis() - downloadStart) + "ms");
 
                 long initListStart = System.currentTimeMillis();
+
                 inputList = inputCache.get(filePath);
                 if (inputList == null) {
+                    Logger.log("缓存未命中，初始化 FileBasedList，filePath：" + filePath);
                     inputList = new FileBasedList<String>(filePath, String.class); // 初始化 FileBasedList
-                    inputCache.put(filePath, inputList);
+                    inputCache.put(filePath, inputList); // 放入缓存
                     Logger.log("初始化 FileBasedList 耗时: " + (System.currentTimeMillis() - initListStart) + "ms");
+                } else {
+                    Logger.log("缓存命中，直接使用缓存数据");
                 }
             }
         } finally {
