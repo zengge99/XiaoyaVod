@@ -369,6 +369,10 @@ public class LocalIndexService {
             if (fieldValue.startsWith("/")) {
                 fieldValue = fieldValue.substring(1);
             }
+            if (fieldValue.isEmpty()) {
+                outputSortList = inputSortList;
+                return;
+            }
             List<String> noPicList = new FileBasedList<String>(String.class);
             for (String line : inputSortList) {
                 String[] fields = line.split("#");
