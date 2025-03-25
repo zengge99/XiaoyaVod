@@ -20,7 +20,7 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
-          java-version: '17'  # 将 Java 版本从 11 改为 17
+          java-version: '17'
           distribution: 'temurin'
 
       - name: Install dependencies
@@ -40,11 +40,11 @@ jobs:
       - name: Clean up previous build artifacts
         run: |
           rm -f custom_spider.jar
-          rm -rf Smali_classes
+          rm -rf spider.jar
 
       - name: Decode APK
         run: |
-          java -jar 3rd/apktool_2.11.0.jar d -f --only-main-classes ./app/build/outputs/apk/release/app-release-unsigned.apk -o Smali_classes
+          java -jar 3rd/apktool_2.11.0.jar d -f --only-main-classes ./app/build/outputs/apk/release/app-release-unsigned.apk -o spider.jar
 
       - name: Prepare directories
         run: |
@@ -56,9 +56,9 @@ jobs:
 
       - name: Move smali files
         run: |
-          mv Smali_classes/smali/com/github/catvod/spider spider.jar/smali/com/github/catvod/
-          mv Smali_classes/smali/com/github/catvod/js spider.jar/smali/com/github/catvod/
-          mv Smali_classes/smali/org/slf4j spider.jar/smali/org/
+          mv spider.jar/smali/com/github/catvod/spider spider.jar/smali/com/github/catvod/
+          mv spider.jar/smali/com/github/catvod/js spider.jar/smali/com/github/catvod/
+          mv spider.jar/smali/org/slf4j spider.jar/smali/org/
 
       - name: Build JAR
         run: |
@@ -74,7 +74,6 @@ jobs:
           rm -rf spider.jar/build
           rm -rf spider.jar/smali
           rm -rf spider.jar/dist
-          rm -rf Smali_classes
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
