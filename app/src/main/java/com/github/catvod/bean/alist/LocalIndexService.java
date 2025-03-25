@@ -228,7 +228,7 @@ public class LocalIndexService {
             }
             List<String> outputSortList = new FileBasedList<String>(String.class);
             long filterStart = System.currentTimeMillis();
-            filterByPath(inputList, outputSortList, path);
+            outputSortList = filterByPath(inputList, outputSortList, path);
 
             long indexStart = System.currentTimeMillis();
             inputList = outputSortList;
