@@ -372,6 +372,7 @@ public class LocalIndexService {
             Logger.log("Filtered by field: " + fieldValue);
             if (fieldValue.isEmpty()) {
                 outputSortList = inputSortList;
+                return outputSortList;
             }
             List<String> noPicList = new FileBasedList<String>(String.class);
             for (String line : inputSortList) {
@@ -385,9 +386,9 @@ public class LocalIndexService {
                 }
             }
             outputSortList.addAll(noPicList);
+            return outputSortList;
         } finally {
             Logger.log("filterByPath耗时: " + (System.currentTimeMillis() - startTime) + "ms");
-            return outputSortList;
         }
     }
 
