@@ -229,11 +229,9 @@ public class LocalIndexService {
             List<String> outputSortList = new FileBasedList<String>(String.class);
             long filterStart = System.currentTimeMillis();
             filterByPath(inputList, outputSortList, path);
-            Logger.log("filterByPath耗时: " + (System.currentTimeMillis() - filterStart) + "ms");
 
             long indexStart = System.currentTimeMillis();
             buildInvertedIndex();
-            Logger.log("buildInvertedIndex耗时: " + (System.currentTimeMillis() - indexStart) + "ms");
 
             inputList = outputSortList;
             slimed = true;
@@ -267,13 +265,14 @@ public class LocalIndexService {
         long startTime = System.currentTimeMillis();
         try {
             invertedIndex = new HashMap<>();
-            for (int i = 0; i < inputList.size(); i++) {
-                String line = inputList.get(i);
+            int i = 0;
+            for (String line : inputList) {
                 String[] fields = line.split("#");
                 if (fields.length >= 2) {
                     String keyword = fields[1].trim(); // 第二个字段作为关键字
                     invertedIndex.computeIfAbsent(keyword, k -> new ArrayList<>()).add(i); // 保存行号
                 }
+                i++;
             }
         } finally {
             Logger.log("buildInvertedIndex耗时: " + (System.currentTimeMillis() - startTime) + "ms");
