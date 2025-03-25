@@ -54,17 +54,13 @@ jobs:
 
       - name: Move smali files
         run: |
-          mv spider.jar/smali/com/github/catvod/spider spider.jar/smali/com/github/catvod/
-          mv spider.jar/smali/com/github/catvod/js spider.jar/smali/com/github/catvod/
-          mv spider.jar/smali/org/slf4j spider.jar/smali/org/
+          mv spider.jar/smali/com/github/catvod/spider spider.jar/smali/com/github/catvod/spider_new
+          mv spider.jar/smali/com/github/catvod/js spider.jar/smali/com/github/catvod/js_new
+          mv spider.jar/smali/org/slf4j spider.jar/smali/org/slf4j_new
 
       - name: Build JAR
         run: |
           java -jar 3rd/apktool_2.11.0.jar b spider.jar -c
-
-      - name: List build output directory
-        run: |
-          ls -l spider.jar/dist
 
       - name: Rename and generate MD5
         run: |
