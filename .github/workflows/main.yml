@@ -54,9 +54,9 @@ jobs:
 
       - name: Move smali files
         run: |
-          mkdir spider.jar/smali/com/github/catvod
-          mkdir
-          mv Smali_classes/smali/com/github/catvod/spider spider.jar/smali/com/github/catvod/spider spider.jar/smali/org/slf4j
+          mkdir -p spider.jar/smali/com/github/catvod
+          mkdir -p spider.jar/smali/org/slf4j
+          mv Smali_classes/smali/com/github/catvod/spider spider.jar/smali/com/github/catvod/spider
           mv Smali_classes/smali/com/github/catvod/js spider.jar/smali/com/github/catvod/js
           mv Smali_classes/smali/org/slf4j spider.jar/smali/org/slf4j
 
