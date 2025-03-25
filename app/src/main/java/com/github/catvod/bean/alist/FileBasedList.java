@@ -103,9 +103,10 @@ public class FileBasedList<T> implements List<T> {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {
             long position = 0;
             String line;
+            int lineSeparatorLength = System.lineSeparator().getBytes(StandardCharsets.UTF_8).length;
             while ((line = reader.readLine()) != null) {
                 linePositions.add(position);
-                position += line.getBytes(StandardCharsets.UTF_8).length + System.lineSeparator().getBytes(StandardCharsets.UTF_8).length;
+                position += line.getBytes(StandardCharsets.UTF_8).length + lineSeparatorLength;
             }
             this.size = linePositions.size();
         } catch (IOException e) {
