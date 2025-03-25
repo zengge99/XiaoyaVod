@@ -7,7 +7,7 @@ import com.google.gson.Gson;
 import com.github.catvod.utils.Path;
 
 public class Logger {
-    static boolean dbg = false;
+    static boolean dbg = true;
 
     public static void log(Object message) {
         if (!dbg) {
