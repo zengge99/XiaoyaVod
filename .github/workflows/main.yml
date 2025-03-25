@@ -1,0 +1,78 @@
+name: Build Custom Spider
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y unzip
+
+      - name: Download and extract Apktool
+        run: |
+          mkdir -p 3rd
+          wget https://bitbucket.org/iBotPeaches/apktool/downloads/apktool_2.11.0.jar -O 3rd/apktool_2.11.0.jar
+
+      - name: Clean up previous build artifacts
+        run: |
+          rm -f custom_spider.jar
+          rm -rf Smali_classes
+
+      - name: Decode APK
+        run: |
+          java -jar 3rd/apktool_2.11.0.jar d -f --only-main-classes ./app/build/outputs/apk/release/app-release-unsigned.apk -o Smali_classes
+
+      - name: Prepare directories
+        run: |
+          rm -rf spider.jar/smali/com/github/catvod/spider
+          rm -rf spider.jar/smali/com/github/catvod/js
+          rm -rf spider.jar/smali/org/slf4j
+          mkdir -p spider.jar/smali/com/github/catvod
+          mkdir -p spider.jar/smali/org/slf4j
+
+      - name: Move smali files
+        run: |
+          mv Smali_classes/smali/com/github/catvod/spider spider.jar/smali/com/github/catvod/
+          mv Smali_classes/smali/com/github/catvod/js spider.jar/smali/com/github/catvod/
+          mv Smali_classes/smali/org/slf4j spider.jar/smali/org/
+
+      - name: Build JAR
+        run: |
+          java -jar 3rd/apktool_2.11.0.jar b spider.jar -c
+
+      - name: Rename and generate MD5
+        run: |
+          mv spider.jar/dist/dex.jar custom_spider.jar
+          md5sum custom_spider.jar | cut -d ' ' -f 1 > custom_spider.jar.md5
+
+      - name: Clean up temporary files
+        run: |
+          rm -rf spider.jar/build
+          rm -rf spider.jar/smali
+          rm -rf spider.jar/dist
+          rm -rf Smali_classes
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: custom_spider
+          path: |
+            custom_spider.jar
+            custom_spider.jar.md5
