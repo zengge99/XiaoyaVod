@@ -30,7 +30,6 @@ public class LocalIndexService {
         try {
             inputList = new FileBasedList<String>(String.class);
             if (isOnline(url)) {
-                Logger.log("开始在线加载数据");
                 long httpStart = System.currentTimeMillis();
                 Document doc = Jsoup.parse(OkHttp.string(url));
                 Logger.log("网络请求耗时: " + (System.currentTimeMillis() - httpStart) + "ms");
@@ -43,7 +42,6 @@ public class LocalIndexService {
                 }
                 Logger.log("HTML解析耗时: " + (System.currentTimeMillis() - parseStart) + "ms");
             } else {
-                Logger.log("开始本地文件加载");
                 long downloadStart = System.currentTimeMillis();
                 String filePath = IndexDownloader.downlodadAndUnzip(url); // 下载并解压文件
                 Logger.log("文件下载解压耗时: " + (System.currentTimeMillis() - downloadStart) + "ms");
@@ -53,8 +51,8 @@ public class LocalIndexService {
                 if (inputList == null) {
                     inputList = new FileBasedList<String>(filePath, String.class); // 初始化 FileBasedList
                     inputCache.put(filePath, inputList);
+                    Logger.log("初始化 FileBasedList 耗时: " + (System.currentTimeMillis() - initListStart) + "ms");
                 }
-                Logger.log("初始化 FileBasedList 耗时: " + (System.currentTimeMillis() - initListStart) + "ms");
             }
         } finally {
             Logger.log("LocalIndexService初始化总耗时: " + (System.currentTimeMillis() - startTime) + "ms");
