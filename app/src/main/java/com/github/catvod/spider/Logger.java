@@ -7,7 +7,7 @@ import com.google.gson.Gson;
 import com.github.catvod.utils.Path;
 
 public class Logger {
-    static boolean dbg = true;
+    static boolean dbg = false;
 
     public static void log(Object message) {
         if (!dbg) {
@@ -36,7 +36,6 @@ public class Logger {
         } else {
             loggerMessage = callPrefix + (new Gson()).toJson(message);
         }
-        //String filePath = "/storage/emulated/0/TV/log.txt";
         String filePath = Path.root().getPath();
         if (filePath == null) {
             return;
