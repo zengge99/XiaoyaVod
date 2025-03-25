@@ -21,7 +21,7 @@ public class LocalIndexService {
 
     private List<String> inputList;
     private HashMap<String, List<String>> queryCache = new HashMap<>();
-    private HashMap<String, List<String>> inputCache = new HashMap<>();
+    private static HashMap<String, List<String>> inputCache = new HashMap<>();
     private boolean slimed = false;
     private Map<String, List<Integer>> invertedIndex; // 倒排索引，保存行号
 
