@@ -39,7 +39,7 @@ jobs:
 
       - name: Clean up previous build artifacts
         run: |
-          rm -f jar/custom_spider.jar
+          rm -f jar/xiaoya_proxy.jar
           rm -rf spider.jar
 
       - name: Decode APK
@@ -68,8 +68,8 @@ jobs:
       - name: Rename and generate MD5
         run: |
           mkdir -p jar
-          mv spider.jar/dist/app-release-unsigned.apk jar/custom_spider.jar
-          md5sum jar/custom_spider.jar | cut -d ' ' -f 1 > jar/custom_spider.jar.md5
+          mv spider.jar/dist/app-release-unsigned.apk jar/xiaoya_proxy.jar
+          md5sum jar/xiaoya_proxy.jar | cut -d ' ' -f 1 > jar/xiaoya_proxy.jar.md5
 
       - name: Clean up temporary files
         run: |
@@ -82,5 +82,5 @@ jobs:
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           git add jar/
-          git commit -m "Add custom_spider.jar and custom_spider.jar.md5"
+          git commit -m "Add xiaoya_proxy.jar and xiaoya_proxy.jar.md5"
           git push
