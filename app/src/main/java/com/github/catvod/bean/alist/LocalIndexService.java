@@ -369,6 +369,7 @@ public class LocalIndexService {
             if (fieldValue.startsWith("/")) {
                 fieldValue = fieldValue.substring(1);
             }
+            Logger.log("Filtered by field: " + fieldValue);
             if (fieldValue.isEmpty()) {
                 outputSortList = inputSortList;
                 return;
@@ -385,7 +386,6 @@ public class LocalIndexService {
                 }
             }
             outputSortList.addAll(noPicList);
-            Logger.log("Filtered by field: " + fieldValue);
         } finally {
             Logger.log("filterByPath耗时: " + (System.currentTimeMillis() - startTime) + "ms");
         }
