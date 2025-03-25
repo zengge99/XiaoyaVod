@@ -362,7 +362,7 @@ public class LocalIndexService {
         }
     }
 
-    private void filterByPath(List<String> inputSortList, List<String> outputSortList, String fieldValue)
+    private List<String> filterByPath(List<String> inputSortList, List<String> outputSortList, String fieldValue)
             throws IOException {
         long startTime = System.currentTimeMillis();
         try {
@@ -372,7 +372,6 @@ public class LocalIndexService {
             Logger.log("Filtered by field: " + fieldValue);
             if (fieldValue.isEmpty()) {
                 outputSortList = inputSortList;
-                return;
             }
             List<String> noPicList = new FileBasedList<String>(String.class);
             for (String line : inputSortList) {
@@ -388,6 +387,7 @@ public class LocalIndexService {
             outputSortList.addAll(noPicList);
         } finally {
             Logger.log("filterByPath耗时: " + (System.currentTimeMillis() - startTime) + "ms");
+            return outputSortList;
         }
     }
 
