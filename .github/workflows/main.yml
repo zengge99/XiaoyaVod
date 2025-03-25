@@ -46,9 +46,11 @@ jobs:
         run: |
           java -jar 3rd/apktool_2.11.0.jar d -f --only-main-classes ./app/build/outputs/apk/release/app-release-unsigned.apk -o spider.jar
 
-      - name: List decoded directory
+      - name: List source directories
         run: |
-          ls -R spider.jar/smali/com/github/catvod
+          ls -l spider.jar/smali/com/github/catvod/spider
+          ls -l spider.jar/smali/com/github/catvod/js
+          ls -l spider.jar/smali/org/slf4j
 
       - name: Move smali files
         run: |
