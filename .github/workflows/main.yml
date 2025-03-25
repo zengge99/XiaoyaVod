@@ -39,7 +39,7 @@ jobs:
 
       - name: Clean up previous build artifacts
         run: |
-          rm -f custom_spider.jar
+          rm -f jar/custom_spider.jar
           rm -rf spider.jar
 
       - name: Decode APK
@@ -67,24 +67,20 @@ jobs:
 
       - name: Rename and generate MD5
         run: |
+          mkdir -p jar
           mv spider.jar/dist/app-release-unsigned.apk jar/custom_spider.jar
-          md5sum custom_spider.jar | cut -d ' ' -f 1 > jar/custom_spider.jar.md5
+          md5sum jar/custom_spider.jar | cut -d ' ' -f 1 > jar/custom_spider.jar.md5
 
       - name: Clean up temporary files
         run: |
-          ls -l
           rm -rf spider.jar/build
           rm -rf spider.jar/smali
           rm -rf spider.jar/dist
 
-      - name: Upload APK
-        uses: actions/upload-pages-artifact@v3
-        with:
-          name: Spider
-          path: ./jar/
-      - name: Update spider jar
-        uses: EndBug/add-and-commit@v9.1.3
-        with:
-          default_author: github_actions
-          message: 'update spider jar'
-          add: "['./jar/xiaoya_proxy.jar', './jar/xiaoya_proxy.jar.md5']"
+      - name: Commit files to jar directory
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add jar/
+          git commit -m "Add custom_spider.jar and custom_spider.jar.md5"
+          git push
