@@ -231,9 +231,10 @@ public class LocalIndexService {
             filterByPath(inputList, outputSortList, path);
 
             long indexStart = System.currentTimeMillis();
-            buildInvertedIndex();
-
             inputList = outputSortList;
+
+            buildInvertedIndex();
+            
             slimed = true;
             return inputList;
         } catch (Exception e) {
