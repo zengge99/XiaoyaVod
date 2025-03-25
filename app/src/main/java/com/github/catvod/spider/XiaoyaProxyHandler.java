@@ -7,8 +7,7 @@ import java.util.Map;
 import java.util.Arrays;
 import java.util.List;
 import java.util.TreeMap;
-import com.github.catvod.bean.DanmuFetcher;
-import com.github.catvod.bean.KanDanmuFetcher;
+import com.github.catvod.bean.alist.LocalIndexService;
 
 import okhttp3.Response;
 import fi.iki.elonen.NanoHTTPD;
@@ -38,6 +37,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.Callable; 
 import com.github.catvod.bean.alist.LoginDlg;
+import com.github.catvod.bean.alist.FileBasedList;
 
 public class XiaoyaProxyHandler {
 
@@ -505,7 +505,8 @@ public class XiaoyaProxyHandler {
             case "gen":
                 return genProxy(params);
             case "test":
-                KanDanmuFetcher.test();
+                LocalIndexService.test();
+                //FileBasedList.test();
                 return new Object[]{200, "text/plain; charset=utf-8", new ByteArrayInputStream("ok".getBytes("UTF-8"))};
             default:
                 return null;

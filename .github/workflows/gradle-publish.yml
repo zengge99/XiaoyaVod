@@ -2,9 +2,9 @@ name: build
 
 on:
   push:
-    branches: ['main']
+    branches: ['dev']
   pull_request:
-    branches: ['main']
+    branches: ['dev']
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -29,7 +29,7 @@ jobs:
         run: |
           rm -rf project
           rm -rf jar/xiaoya_proxy.jar
-          git clone --recurse-submodules https://github.com/zengge99/XiaoyaVod project
+          git clone --recurse-submodules -b dev https://github.com/zengge99/XiaoyaVod.git project
       - name: Download baksmali
         working-directory: ./project
         run: |

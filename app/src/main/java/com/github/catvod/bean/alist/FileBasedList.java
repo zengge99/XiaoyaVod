@@ -1,63 +1,61 @@
 package com.github.catvod.bean.alist;
 
 import com.google.gson.Gson;
-
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.function.Consumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import java.nio.charset.StandardCharsets;
+import com.github.catvod.spider.Logger;
 import java.nio.file.Files;
 
 public class FileBasedList<T> implements List<T> {
-    private final File file; // 存储数据的文件
-    private final Gson gson; // Gson 用于序列化和反序列化
-    private final Class<T> type; // 泛型类型
-    private int size; // 当前列表的大小
-    private final List<Long> linePositions; // 记录每一行的文件位置
-    private final List<T> buffer; // 内存缓存
-    private static final int BUFFER_SIZE = 1000; // 缓存大小
+    private final File file;
+    private final Gson gson;
+    private final Class<T> type;
+    private int size;
+    private final List<Long> linePositions;
+    private final List<T> buffer;
+    private static final int BUFFER_SIZE = 20000;
+    private final Map<Integer, T> cache;
+    private int lastAccessedIndex = -1;
+    private RandomAccessFile lastAccessedFile;
+    private BufferedReader lastAccessedReader;
 
+    // 带文件路径的构造函数
     public FileBasedList(String filePath, Class<T> type) {
         this.file = new File(filePath);
         this.gson = new Gson();
         this.type = type;
-        this.linePositions = new ArrayList<>();
+        this.linePositions = new ArrayList<>(BUFFER_SIZE);
         this.buffer = new ArrayList<>(BUFFER_SIZE);
-
-        // 确保文件的父目录存在，如果不存在则创建所有缺失的父目录
-        File parentDir = file.getParentFile();
-        if (parentDir != null && !parentDir.exists()) {
-            boolean dirsCreated = parentDir.mkdirs();
-            if (!dirsCreated) {
-                throw new RuntimeException("Failed to create parent directories: " + parentDir.getAbsolutePath());
+        this.cache = new LinkedHashMap<Integer, T>(100, 0.75f, true) {
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<Integer, T> eldest) {
+                return size() > 100; // LRU cache with max size of 100
             }
-        }
+        };
 
-        // 如果文件不存在，则创建
-        if (!file.exists()) {
-            try {
-                file.createNewFile();
-                this.size = 0; // 新文件大小为 0
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to create file: " + filePath, e);
-            }
-        } else {
-            // 如果文件已存在，初始化文件位置和大小
-            initializeLinePositions();
-        }
+        ensureFileExists();
+        initializeLinePositions();
     }
 
-    // 不带文件名的构造函数，自动生成随机文件名
+    // 不带文件路径的构造函数，自动生成随机文件名
     public FileBasedList(Class<T> type) {
         this(generateRandomFileName(), type);
     }
 
+    // 生成随机文件名
+    private static String generateRandomFileName() {
+        return getCacheDirPath() + UUID.randomUUID().toString() + ".list";
+    }
+
+    // 获取缓存目录路径
     private static String getCacheDirPath() {
         return com.github.catvod.utils.Path.cache() + "/TV/list/";
     }
 
+    // 清空缓存目录
     public static void clearCacheDirectory() {
         String cacheDirPath = getCacheDirPath();
         File cacheDir = new File(cacheDirPath);
@@ -80,23 +78,35 @@ public class FileBasedList<T> implements List<T> {
         }
     }
 
-    // 生成随机文件名
-    private static String generateRandomFileName() {
-        return getCacheDirPath() + UUID.randomUUID().toString() + ".list";
+    // 确保文件存在
+    private void ensureFileExists() {
+        File parentDir = file.getParentFile();
+        if (parentDir != null && !parentDir.exists()) {
+            boolean dirsCreated = parentDir.mkdirs();
+            if (!dirsCreated) {
+                throw new RuntimeException("Failed to create parent directories: " + parentDir.getAbsolutePath());
+            }
+        }
+
+        if (!file.exists()) {
+            try {
+                file.createNewFile();
+                this.size = 0;
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to create file: " + file.getAbsolutePath(), e);
+            }
+        }
     }
 
-    /**
-     * 初始化文件位置和大小
-     */
+    // 初始化行位置
     private void initializeLinePositions() {
-        try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {
             long position = 0;
             String line;
+            int lineSeparatorLength = System.lineSeparator().getBytes(StandardCharsets.UTF_8).length;
             while ((line = reader.readLine()) != null) {
                 linePositions.add(position);
-                position += line.getBytes(StandardCharsets.UTF_8).length
-                        + System.lineSeparator().getBytes(StandardCharsets.UTF_8).length; // 更新位置
+                position += line.getBytes(StandardCharsets.UTF_8).length + lineSeparatorLength;
             }
             this.size = linePositions.size();
         } catch (IOException e) {
@@ -130,7 +140,7 @@ public class FileBasedList<T> implements List<T> {
             flushBuffer();
             BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
             return new Iterator<T>() {
-                private String nextLine = reader.readLine(); // 读取第一行
+                private String nextLine = reader.readLine();
 
                 @Override
                 public boolean hasNext() {
@@ -140,8 +150,8 @@ public class FileBasedList<T> implements List<T> {
                 @Override
                 public T next() {
                     try {
-                        T item = gson.fromJson(nextLine, type); // 反序列化为对象
-                        nextLine = reader.readLine(); // 读取下一行
+                        T item = parseLine(nextLine);
+                        nextLine = reader.readLine();
                         return item;
                     } catch (IOException e) {
                         throw new RuntimeException("Failed to read next line", e);
@@ -181,26 +191,21 @@ public class FileBasedList<T> implements List<T> {
         return true;
     }
 
-    /**
-     * 将缓存中的数据批量写入文件
-     */
+    // 将缓存中的数据写入文件
     private void flushBuffer() {
         if (buffer.size() == 0) {
             return;
         }
-        try (BufferedWriter writer = new BufferedWriter(
-                new OutputStreamWriter(new FileOutputStream(file, true), StandardCharsets.UTF_8))) {
-            long currentPosition = file.length(); // 获取当前文件长度作为初始位置
-
+        try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file, true), StandardCharsets.UTF_8))) {
+            long currentPosition = file.length();
             for (T item : buffer) {
-                linePositions.add(currentPosition); // 记录新行的起始位置
-                String json = gson.toJson(item) + "\n";
-                writer.write(json);
-                currentPosition += json.getBytes(StandardCharsets.UTF_8).length; // 更新当前位置
+                linePositions.add(currentPosition);
+                String line = type == String.class ? (String) item + "\n" : gson.toJson(item) + "\n";
+                writer.write(line);
+                currentPosition += line.getBytes(StandardCharsets.UTF_8).length;
             }
-
-            writer.flush(); // 最终确保所有缓冲的数据都已写入文件
-            buffer.clear(); // 清空缓存
+            writer.flush();
+            buffer.clear();
         } catch (IOException e) {
             throw new RuntimeException("Failed to write to file", e);
         }
@@ -224,43 +229,33 @@ public class FileBasedList<T> implements List<T> {
     @Override
     public boolean addAll(Collection<? extends T> c) {
         if (c instanceof FileBasedList) {
-            // 如果传入的集合是 FileBasedList 类型，直接合并文件
             return mergeFileBasedList((FileBasedList<? extends T>) c);
         } else {
-            // 否则，按照原来的方式逐条添加
             for (T item : c) {
                 add(item);
             }
             return true;
         }
     }
-    
-    /**
-     * 合并两个 FileBasedList 的文件内容
-     * @param other 另一个 FileBasedList
-     * @return 是否合并成功
-     */
+
+    // 合并两个 FileBasedList 的文件内容
     private boolean mergeFileBasedList(FileBasedList<? extends T> other) {
-        flushBuffer(); // 确保当前缓存数据写入文件
+        flushBuffer();
         if (other != this) {
-            other.flushBuffer(); // 确保另一个文件的缓存数据写入文件
+            other.flushBuffer();
         }
-    
-        try (BufferedWriter writer = new BufferedWriter(
-                new OutputStreamWriter(new FileOutputStream(file, true), StandardCharsets.UTF_8));
-             BufferedReader reader = new BufferedReader(
-                     new InputStreamReader(new FileInputStream(other.file), StandardCharsets.UTF_8))) {
-    
-            long currentPosition = file.length(); // 获取当前文件长度作为初始位置
+        try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file, true), StandardCharsets.UTF_8));
+             BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(other.file), StandardCharsets.UTF_8))) {
+            long currentPosition = file.length();
             String line;
             while ((line = reader.readLine()) != null) {
-                linePositions.add(currentPosition); // 记录新行的起始位置
-                writer.write(line); // 将另一文件的内容逐行写入当前文件
-                writer.newLine(); // 写入换行符
-                currentPosition += line.getBytes(StandardCharsets.UTF_8).length + System.lineSeparator().getBytes(StandardCharsets.UTF_8).length; // 更新当前位置
+                linePositions.add(currentPosition);
+                writer.write(line);
+                writer.newLine();
+                currentPosition += line.getBytes(StandardCharsets.UTF_8).length + System.lineSeparator().getBytes(StandardCharsets.UTF_8).length;
             }
-            writer.flush(); // 确保所有数据写入文件
-            size += other.size(); // 更新列表大小
+            writer.flush();
+            size += other.size();
             return true;
         } catch (IOException e) {
             throw new RuntimeException("Failed to merge FileBasedList files", e);
@@ -286,10 +281,10 @@ public class FileBasedList<T> implements List<T> {
     public void clear() {
         flushBuffer();
         try (FileWriter writer = new FileWriter(file)) {
-            writer.write(""); // 清空文件内容
-            size = 0; // 大小重置为 0
-            linePositions.clear(); // 清空文件位置记录
-            buffer.clear(); // 清空缓存
+            writer.write("");
+            size = 0;
+            linePositions.clear();
+            buffer.clear();
         } catch (IOException e) {
             throw new RuntimeException("Failed to clear file", e);
         }
@@ -300,25 +295,50 @@ public class FileBasedList<T> implements List<T> {
         if (index < 0 || index >= size) {
             throw new IndexOutOfBoundsException("Index " + index + " is out of bounds");
         }
-        flushBuffer();
-        try (
-                RandomAccessFile randomAccessFile = new RandomAccessFile(file, "r");
-                InputStreamReader reader = new InputStreamReader(new FileInputStream(randomAccessFile.getFD()), StandardCharsets.UTF_8);
-                BufferedReader bufferedReader = new BufferedReader(reader)
-        ) {
-            long position = linePositions.get(index); // 获取指定行的起始位置
-            randomAccessFile.seek(position); // 跳转到指定位置
 
-            String line;
-            while ((line = bufferedReader.readLine()) != null) {
-                return gson.fromJson(line, type); // 反序列化为对象
+        // 检查缓存
+        if (cache.containsKey(index)) {
+            return cache.get(index);
+        }
+
+        flushBuffer();
+        try {
+            // 如果是顺序访问（当前行号的下一个），则直接读取下一行
+            if (index == lastAccessedIndex + 1 && lastAccessedReader != null) {
+                String line = lastAccessedReader.readLine();
+                if (line != null) {
+                    T item = parseLine(line);
+                    cache.put(index, item);
+                    lastAccessedIndex = index;
+                    return item;
+                }
             }
 
-            throw new IllegalStateException("Failed to read the specified line");
+            // 否则，重新定位文件指针并初始化 BufferedReader
+            if (lastAccessedFile == null) {
+                lastAccessedFile = new RandomAccessFile(file, "r");
+            }
 
+            long position = linePositions.get(index);
+            lastAccessedFile.seek(position);
+            lastAccessedReader = new BufferedReader(new InputStreamReader(new FileInputStream(lastAccessedFile.getFD()), StandardCharsets.UTF_8));
+
+            String line = lastAccessedReader.readLine();
+            if (line != null) {
+                T item = parseLine(line);
+                cache.put(index, item);
+                lastAccessedIndex = index;
+                return item;
+            }
+            throw new IllegalStateException("Failed to read the specified line");
         } catch (IOException e) {
             throw new RuntimeException("Failed to read from file", e);
         }
+    }
+
+    // 解析一行数据
+    private T parseLine(String line) {
+        return type == String.class ? (T) line : gson.fromJson(line, type);
     }
 
     @Override
@@ -382,7 +402,7 @@ public class FileBasedList<T> implements List<T> {
 
     public Stream<T> stream() {
         Spliterator<T> spliterator = Spliterators.spliteratorUnknownSize(iterator(), Spliterator.ORDERED);
-        return StreamSupport.stream(spliterator, false); // 不支持并行流
+        return StreamSupport.stream(spliterator, false);
     }
 
     public static class IndexedItem<T> {
@@ -407,32 +427,59 @@ public class FileBasedList<T> implements List<T> {
         try {
             flushBuffer();
             BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
-            Spliterator<IndexedItem<T>> spliterator = Spliterators
-                    .spliteratorUnknownSize(new Iterator<IndexedItem<T>>() {
-                        private String nextLine = reader.readLine(); // 读取第一行
-                        private int currentLineNumber = 0; // 当前行号
+            Spliterator<IndexedItem<T>> spliterator = Spliterators.spliteratorUnknownSize(new Iterator<IndexedItem<T>>() {
+                private String nextLine = reader.readLine();
+                private int currentLineNumber = 0;
 
-                        @Override
-                        public boolean hasNext() {
-                            return nextLine != null;
-                        }
+                @Override
+                public boolean hasNext() {
+                    return nextLine != null;
+                }
 
-                        @Override
-                        public IndexedItem<T> next() {
-                            try {
-                                T item = gson.fromJson(nextLine, type); // 反序列化为对象
-                                IndexedItem<T> indexedItem = new IndexedItem<>(item, currentLineNumber);
-                                nextLine = reader.readLine(); // 读取下一行
-                                currentLineNumber++; // 行号增加
-                                return indexedItem;
-                            } catch (IOException e) {
-                                throw new RuntimeException("Failed to read next line", e);
-                            }
-                        }
-                    }, Spliterator.ORDERED);
-            return StreamSupport.stream(spliterator, false); // 不支持并行流
+                @Override
+                public IndexedItem<T> next() {
+                    try {
+                        T item = parseLine(nextLine);
+                        IndexedItem<T> indexedItem = new IndexedItem<>(item, currentLineNumber);
+                        nextLine = reader.readLine();
+                        currentLineNumber++;
+                        return indexedItem;
+                    } catch (IOException e) {
+                        throw new RuntimeException("Failed to read next line", e);
+                    }
+                }
+            }, Spliterator.ORDERED);
+            return StreamSupport.stream(spliterator, false);
         } catch (IOException e) {
             throw new RuntimeException("Failed to initialize indexed stream", e);
+        }
+    }
+
+    public static void test() {
+        long startTime, endTime;
+        try {
+            startTime = System.currentTimeMillis();
+            List<String> list = new FileBasedList<>(com.github.catvod.utils.Path.root().getPath() + "/TV/index.all.txt", String.class);
+            endTime = System.currentTimeMillis();
+            Logger.log("初始化 FileBasedList 耗时: " + (endTime - startTime) + " 毫秒");
+
+            startTime = System.currentTimeMillis();
+            String item = list.get(1000);
+            endTime = System.currentTimeMillis();
+            Logger.log(item);
+            Logger.log("获取第 1000 个元素耗时: " + (endTime - startTime) + " 毫秒");
+
+            List<String> filteredList = new FileBasedList<>(String.class);
+            startTime = System.currentTimeMillis();
+            for (String s : list) {
+                if (s.startsWith("电影")) {
+                    filteredList.add(s);
+                }
+            }
+            endTime = System.currentTimeMillis();
+            Logger.log("过滤列表耗时: " + (endTime - startTime) + " 毫秒");
+        } catch (Exception e) {
+            Logger.log(e);
         }
     }
 }
