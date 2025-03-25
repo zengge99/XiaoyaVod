@@ -463,7 +463,7 @@ public class LocalIndexService {
                 item.doubanInfo.setId(splits.length >= 3 ? splits[2] : "");
                 item.doubanInfo.setRating(splits.length >= 4 ? splits[3] : "");
                 item.setThumb(splits.length >= 5 ? splits[4] : "");
-                item.setPath("/" + splits[0].substring(0, index);
+                item.setPath("/" + splits[0].substring(0, index));
                 String fileName = splits[0].substring(index + 1);
                 item.setName(fileName);
                 item.doubanInfo.setName(splits.length >= 2 ? splits[1] : fileName);
