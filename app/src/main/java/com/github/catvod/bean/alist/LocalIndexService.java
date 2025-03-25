@@ -21,6 +21,7 @@ public class LocalIndexService {
 
     private List<String> inputList;
     private HashMap<String, List<String>> queryCache = new HashMap<>();
+    private HashMap<String, List<String>> inputCache = new HashMap<>();
     private boolean slimed = false;
     private Map<String, List<Integer>> invertedIndex; // 倒排索引，保存行号
 
@@ -48,7 +49,11 @@ public class LocalIndexService {
                 Logger.log("文件下载解压耗时: " + (System.currentTimeMillis() - downloadStart) + "ms");
 
                 long initListStart = System.currentTimeMillis();
-                inputList = new FileBasedList<String>(filePath, String.class); // 初始化 FileBasedList
+                inputList = inputCache.get(filePath);
+                if (inputList == null) {
+                    inputList = new FileBasedList<String>(filePath, String.class); // 初始化 FileBasedList
+                    inputCache.put(filePath, inputList);
+                }
                 Logger.log("初始化 FileBasedList 耗时: " + (System.currentTimeMillis() - initListStart) + "ms");
             }
         } finally {
