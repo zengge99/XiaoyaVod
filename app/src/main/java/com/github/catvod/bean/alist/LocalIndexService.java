@@ -171,7 +171,7 @@ public class LocalIndexService {
         return (o1, o2) -> {
             double value1 = parseFieldAsDouble(o1.split("#"), 3);
             double value2 = parseFieldAsDouble(o2.split("#"), 3);
-            if (order.equals("asc")) {
+            if (order.equals("2")) {
                 return Double.compare(value1, value2); // 升序
             } else {
                 return Double.compare(value2, value1); // 降序
