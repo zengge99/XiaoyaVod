@@ -376,7 +376,6 @@ public class AList extends Spider {
         Vod vod = null;
         if (id.endsWith("~xiaoya")) {
             vod = LocalIndexService.get(drive).findVodByPath(drive, path.substring(path.indexOf("/") + 1));
-            Logger.log(vod);
         }
         if (vod == null) {
             vod = new Vod();
