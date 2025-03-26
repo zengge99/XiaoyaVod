@@ -28,11 +28,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y unzip
 
-      - name: Download and extract Apktool
-        run: |
-          mkdir -p 3rd
-          wget https://bitbucket.org/iBotPeaches/apktool/downloads/apktool_2.11.0.jar -O 3rd/apktool_2.11.0.jar
-
       - name: Build APK
         run: |
           ./gradlew assembleRelease
@@ -44,13 +39,13 @@ jobs:
 
       - name: Decode APK
         run: |
-          java -jar 3rd/apktool_2.11.0.jar d -f --only-main-classes ./app/build/outputs/apk/release/app-release-unsigned.apk -o Smali_classes
+          java -jar jar/3rd/apktool_2.11.0.jar d -f --only-main-classes ./app/build/outputs/apk/release/app-release-unsigned.apk -o jar/Smali_classes
 
       - name: List source directories
         run: |
-          ls -l Smali_classes/smali/com/github/catvod/spider
-          ls -l Smali_classes/smali/com/github/catvod/js
-          ls -l Smali_classes/smali/org/slf4j
+          ls -l jar/Smali_classes/smali/com/github/catvod/spider
+          ls -l jar/Smali_classes/smali/com/github/catvod/js
+          ls -l jar/Smali_classes/smali/org/slf4j
 
       - name: Move smali files
         run: |
@@ -60,10 +55,10 @@ jobs:
           mkdir -p jar/spider.jar/smali/com/github/catvod
           mkdir -p jar/spider.jar/smali/org/slf4j
           mkdir -p jar/spider.jar/smali/com/github/catvod/spider
-          mv Smali_classes/smali/com/github/catvod/spider jar/spider.jar/smali/com/github/catvod/spider
-          mv Smali_classes/smali/com/github/catvod/js jar/spider.jar/smali/com/github/catvod/js
-          mv Smali_classes/smali/org/slf4j jar/spider.jar/smali/org/slf4j
-          #mv Smali_classes/apktool.yml jar/spider.jar/
+          mv jar/Smali_classes/smali/com/github/catvod/spider jar/spider.jar/smali/com/github/catvod/spider
+          mv jar/Smali_classes/smali/com/github/catvod/js jar/spider.jar/smali/com/github/catvod/js
+          mv jar/Smali_classes/smali/org/slf4j jar/spider.jar/smali/org/slf4j
+          #mv jar/Smali_classes/apktool.yml jar/spider.jar/
 
       - name: Build JAR
         run: |
@@ -81,6 +76,7 @@ jobs:
           rm -rf jar/spider.jar/build
           rm -rf jar/spider.jar/smali
           rm -rf jar/spider.jar/dist
+          rm -rf jar/Smali_classes
 
       - name: Commit files to jar directory
         run: |
