@@ -35,7 +35,12 @@ jobs:
       - name: Clean up previous build artifacts
         run: |
           rm -f jar/xiaoya_proxy.jar
-          #rm -rf jar/spider.jar
+          rm -rf jar/spider.jar/smali/com/github/catvod
+          rm -rf jar/spider.jar/smali/org/slf4j
+          rm -rf jar/spider.jar/smali/com/github/catvod/spider
+          mkdir -p jar/spider.jar/smali/com/github/catvod
+          mkdir -p jar/spider.jar/smali/org/slf4j
+          mkdir -p jar/spider.jar/smali/com/github/catvod/spider
 
       - name: Decode APK
         run: |
@@ -49,25 +54,17 @@ jobs:
 
       - name: Move smali files
         run: |
-          rm -rf jar/spider.jar/smali/com/github/catvod
-          rm -rf jar/spider.jar/smali/org/slf4j
-          rm -rf jar/spider.jar/smali/com/github/catvod/spider
-          mkdir -p jar/spider.jar/smali/com/github/catvod
-          mkdir -p jar/spider.jar/smali/org/slf4j
-          mkdir -p jar/spider.jar/smali/com/github/catvod/spider
           mv jar/Smali_classes/smali/com/github/catvod/spider jar/spider.jar/smali/com/github/catvod/spider
           mv jar/Smali_classes/smali/com/github/catvod/js jar/spider.jar/smali/com/github/catvod/js
           mv jar/Smali_classes/smali/org/slf4j jar/spider.jar/smali/org/slf4j
-          #mv jar/Smali_classes/apktool.yml jar/spider.jar/
 
       - name: Build JAR
         run: |
-          java -jar 3rd/apktool_2.11.0.jar b jar/spider.jar -c
+          java -jar jar/3rd/apktool_2.11.0.jar b jar/spider.jar -c
 
       - name: Rename and generate MD5
         run: |
           mkdir -p jar
-          #mv jar/spider.jar/dist/app-release-unsigned.apk jar/xiaoya_proxy.jar
           mv jar/spider.jar/dist/dex.jar jar/xiaoya_proxy.jar
           md5sum jar/xiaoya_proxy.jar | cut -d ' ' -f 1 > jar/xiaoya_proxy.jar.md5
 
