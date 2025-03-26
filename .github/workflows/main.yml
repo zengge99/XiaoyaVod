@@ -40,7 +40,7 @@ jobs:
       - name: Clean up previous build artifacts
         run: |
           rm -f jar/xiaoya_proxy.jar
-          #rm -rf spider.jar
+          #rm -rf jar/spider.jar
 
       - name: Decode APK
         run: |
@@ -54,33 +54,33 @@ jobs:
 
       - name: Move smali files
         run: |
-          rm -rf spider.jar/smali/com/github/catvod
-          rm -rf spider.jar/smali/org/slf4j
-          rm -rf spider.jar/smali/com/github/catvod/spider
-          mkdir -p spider.jar/smali/com/github/catvod
-          mkdir -p spider.jar/smali/org/slf4j
-          mkdir -p spider.jar/smali/com/github/catvod/spider
-          mv Smali_classes/smali/com/github/catvod/spider spider.jar/smali/com/github/catvod/spider
-          mv Smali_classes/smali/com/github/catvod/js spider.jar/smali/com/github/catvod/js
-          mv Smali_classes/smali/org/slf4j spider.jar/smali/org/slf4j
-          #mv Smali_classes/apktool.yml spider.jar/
+          rm -rf jar/spider.jar/smali/com/github/catvod
+          rm -rf jar/spider.jar/smali/org/slf4j
+          rm -rf jar/spider.jar/smali/com/github/catvod/spider
+          mkdir -p jar/spider.jar/smali/com/github/catvod
+          mkdir -p jar/spider.jar/smali/org/slf4j
+          mkdir -p jar/spider.jar/smali/com/github/catvod/spider
+          mv Smali_classes/smali/com/github/catvod/spider jar/spider.jar/smali/com/github/catvod/spider
+          mv Smali_classes/smali/com/github/catvod/js jar/spider.jar/smali/com/github/catvod/js
+          mv Smali_classes/smali/org/slf4j jar/spider.jar/smali/org/slf4j
+          #mv Smali_classes/apktool.yml jar/spider.jar/
 
       - name: Build JAR
         run: |
-          java -jar 3rd/apktool_2.11.0.jar b spider.jar -c
+          java -jar 3rd/apktool_2.11.0.jar b jar/spider.jar -c
 
       - name: Rename and generate MD5
         run: |
           mkdir -p jar
-          #mv spider.jar/dist/app-release-unsigned.apk jar/xiaoya_proxy.jar
-          mv spider.jar/dist/dex.jar jar/xiaoya_proxy.jar
+          #mv jar/spider.jar/dist/app-release-unsigned.apk jar/xiaoya_proxy.jar
+          mv jar/spider.jar/dist/dex.jar jar/xiaoya_proxy.jar
           md5sum jar/xiaoya_proxy.jar | cut -d ' ' -f 1 > jar/xiaoya_proxy.jar.md5
 
       - name: Clean up temporary files
         run: |
-          rm -rf spider.jar/build
-          rm -rf spider.jar/smali
-          rm -rf spider.jar/dist
+          rm -rf jar/spider.jar/build
+          rm -rf jar/spider.jar/smali
+          rm -rf jar/spider.jar/dist
 
       - name: Commit files to jar directory
         run: |
