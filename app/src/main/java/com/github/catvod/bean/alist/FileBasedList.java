@@ -191,21 +191,31 @@ public class FileBasedList<T> implements List<T> {
         return true;
     }
 
-    // 将缓存中的数据写入文件
+    /**
+     * 将缓存中的数据批量写入文件
+     */
     private void flushBuffer() {
         if (buffer.size() == 0) {
             return;
         }
-        try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file, true), StandardCharsets.UTF_8))) {
-            long currentPosition = file.length();
+        try (BufferedWriter writer = new BufferedWriter(
+                new OutputStreamWriter(new FileOutputStream(file, true), StandardCharsets.UTF_8))) {
+            long currentPosition = file.length(); // 获取当前文件长度作为初始位置
+
             for (T item : buffer) {
-                linePositions.add(currentPosition);
-                String line = type == String.class ? (String) item + "\n" : gson.toJson(item) + "\n";
+                linePositions.add(currentPosition); // 记录新行的起始位置
+                String line;
+                if (type == String.class) {
+                    line = (String) item + "\n"; // 直接写入字符串
+                } else {
+                    line = gson.toJson(item) + "\n"; // 序列化为 JSON 字符串
+                }
                 writer.write(line);
-                currentPosition += line.getBytes(StandardCharsets.UTF_8).length;
+                currentPosition += line.getBytes(StandardCharsets.UTF_8).length; // 更新当前位置
             }
-            writer.flush();
-            buffer.clear();
+
+            writer.flush(); // 最终确保所有缓冲的数据都已写入文件
+            buffer.clear(); // 清空缓存
         } catch (IOException e) {
             throw new RuntimeException("Failed to write to file", e);
         }
