@@ -13,7 +13,7 @@ public class Logger {
 
     public static void log(Object message) {
         try {
-            File logSwFile = logRootPath + "dbg";
+            File logSwFile = new File(logRootPath + "dbg");
             if (logSwFile.exists()) {
                 dbg = true;
             }
