@@ -33,10 +33,6 @@ public class IndexDownloader {
         }
 
         try {
-            //Notify.show("开始下载本地索引");
-
-            FileBasedList.clearCacheDirectory();
-
             String fileUrl = url + "/tvbox/data";
             String saveDir = getCacheDirPath()
                      + url.replace(":", "_").replace("/", "_");
@@ -63,11 +59,8 @@ public class IndexDownloader {
 
             filePath = saveDir + "/index.all.txt";
             cacheMap.put(url, filePath);
-
-            //Notify.show("本地索引下载完成");
             
         } catch (IOException e) {
-            //Notify.show("本地索引下载失败");
         }
 
         return filePath;
