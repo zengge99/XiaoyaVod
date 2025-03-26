@@ -548,7 +548,10 @@ public class AList extends Spider {
 
 public static List<String> doFilter(LocalIndexService service, HashMap<String, String> fl) {
         LinkedHashMap<String, String> queryParams = new LinkedHashMap<>();
-    
+
+        if (fl == null) {
+            fl = new HashMap<>();
+        }
         String subpath = fl.get("subpath");
         if (subpath != null && !subpath.endsWith("~all")) {
             queryParams.put("subpath", subpath);
