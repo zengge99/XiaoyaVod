@@ -835,7 +835,8 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
             if (keyword.startsWith("~daily:")) {
                 LocalIndexService service = LocalIndexService.get(drive.getName() + "/"+ drive.dailySearchApi(shortKeyword));
                 service.slim(drive.getPath());
-                return service.query(new LinkedHashMap<String, String>());
+                return doFilter(service, drive.fl);
+                //return service.query(new LinkedHashMap<String, String>());
             } else if (keyword.startsWith("~search:")) {
                 LocalIndexService service = LocalIndexService.get(drive.getName() + "/"+ drive.searchApi(shortKeyword));
                 service.slim(drive.getPath());
