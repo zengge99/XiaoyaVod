@@ -70,7 +70,11 @@ public class LocalIndexService {
     }
 
     private List<String> creatHugeList(String filePath) {
-        return Files.readAllLines(Paths.get(filePath));
+        try {
+            return Files.readAllLines(Paths.get(filePath));
+        } catch (Exception e) {
+            return new ArrayList<>();
+        }
         //return new FileBasedList<String>(filePath, String.class);
     }
 
@@ -515,7 +519,7 @@ public class LocalIndexService {
     public static void test() {
 
         // 第一次查询
-        LocalIndexService service = LocalIndexService.get("http://zengge99.f3322.org:5678/");
+        LocalIndexService service = LocalIndexService.get("http://xxx:5678/");
         LinkedHashMap<String, String> queryParams = new LinkedHashMap<>();
         queryParams.put("subpath", "每日更新");
         queryParams.put("doubansort", "desc");
@@ -527,7 +531,7 @@ public class LocalIndexService {
         Logger.log("Query result2: " + pagger.page(1));
 
         // service = LocalIndexService.get(
-        //         "http://zengge99.1996999.xyz:5678/sou?box=%E6%AF%8F%E6%97%A5%E6%9B%B4%E6%96%B0&url=&type=video");
+        //         "http://xxx:5678/sou?box=%E6%AF%8F%E6%97%A5%E6%9B%B4%E6%96%B0&url=&type=video");
         // queryParams = new LinkedHashMap<>();
         // queryParams.put("doubansort", "desc");
         // service.slim("每日更新/电视剧/国产剧");
