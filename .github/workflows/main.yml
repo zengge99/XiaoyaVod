@@ -2,10 +2,10 @@ name: Build Custom Spider
 on:
   push:
     branches:
-      - main
+      - dev
   pull_request:
     branches:
-      - main
+      - dev
 
 jobs:
   build:
