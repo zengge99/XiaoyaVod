@@ -134,7 +134,7 @@ public class IndexDownloader {
         if (filePath.toLowerCase().endsWith(".zip")) {
             // 处理 ZIP 文件
             try (ZipFile zipFile = new ZipFile(filePath)) {
-                var entries = zipFile.entries();
+                ZipEntry entries = zipFile.entries();
                 while (entries.hasMoreElements()) {
                     ZipEntry entry = entries.nextElement();
                     Path entryPath = Paths.get(extractDir, entry.getName());
@@ -186,7 +186,7 @@ public class IndexDownloader {
             throw new IOException("路径不是目录: " + dirPath);
         }
 
-        try (var stream = Files.newDirectoryStream(path)) {
+        try (DirectoryStream stream = Files.newDirectoryStream(path)) {
             for (Path file : stream) {
                 // 检查是否需要排除该文件
                 boolean shouldExclude = false;
@@ -225,7 +225,7 @@ public class IndexDownloader {
             throw new IOException("路径不是目录: " + dirPath);
         }
 
-        try (var stream = pattern == null ? Files.newDirectoryStream(path) : Files.newDirectoryStream(path, pattern)) {
+        try (DirectoryStream stream = pattern == null ? Files.newDirectoryStream(path) : Files.newDirectoryStream(path, pattern)) {
             for (Path file : stream) {
                 if (Files.isDirectory(file)) {
                     // 如果是目录，递归删除
@@ -267,7 +267,7 @@ public class IndexDownloader {
             }
 
             // 读取剩余的其他 .txt 文件（如果有）
-            try (var stream = Files.newDirectoryStream(dirPath, "*.txt")) {
+            try (DirectoryStream stream = Files.newDirectoryStream(dirPath, "*.txt")) {
                 for (Path file : stream) {
                     // 跳过 outputFile 和已经处理的文件
                     if (file.equals(outputFilePath) || fileOrder.contains(file.getFileName().toString())) {
