@@ -14,6 +14,7 @@ import com.github.catvod.bean.alist.Drive;
 import com.github.catvod.bean.alist.Item;
 import com.github.catvod.bean.Vod;
 import java.nio.file.Paths;
+import java.nio.file.Files;
 
 public class LocalIndexService {
 
