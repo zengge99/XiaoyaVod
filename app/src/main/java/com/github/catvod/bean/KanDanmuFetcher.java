@@ -71,7 +71,7 @@ public class KanDanmuFetcher extends DanmuFetcher {
         JsonObject longData = data.getAsJsonObject("longData");
         JsonArray rows = longData.getAsJsonArray("rows");
 
-        for (var item : rows) {
+        for (JsonElement item : rows) {
             JsonObject show = item.getAsJsonObject();
             String showYear = show.get("year").getAsString();
             if (showYear.equals(String.valueOf(year))) {
@@ -93,7 +93,7 @@ public class KanDanmuFetcher extends DanmuFetcher {
         // 遍历 allepidetail 的所有字段
         for (String key : allepidetail.keySet()) {
             JsonArray episodes = allepidetail.getAsJsonArray(key); // 获取当前字段的 JsonArray
-            for (var item : episodes) {
+            for (JsonElement item : episodes) {
                 JsonObject episodeData = item.getAsJsonObject();
                 int playlinkNum = episodeData.get("playlink_num").getAsInt();
                 if (playlinkNum == episode) {
