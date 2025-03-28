@@ -11,6 +11,7 @@ import java.util.List;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonElement;
 import com.github.catvod.spider.Logger;
 import com.github.catvod.utils.Path;
 import java.io.File;
