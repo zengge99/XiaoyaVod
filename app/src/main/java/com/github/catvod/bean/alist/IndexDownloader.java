@@ -187,7 +187,7 @@ public class IndexDownloader {
             throw new IOException("路径不是目录: " + dirPath);
         }
 
-        try (DirectoryStream stream = Files.newDirectoryStream(path)) {
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(path)) {
             for (Path file : stream) {
                 // 检查是否需要排除该文件
                 boolean shouldExclude = false;
@@ -226,7 +226,7 @@ public class IndexDownloader {
             throw new IOException("路径不是目录: " + dirPath);
         }
 
-        try (DirectoryStream stream = pattern == null ? Files.newDirectoryStream(path) : Files.newDirectoryStream(path, pattern)) {
+        try (DirectoryStream<Path> stream = pattern == null ? Files.newDirectoryStream(path) : Files.newDirectoryStream(path, pattern)) {
             for (Path file : stream) {
                 if (Files.isDirectory(file)) {
                     // 如果是目录，递归删除
@@ -268,7 +268,7 @@ public class IndexDownloader {
             }
 
             // 读取剩余的其他 .txt 文件（如果有）
-            try (DirectoryStream stream = Files.newDirectoryStream(dirPath, "*.txt")) {
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(dirPath, "*.txt")) {
                 for (Path file : stream) {
                     // 跳过 outputFile 和已经处理的文件
                     if (file.equals(outputFilePath) || fileOrder.contains(file.getFileName().toString())) {
