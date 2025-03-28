@@ -205,7 +205,7 @@ public class LocalIndexService {
         }
         try {
             double value = Double.parseDouble(field);
-            if (value > 10) {
+            if (index == 3 && value > 10) {
                 value = 10;
             }
             return value; 
