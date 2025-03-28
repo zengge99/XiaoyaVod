@@ -204,7 +204,11 @@ public class LocalIndexService {
             return 0.0; // 字段为空，返回 0
         }
         try {
-            return Double.parseDouble(field); // 解析为 double
+            double value = Double.parseDouble(field);
+            if (value > 10) {
+                value = 10;
+            }
+            return value; 
         } catch (NumberFormatException e) {
             return 0.0; // 字段非 double，返回 0
         }
