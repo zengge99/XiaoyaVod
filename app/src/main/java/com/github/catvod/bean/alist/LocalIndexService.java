@@ -28,8 +28,8 @@ public class LocalIndexService {
     private LocalIndexService(String url) {
         long startTime = System.currentTimeMillis();
         try {
-            inputList = new FileBasedList<String>(String.class);
             if (isOnline(url)) {
+                inputList = creatHugeList();
                 long httpStart = System.currentTimeMillis();
                 Document doc = Jsoup.parse(OkHttp.string(url));
                 Logger.log("网络请求耗时: " + (System.currentTimeMillis() - httpStart) + "ms");
@@ -47,11 +47,10 @@ public class LocalIndexService {
                 Logger.log("文件下载解压耗时: " + (System.currentTimeMillis() - downloadStart) + "ms");
 
                 long initListStart = System.currentTimeMillis();
-
                 inputList = inputCache.get(filePath);
                 if (inputList == null) {
                     Logger.log("缓存未命中，初始化 FileBasedList，filePath：" + filePath);
-                    inputList = new FileBasedList<String>(filePath, String.class); // 初始化 FileBasedList
+                    inputList = creatHugeList(filePath); // 初始化 FileBasedList
                     inputCache.put(filePath, inputList); // 放入缓存
                     Logger.log("初始化 FileBasedList 耗时: " + (System.currentTimeMillis() - initListStart) + "ms");
                 } else {
@@ -61,6 +60,14 @@ public class LocalIndexService {
         } finally {
             Logger.log("LocalIndexService初始化总耗时: " + (System.currentTimeMillis() - startTime) + "ms");
         }
+    }
+
+    private List<String> creatHugeList() {
+        return new FileBasedList<String>(String.class);
+    }
+
+    private List<String> creatHugeList(String filePath) {
+        return new FileBasedList<String>(filePath, String.class);
     }
 
     private static boolean isOnline(String path) {
@@ -93,12 +100,12 @@ public class LocalIndexService {
         }
     }
 
-    public List<String> externalSort(List<String> inputSortList, List<String> outputSortList, String order)
+    public List<String> externalSort(List<String> inputSortList, String order)
             throws IOException {
         long startTime = System.currentTimeMillis();
         try {
             List<List<String>> sortedChunks = sortInChunks(inputSortList, order);
-            return mergeSortedChunks(sortedChunks, outputSortList, order);
+            return mergeSortedChunks(sortedChunks, order);
         } finally {
             Logger.log("externalSort总耗时: " + (System.currentTimeMillis() - startTime) + "ms");
         }
@@ -129,7 +136,7 @@ public class LocalIndexService {
         long startTime = System.currentTimeMillis();
         try {
             chunk.sort(createComparator(order));
-            List<String> tempList = new FileBasedList<String>(String.class);
+            List<String> tempList = creatHugeList();
             for (String line : chunk) {
                 tempList.add(line);
             }
@@ -139,7 +146,7 @@ public class LocalIndexService {
         }
     }
 
-    private List<String> mergeSortedChunks(List<List<String>> sortedChunks, List<String> outputSortList, String order)
+    private List<String> mergeSortedChunks(List<List<String>> sortedChunks, String order)
             throws IOException {
         long startTime = System.currentTimeMillis();
         try {
@@ -153,6 +160,7 @@ public class LocalIndexService {
                 }
             }
             // 多路归并
+            List<String> outputSortList = creatHugeList();
             while (!minHeap.isEmpty()) {
                 ListReader reader = minHeap.poll();
                 outputSortList.add(reader.currentLine);
@@ -233,9 +241,8 @@ public class LocalIndexService {
             if (path.startsWith("/")) {
                 path = path.substring(1);
             }
-            List<String> outputSortList = new FileBasedList<String>(String.class);
             long filterStart = System.currentTimeMillis();
-            outputSortList = filterByPath(inputList, outputSortList, path);
+            outputSortList = filterByPath(inputList, path);
 
             long indexStart = System.currentTimeMillis();
             inputList = outputSortList;
@@ -287,12 +294,12 @@ public class LocalIndexService {
         }
     }
 
-    private void sortByDouban(List<String> inputSortList, List<String> outputSortList, String order)
+    private List<String> sortByDouban(List<String> inputSortList, String order)
             throws IOException {
         long startTime = System.currentTimeMillis();
         try {
-            externalSort(inputSortList, outputSortList, order);
             Logger.log("Sorted by field: " + order);
+            return externalSort(inputSortList, order);
         } finally {
             Logger.log("sortByDouban耗时: " + (System.currentTimeMillis() - startTime) + "ms");
         }
@@ -319,18 +326,18 @@ public class LocalIndexService {
                 String method = entry.getKey();
                 String param = entry.getValue();
 
-                List<String> tempOutputList = new FileBasedList<String>(String.class);
+                List<String> tempOutputList;
 
                 // 执行查询方法
                 switch (method) {
                     case "subpath":
-                        filterByPath(currentInputList, tempOutputList, param);
+                        tempOutputList = filterByPath(currentInputList, param);
                         break;
                     case "doubansort":
-                        sortByDouban(currentInputList, tempOutputList, param);
+                        tempOutputList = sortByDouban(currentInputList, param);
                         break;
                     case "douban":
-                        filterByDouban(currentInputList, tempOutputList, param);
+                        tempOutputList = filterByDouban(currentInputList, param);
                         break;
                     default:
                         throw new IllegalArgumentException("Unknown query method: " + method);
@@ -369,7 +376,7 @@ public class LocalIndexService {
         }
     }
 
-    private List<String> filterByPath(List<String> inputSortList, List<String> outputSortList, String fieldValue)
+    private List<String> filterByPath(List<String> inputSortList, String fieldValue)
             throws IOException {
         long startTime = System.currentTimeMillis();
         try {
@@ -381,7 +388,8 @@ public class LocalIndexService {
                 outputSortList = inputSortList;
                 return outputSortList;
             }
-            List<String> noPicList = new FileBasedList<String>(String.class);
+            List<String> outputSortList = creatHugeList();
+            List<String> noPicList = creatHugeList();
             for (String line : inputSortList) {
                 String[] fields = line.split("#");
                 if (fields.length > 0 && fields[0].startsWith(fieldValue)) {
@@ -399,17 +407,19 @@ public class LocalIndexService {
         }
     }
 
-    private void filterByDouban(List<String> inputSortList, List<String> outputSortList, String fieldValue)
+    private List<String> filterByDouban(List<String> inputSortList, String fieldValue)
             throws IOException {
         long startTime = System.currentTimeMillis();
         try {
             double filterValue = parseStringAsDouble(fieldValue);
+            List<String> outputSortList = creatHugeList();
             for (String line : inputSortList) {
                 double actualValue = parseFieldAsDouble(line.split("#"), 3);
                 if (actualValue >= filterValue) {
                     outputSortList.add(line);
                 }
             }
+            return outputSortList;
         } finally {
             Logger.log("filterByDouban耗时: " + (System.currentTimeMillis() - startTime) + "ms");
         }
