@@ -216,12 +216,12 @@ public class AList extends Spider {
             } catch (InterruptedException e) {
             }
             Notify.show("开始构建本地索引，需要数秒");
-            // for (Drive d : drives) {
-            //     if (!d.noPoster() || d.search()) {
-            //         LocalIndexService.get(d).slim(d.getPath());
-            //     }
-            // }
-            LocalIndexService.get(defaultDrive);
+            for (Drive d : drives) {
+                if (d.search()) {
+                   LocalIndexService.get(d).slim(d.getPath());
+                }
+            }
+            // LocalIndexService.get(defaultDrive);
             Notify.show("构建本地索引完成");
         });
         thread.start();
