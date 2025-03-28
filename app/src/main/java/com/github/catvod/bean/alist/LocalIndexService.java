@@ -65,17 +65,17 @@ public class LocalIndexService {
     }
 
     private List<String> creatHugeList() {
-        return new ArrayList<>();
-        //return new FileBasedList<String>(String.class);
+        // return new ArrayList<>();
+        return new FileBasedList<String>(String.class);
     }
 
     private List<String> creatHugeList(String filePath) {
-        try {
-            return Files.readAllLines(Paths.get(filePath));
-        } catch (Exception e) {
-            return new ArrayList<>();
-        }
-        //return new FileBasedList<String>(filePath, String.class);
+        // try {
+        //     return Files.readAllLines(Paths.get(filePath));
+        // } catch (Exception e) {
+        //     return new ArrayList<>();
+        // }
+        return new FileBasedList<String>(filePath, String.class);
     }
 
     private static boolean isOnline(String path) {
