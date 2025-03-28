@@ -13,6 +13,7 @@ import org.jsoup.Jsoup;
 import com.github.catvod.bean.alist.Drive;
 import com.github.catvod.bean.alist.Item;
 import com.github.catvod.bean.Vod;
+import java.nio.file.Paths;
 
 public class LocalIndexService {
 
@@ -63,11 +64,13 @@ public class LocalIndexService {
     }
 
     private List<String> creatHugeList() {
-        return new FileBasedList<String>(String.class);
+        return new ArrayList<>();
+        //return new FileBasedList<String>(String.class);
     }
 
     private List<String> creatHugeList(String filePath) {
-        return new FileBasedList<String>(filePath, String.class);
+        return Files.readAllLines(Paths.get(filePath));
+        //return new FileBasedList<String>(filePath, String.class);
     }
 
     private static boolean isOnline(String path) {
