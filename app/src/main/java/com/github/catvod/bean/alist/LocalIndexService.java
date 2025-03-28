@@ -214,7 +214,7 @@ public class LocalIndexService {
         try {
             double value = Double.parseDouble(field);
             if (index == 3 && value > 10) {
-                value = 10;
+                value = 0;
             }
             return value; 
         } catch (NumberFormatException e) {
