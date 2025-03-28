@@ -93,7 +93,7 @@ public class DanmuFetcher {
         JsonObject response = gson.fromJson(jsonResponse, JsonObject.class);
         JsonArray pageComponentList = response.getAsJsonArray("pageComponentList");
 
-        for (var item : pageComponentList) {
+        for (JsonElement item : pageComponentList) {
             JsonObject commonData = item.getAsJsonObject().get("commonData").getAsJsonObject();
             String feature = commonData.get("feature").getAsString();
             if (feature.contains(String.valueOf(year))) {
@@ -111,7 +111,7 @@ public class DanmuFetcher {
         JsonObject response = gson.fromJson(jsonResponse, JsonObject.class);
         JsonArray serisesList = response.getAsJsonArray("serisesList");
 
-        for (var item : serisesList) {
+        for (JsonElement item : serisesList) {
             JsonObject series = item.getAsJsonObject();
             String showVideoStage = series.get("showVideoStage").getAsString();
             String displayName = series.get("displayName").getAsString();
