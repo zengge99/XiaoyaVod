@@ -26,9 +26,11 @@ public class LocalIndexService {
     private static HashMap<String, List<String>> inputCache = new HashMap<>();
     private boolean slimed = false;
     private Map<String, List<Integer>> invertedIndex; // 倒排索引，保存行号
+    private String startPath;
 
-    private LocalIndexService(String url) {
+    private LocalIndexService(String url, String startPath) {
         long startTime = System.currentTimeMillis();
+        this.startPath = startPath;
         try {
             if (isOnline(url)) {
                 inputList = creatHugeList();
@@ -42,6 +44,7 @@ public class LocalIndexService {
                     if (!line.contains("/")) continue;
                     inputList.add(a.text());
                 }
+                slim(startPath);
                 Logger.log("HTML解析耗时: " + (System.currentTimeMillis() - parseStart) + "ms");
             } else {
                 long downloadStart = System.currentTimeMillis();
@@ -58,6 +61,7 @@ public class LocalIndexService {
                 } else {
                     Logger.log("缓存命中，直接使用缓存数据");
                 }
+                slim(startPath);
             }
         } finally {
             Logger.log("LocalIndexService初始化总耗时: " + (System.currentTimeMillis() - startTime) + "ms");
@@ -82,11 +86,15 @@ public class LocalIndexService {
         return path.contains("/sou?");
     }
 
-    public static LocalIndexService get(Drive drive) {
-        return LocalIndexService.get(drive.getName() + "/" + drive.getServer());
+    public static LocalIndexService get(String url) {
+        return LocalIndexService.get(url, "");
     }
 
-    public static LocalIndexService get(String url) {
+    public static LocalIndexService get(Drive drive) {
+        return LocalIndexService.get(drive.getName() + "/" + drive.getServer(), drive.getPath());
+    }
+
+    public static LocalIndexService get(String url, String startPath) {
         long startTime = System.currentTimeMillis();
         try {
             String realUrl = url;
@@ -95,11 +103,11 @@ public class LocalIndexService {
             }
 
             if (isOnline(realUrl)) {
-                return new LocalIndexService(realUrl);
+                return new LocalIndexService(realUrl, startPath);
             }
 
             if (!instances.containsKey(url)) {
-                instances.put(url, new LocalIndexService(realUrl));
+                instances.put(url, new LocalIndexService(realUrl), startPath);
             }
 
             return instances.get(url);
