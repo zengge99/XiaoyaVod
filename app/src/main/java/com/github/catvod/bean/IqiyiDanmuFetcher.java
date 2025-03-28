@@ -59,13 +59,13 @@ public class IqiyiDanmuFetcher extends DanmuFetcher {
         JsonObject response = gson.fromJson(jsonResponse, JsonObject.class);
         JsonArray docInfos = response.getAsJsonObject("data").getAsJsonArray("docinfos");
 
-        for (var item : docInfos) {
+        for (JsonElement item : docInfos) {
             JsonObject docData = item.getAsJsonObject();
             JsonObject albumDocInfo = docData.getAsJsonObject("albumDocInfo"); // 深入 albumDocInfo
             String albumTitle = albumDocInfo.get("albumTitle").getAsString();
             if (albumTitle.equals(title)) {
                 JsonArray videoInfos = albumDocInfo.getAsJsonArray("videoinfos"); // 注意字段名是 videoinfos
-                for (var videoItem : videoInfos) {
+                for (JsonElement videoItem : videoInfos) {
                     JsonObject episodeData = videoItem.getAsJsonObject();
                     int itemNumber = episodeData.get("itemNumber").getAsInt();
                     if (itemNumber == episode) {
