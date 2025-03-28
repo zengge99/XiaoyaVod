@@ -33,19 +33,21 @@ android {
 
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_11
-        targetCompatibility JavaVersion.VERSION_11
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
 
     configurations.configureEach {
         resolutionStrategy {
-            force 'com.squareup.okhttp3:okhttp:' + okhttpVersion
+            force 'com.squareup.okhttp3:okhttp:3.12.13'
+            // + okhttpVersion
         }
     }
 }
 
 dependencies {
-    implementation 'com.squareup.okhttp3:okhttp:' + okhttpVersion
+    implementation 'com.squareup.okhttp3:okhttp:3.12.13'
+    // + okhttpVersion
     implementation 'com.github.thegrizzlylabs:sardine-android:0.9'
     implementation 'wang.harlon.quickjs:wrapper-android:2.4.4'
     implementation 'com.google.code.gson:gson:2.11.0'
