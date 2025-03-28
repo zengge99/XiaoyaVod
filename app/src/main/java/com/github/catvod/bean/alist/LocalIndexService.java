@@ -107,7 +107,7 @@ public class LocalIndexService {
             }
 
             if (!instances.containsKey(url)) {
-                instances.put(url, new LocalIndexService(realUrl), startPath);
+                instances.put(url, new LocalIndexService(realUrl, startPath));
             }
 
             return instances.get(url);
