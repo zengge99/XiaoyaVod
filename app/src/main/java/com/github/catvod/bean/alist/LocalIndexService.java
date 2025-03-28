@@ -242,7 +242,7 @@ public class LocalIndexService {
                 path = path.substring(1);
             }
             long filterStart = System.currentTimeMillis();
-            outputSortList = filterByPath(inputList, path);
+            List<String> outputSortList = filterByPath(inputList, path);
 
             long indexStart = System.currentTimeMillis();
             inputList = outputSortList;
@@ -384,11 +384,12 @@ public class LocalIndexService {
                 fieldValue = fieldValue.substring(1);
             }
             Logger.log("Filtered by field: " + fieldValue);
+            List<String> outputSortList;
             if (fieldValue.isEmpty()) {
                 outputSortList = inputSortList;
                 return outputSortList;
             }
-            List<String> outputSortList = creatHugeList();
+            outputSortList = creatHugeList();
             List<String> noPicList = creatHugeList();
             for (String line : inputSortList) {
                 String[] fields = line.split("#");
