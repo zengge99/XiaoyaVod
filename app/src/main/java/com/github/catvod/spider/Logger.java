@@ -14,13 +14,6 @@ public class Logger {
 
     public static void log(Object message) {
         try {
-            File logSwFile = new File(logRootPath + "dbg");
-            if (logSwFile.exists()) {
-                dbg = true;
-            }
-            if (!dbg) {
-                return;
-            }
             String callPrefix = "";
             StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
             for (int i = 0; i < stackTrace.length; i++) {
