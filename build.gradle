@@ -2,7 +2,7 @@
 // 文件位置：build.gradle
 buildscript {
     ext {
-        agpVersion = '7.4.2'  // 支持Java8的最新稳定版
+        agpVersion = '4.4.2'  // 支持Java8的最新稳定版
         kotlinVersion = '1.8.0' // 配套Kotlin版本
     }
     dependencies {
