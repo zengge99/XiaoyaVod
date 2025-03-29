@@ -1,6 +1,6 @@
 plugins {
     id 'com.android.application'
-    //id 'ru.cleverpumpkin.proguard-dictionaries-generator'
+    id 'ru.cleverpumpkin.proguard-dictionaries-generator'
 }
 
 android {
@@ -16,16 +16,14 @@ android {
 
     buildTypes {
         release {
-            roguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            minifyEnabled false
-            // minifyEnabled true
-            // proguardFiles 'proguard-rules.pro'
-            // proguardDictionaries {
-            //     dictionaryNames = ["build/class-dictionary", "build/package-dictionary", "build/obfuscation-dictionary"]
-            //     minLineLength 1
-            //     maxLineLength 3
-            //     linesCountInDictionary 100000
-            // }
+            minifyEnabled true
+            proguardFiles 'proguard-rules.pro'
+            proguardDictionaries {
+                dictionaryNames = ["build/class-dictionary", "build/package-dictionary", "build/obfuscation-dictionary"]
+                minLineLength 1
+                maxLineLength 3
+                linesCountInDictionary 100000
+            }
         }
     }
 
@@ -41,14 +39,14 @@ android {
 
     configurations.configureEach {
         resolutionStrategy {
-            force 'com.squareup.okhttp3:okhttp:3.12.11'
+            force 'com.squareup.okhttp3:okhttp:3.12.13'
             // + okhttpVersion
         }
     }
 }
 
 dependencies {
-    implementation 'com.squareup.okhttp3:okhttp:3.12.11'
+    implementation 'com.squareup.okhttp3:okhttp:3.12.13'
     // + okhttpVersion
     implementation 'com.github.thegrizzlylabs:sardine-android:0.9'
     implementation 'wang.harlon.quickjs:wrapper-android:2.4.4'
