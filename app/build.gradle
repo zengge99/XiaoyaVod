@@ -1,6 +1,6 @@
 plugins {
     id 'com.android.application'
-    id 'ru.cleverpumpkin.proguard-dictionaries-generator'
+    //id 'ru.cleverpumpkin.proguard-dictionaries-generator'
 }
 
 android {
@@ -56,4 +56,5 @@ dependencies {
     implementation 'org.jsoup:jsoup:1.18.3'
     implementation 'org.nanohttpd:nanohttpd:2.3.1'
     implementation 'org.apache.commons:commons-compress:1.24.0'
+    classpath 'com.android.tools.build:gradle:4.2.2'
 }
