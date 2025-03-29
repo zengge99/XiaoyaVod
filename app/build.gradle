@@ -16,14 +16,16 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled true
-            proguardFiles 'proguard-rules.pro'
-            proguardDictionaries {
-                dictionaryNames = ["build/class-dictionary", "build/package-dictionary", "build/obfuscation-dictionary"]
-                minLineLength 1
-                maxLineLength 3
-                linesCountInDictionary 100000
-            }
+            roguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            minifyEnabled false
+            // minifyEnabled true
+            // proguardFiles 'proguard-rules.pro'
+            // proguardDictionaries {
+            //     dictionaryNames = ["build/class-dictionary", "build/package-dictionary", "build/obfuscation-dictionary"]
+            //     minLineLength 1
+            //     maxLineLength 3
+            //     linesCountInDictionary 100000
+            // }
         }
     }
 
