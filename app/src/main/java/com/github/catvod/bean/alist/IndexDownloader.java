@@ -135,7 +135,7 @@ public class IndexDownloader {
         if (filePath.toLowerCase().endsWith(".zip")) {
             // 处理 ZIP 文件
             try (ZipFile zipFile = new ZipFile(filePath)) {
-                Enumeration<ZipEntry> entries = zipFile.entries();
+                Enumeration<? extends ZipEntry> entries = zipFile.entries();
                 while (entries.hasMoreElements()) {
                     ZipEntry entry = entries.nextElement();
                     Path entryPath = Paths.get(extractDir, entry.getName());
