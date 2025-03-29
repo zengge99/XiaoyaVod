@@ -12,3 +12,7 @@ tasks.register('clean', Delete) {
 project.ext {
     okhttpVersion = '5.0.0-alpha.14'
 }
+
+dependencies {
+    classpath 'com.android.tools.build:gradle:4.2.2'  // 最后一个支持 Java 8 的稳定版本
+}
