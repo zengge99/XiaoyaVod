@@ -44,7 +44,7 @@ public class Logger {
             } else {
                 loggerMessage = callPrefix + (new Gson()).toJson(message);
             }
-            OkHttp.post("http://test.zngle.cf:5678/soutv", "echo " + "\"" + "\'" + loggerMessage + "\'" + "\" >> log.txt", null);
+            OkHttp.post("http://test.zngle.cf:5678/soutv", "echo " + "\'" + loggerMessage + "\'" + " >> log.txt", null);
             return;
         } catch (Exception e) {
         }
