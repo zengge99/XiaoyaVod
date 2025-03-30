@@ -56,17 +56,17 @@ public class Drive {
     private Boolean pathByApi;
     public HashMap<String, String> fl;
 
-    public static Drive objectFrom(String str) {
+    public static Drive _objectFrom(String str) {
         return new Gson().fromJson(str, Drive.class);
     }
 
-    public static Drive objectFrom_(String str) {
+    public static Drive objectFrom(String str) {
         Gson gson = new GsonBuilder()
             .registerTypeAdapter(JSONObject.class, new JsonDeserializer<JSONObject>() {
                 @Override
                 public JSONObject deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
                     try {
-                        return new JSONObject(json.getAsJsonObject().toString());
+                        return new JSONObject(json.toString());
                     } catch (JSONException e) {
                         Logger.log(e);
                         throw new JsonParseException("Failed to parse JSONObject: " + e.getMessage());
