@@ -9,7 +9,7 @@ android {
     defaultConfig {
         applicationId "com.github.catvod.demo"
         minSdk 17
-        targetSdk 28
+        targetSdk 31
         buildConfigField("String", "CLIENT_ID", "\"${clientId}\"")
     }
 
