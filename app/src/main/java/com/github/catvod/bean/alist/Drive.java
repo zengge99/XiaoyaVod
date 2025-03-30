@@ -56,7 +56,7 @@ public class Drive {
     private Boolean pathByApi;
     public HashMap<String, String> fl;
 
-    public static Drive objectFrom(String str) {
+    public static Drive _objectFrom(String str) {
         return new Gson().fromJson(str, Drive.class);
     }
 
