@@ -20,6 +20,7 @@ import java.util.Iterator;
 import com.github.catvod.utils.Path;
 
 import org.json.JSONObject;
+import org.json.JSONArray;
 import org.json.JSONException;
 
 import com.github.catvod.spider.Logger;
