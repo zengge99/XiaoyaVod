@@ -44,7 +44,7 @@ dependencies {
     //implementation 'com.github.thegrizzlylabs:sardine-android:0.8'
     implementation 'wang.harlon.quickjs:wrapper-android:0.21.1'
     implementation 'com.squareup.okhttp3:okhttp:3.12.13'
-    implementation 'com.google.code.gson:gson:2.11.0'
+    implementation 'com.google.code.gson:gson:2.8.6'
     implementation 'cn.wanghaomiao:JsoupXpath:2.5.1'
     implementation 'org.nanohttpd:nanohttpd:2.3.1'
     implementation 'com.google.zxing:core:3.3.0'
