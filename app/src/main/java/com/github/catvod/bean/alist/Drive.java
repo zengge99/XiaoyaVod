@@ -60,7 +60,23 @@ public class Drive {
         return new Gson().fromJson(str, Drive.class);
     }
 
-    public static Drive _objectFrom(String str) {
+    public static Drive objectFrom(String str) {
+        try {
+            JSONObject json = new JSONObject(str);
+            Gson gson = new Gson();
+            Drive drive = gson.fromJson(str, Drive.class);
+            
+            // 手动处理 params（如果 JSONObject 解析失败）
+            if (json.has("params")) {
+                drive.params = json.getJSONObject("params");
+            }
+            return drive;
+        } catch (JSONException e) {
+            throw new JsonParseException("Failed to parse JSON: " + e.getMessage());
+        }
+    }
+
+    public static Drive __objectFrom(String str) {
         Gson gson = new GsonBuilder()
             .registerTypeAdapter(JSONObject.class, new JsonDeserializer<JSONObject>() {
                 @Override
