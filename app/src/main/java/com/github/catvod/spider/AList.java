@@ -140,19 +140,26 @@ public class AList extends Spider {
     private void fetchRule() {
         if (drives != null && !drives.isEmpty())
             return;
-        Logger.log("fetchRule");
+        Logger.log("fetchRule1");
         if (ext.startsWith("http"))
             ext = OkHttp.string(ext);
+        Logger.log("fetchRule2");
         Logger.log(ext);
         String ext1 = "{\"drives\":" + ext + "}";
         Drive drive = Drive.objectFrom(ext1);
+        Logger.log("fetchRule3");
+        Logger.log(drive);
         drives = drive.getDrives();
         vodPic = drive.getVodPic();
 
+        Logger.log("fetchRule4");
         List<Drive> searcherDrivers = drives.stream().filter(d -> d.search()).collect(Collectors.toList());
+        Logger.log("fetchRule5");
+        Logger.log(searcherDrivers);
         if (searcherDrivers.size() > 0) {
             defaultDrive = searcherDrivers.get(0);
         }
+        Logger.log(searcherDrivers);
     }
 
     private Drive getDrive(String name) {
