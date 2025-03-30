@@ -56,11 +56,11 @@ public class Drive {
     private Boolean pathByApi;
     public HashMap<String, String> fl;
 
-    //public static Drive objectFrom(String str) {
-    //    return new Gson().fromJson(str, Drive.class);
-    //}
-
     public static Drive objectFrom(String str) {
+        return new Gson().fromJson(str, Drive.class);
+    }
+
+    public static Drive objectFrom_(String str) {
         Gson gson = new GsonBuilder()
             .registerTypeAdapter(JSONObject.class, new JsonDeserializer<JSONObject>() {
                 @Override
