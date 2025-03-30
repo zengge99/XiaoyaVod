@@ -68,6 +68,7 @@ public class Drive {
                     try {
                         return new JSONObject(json.getAsJsonObject().toString());
                     } catch (JSONException e) {
+                        Logger.log(e);
                         throw new JsonParseException("Failed to parse JSONObject: " + e.getMessage());
                     }
                 }
