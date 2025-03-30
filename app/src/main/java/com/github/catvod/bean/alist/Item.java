@@ -3,6 +3,7 @@ package com.github.catvod.bean.alist;
 import android.text.TextUtils;
 
 import com.github.catvod.bean.Vod;
+import com.github.catvod.bean.DoubanInfo;
 import com.github.catvod.utils.Util;
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
@@ -13,6 +14,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.time.Instant;
 
 public class Item {
 
@@ -30,6 +32,7 @@ public class Item {
     private String url;
     @SerializedName(value = "modified", alternate = "updated_at")
     private String modified;
+    public DoubanInfo doubanInfo = new DoubanInfo();
 
     public static Item objectFrom(String str) {
         return new Gson().fromJson(str, Item.class);
@@ -64,6 +67,10 @@ public class Item {
         this.type = type;
     }
 
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
     public long getSize() {
         return size;
     }
@@ -86,8 +93,10 @@ public class Item {
 
     public Date getDate() {
         try {
-            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.getDefault());
-            return format.parse(getModified());
+            //SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault());
+            //return format.parse(getModified().subs
+            Instant instant = Instant.parse(getModified());
+            return Date.from(instant);
         } catch (Exception e) {
             return new Date();
         }
@@ -97,16 +106,13 @@ public class Item {
         return getType() == 1;
     }
 
-    public boolean isMedia(boolean isNew) {
-        if (getName().endsWith(".ts") || getName().endsWith(".mpg")) return true;
-        if (isNew) return getType() == 2 || getType() == 3;
-        return getType() == 3 || getType() == 4;
+    public boolean isMedia() {
+        return Util.isMedia(getName());
     }
 
-    public boolean ignore(boolean isNew) {
-        if (getName().endsWith(".ts") || getName().endsWith(".mpg")) return false;
-        if (isNew) return getType() == 0 || getType() == 4;
-        return getType() == 0 || getType() == 2 || getType() == 5;
+    public boolean ignore() {
+        if (isFolder()) return false;
+        return !Util.isMedia(getName());
     }
 
     public String getExt() {

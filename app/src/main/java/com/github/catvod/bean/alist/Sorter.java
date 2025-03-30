@@ -29,7 +29,7 @@ public class Sorter implements Comparator<Item> {
             case "date":
                 return asc ? o1.getDate().compareTo(o2.getDate()) : o2.getDate().compareTo(o1.getDate());
             default:
-                return -1;
+                return 0;
         }
     }
 }

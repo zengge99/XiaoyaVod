@@ -14,6 +14,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
 
 public class Result {
@@ -29,7 +30,9 @@ public class Result {
     @SerializedName("format")
     private String format;
     @SerializedName("danmaku")
-    private String danmaku;
+    private List<Danmaku> danmaku;
+    @SerializedName("click")
+    private String click;
     @SerializedName("msg")
     private String msg;
     @SerializedName("url")
@@ -59,10 +62,6 @@ public class Result {
 
     public static String string(List<Class> classes, List<Vod> list, JSONObject filters) {
         return Result.get().classes(classes).vod(list).filters(filters).string();
-    }
-
-    public static String string(Integer page,Integer pagecount,Integer limit,Integer total,List<Vod> list){
-        return Result.get().page(page,pagecount,limit,total).vod(list).string();
     }
 
     public static String string(List<Class> classes, List<Vod> list, JsonElement filters) {
@@ -95,6 +94,10 @@ public class Result {
 
     public static String error(String msg) {
         return Result.get().vod(Collections.emptyList()).msg(msg).string();
+    }
+
+    public static String notify(String msg) {
+        return Result.get().msg(msg).string();
     }
 
     public static Result get() {
@@ -173,8 +176,13 @@ public class Result {
         return this;
     }
 
-    public Result danmaku(String danmaku) {
+    public Result danmaku(List<Danmaku> danmaku) {
         this.danmaku = danmaku;
+        return this;
+    }
+
+    public Result click(String click) {
+        this.click = click;
         return this;
     }
 
@@ -217,11 +225,40 @@ public class Result {
         return page(1, 1, 0, 1);
     }
 
+    public Result page(String pg) {
+        int page = 1; 
+        try {
+            page = Integer.parseInt(pg);
+        } catch (NumberFormatException e) {
+        }
+        int limit = 72;
+        int total = this.list.size();
+        int count = (total + limit - 1) / limit;
+        page(page, count, limit, total);
+
+        int fromIndex = (page - 1) * limit;
+        int toIndex = Math.min(fromIndex + limit, total);
+        this.list = this.list.subList(fromIndex, toIndex);
+        
+        return this;
+    }
+
     public Result page(int page, int count, int limit, int total) {
         this.page = page > 0 ? page : Integer.MAX_VALUE;
         this.limit = limit > 0 ? limit : Integer.MAX_VALUE;
         this.total = total > 0 ? total : Integer.MAX_VALUE;
         this.pagecount = count > 0 ? count : Integer.MAX_VALUE;
+        return this;
+    }
+
+    public Result vodDrive(String driveName) {
+        List<Vod> cloneList = new ArrayList<>();
+        for (Vod vod : this.list) {
+            Vod cloneVod = vod.clone();
+            cloneVod.setVodId(driveName + cloneVod.getVodId().substring(cloneVod.getVodId().indexOf("/")));
+            cloneList.add(cloneVod);
+        }
+        this.list = cloneList;
         return this;
     }
 

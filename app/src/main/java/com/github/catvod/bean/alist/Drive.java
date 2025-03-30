@@ -7,20 +7,31 @@ import com.github.catvod.bean.Class;
 import com.github.catvod.net.OkHttp;
 import com.github.catvod.utils.Image;
 import com.github.catvod.utils.Util;
-import com.google.gson.Gson;
+import com.google.gson.*;
+import java.lang.reflect.Type;
 import com.google.gson.annotations.SerializedName;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Iterator;
+import com.github.catvod.utils.Path;
+
+import org.json.JSONObject;
+import org.json.JSONException;
+
+import com.github.catvod.spider.Logger;
+import java.io.File;
+
 
 public class Drive {
 
     @SerializedName("drives")
     private List<Drive> drives;
     @SerializedName("params")
-    private List<Param> params;
+    private JSONObject params;
     @SerializedName("login")
     private Login login;
     @SerializedName("vodPic")
@@ -31,7 +42,7 @@ public class Drive {
     private String server;
     @SerializedName("version")
     private int version;
-    @SerializedName("path")
+    @SerializedName("startPage")
     private String path;
     @SerializedName("token")
     private String token;
@@ -39,17 +50,66 @@ public class Drive {
     private Boolean search;
     @SerializedName("hidden")
     private Boolean hidden;
+    @SerializedName("noPoster")
+    private Boolean noPoster;
+    @SerializedName("pathByApi")
+    private Boolean pathByApi;
+    public HashMap<String, String> fl;
+
+    //public static Drive objectFrom(String str) {
+    //    return new Gson().fromJson(str, Drive.class);
+    //}
 
     public static Drive objectFrom(String str) {
-        return new Gson().fromJson(str, Drive.class);
+        Gson gson = new GsonBuilder()
+            .registerTypeAdapter(JSONObject.class, new JsonDeserializer<JSONObject>() {
+                @Override
+                public JSONObject deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
+                    try {
+                        return new JSONObject(json.getAsJsonObject().toString());
+                    } catch (JSONException e) {
+                        throw new JsonParseException("Failed to parse JSONObject: " + e.getMessage());
+                    }
+                }
+            })
+            .create();
+        return gson.fromJson(str, Drive.class);
     }
 
     public List<Drive> getDrives() {
         return drives == null ? new ArrayList<>() : drives;
     }
 
-    public List<Param> getParams() {
-        return params == null ? new ArrayList<>() : params;
+    public JSONObject getParams() {
+        return params == null ? new JSONObject() : params;
+    }
+
+    public JSONObject getParamByPath(String path) {
+        //Logger.log("getParamByPath:" + path);
+        if (params != null) {
+            Logger.log(params);
+            List<String> keys = new ArrayList<>();
+            Iterator<String> iterator = params.keys();
+            while (iterator.hasNext()) {
+                keys.add(iterator.next());
+            }
+            keys.sort(Comparator.comparingInt(String::length).reversed());
+            for (String key : keys) {
+                if (!path.startsWith(key)) {
+                    continue;
+                }
+                try {
+                    Object param = params.get(key);
+                    Logger.log(param);
+                    if (param instanceof JSONObject) {
+                        return (JSONObject) param;
+                    }
+                } catch (Exception e) {
+                    continue;
+                }
+            }
+        }
+        return new JSONObject();
     }
 
     public Login getLogin() {
@@ -64,12 +124,20 @@ public class Drive {
         return TextUtils.isEmpty(vodPic) ? Image.FOLDER : vodPic;
     }
 
+    public String getPlaylistPic() {
+        return Image.PLAYLIST;
+    }
+
     public String getName() {
         return TextUtils.isEmpty(name) ? "" : name;
     }
 
     public String getServer() {
-        return TextUtils.isEmpty(server) ? "" : server;
+        String r = TextUtils.isEmpty(server) ? "" : server;
+        if (r.endsWith("/")) {
+            r = r.substring(0, r.lastIndexOf("/"));
+        }
+        return r;
     }
 
     public int getVersion() {
@@ -89,19 +157,39 @@ public class Drive {
     }
 
     public String getToken() {
-        return TextUtils.isEmpty(token) ? "" : token;
+        token = TextUtils.isEmpty(token) ? "" : token;
+        if (token.isEmpty()) {
+            String tokenPath = Path.files() + "/" + getServer().replace("://", "_").replace(":", "_") + ".token";
+            File tokenFile = new File(tokenPath);
+            token = Path.read(tokenFile);
+        }
+        return token;
     }
 
     public void setToken(String token) {
         this.token = token;
+        if (token.isEmpty())
+            return;
+        
+        String tokenPath = Path.files() + "/" + getServer().replace("://", "_").replace(":", "_") + ".token";
+        File tokenFile = new File(tokenPath);
+        Path.write(tokenFile, token.getBytes());
     }
 
     public Boolean search() {
-        return search == null || search;
+        return search != null && search;
     }
 
     public Boolean hidden() {
         return hidden != null && hidden;
+    }
+
+    public Boolean noPoster() {
+        return noPoster != null && noPoster;
+    }
+
+    public Boolean pathByApi() {
+        return pathByApi != null && pathByApi;
     }
 
     public boolean isNew() {
@@ -109,7 +197,11 @@ public class Drive {
     }
 
     public Class toType() {
-        return new Class(getName(), getName(), "1");
+        if (this.noPoster()) {
+            return new Class(getName(), getName(), "1");
+        } else {
+            return new Class(getName(), getName(), "2");
+        }
     }
 
     public String getHost() {
@@ -137,47 +229,35 @@ public class Drive {
     }
 
     public String searchApi(String param) {
-        return getHost() + "/search?box=" + param + "&url=&type=video";
+        return getHost() + "/sou?box=" + param + "&url=&type=video";
+    }
+
+    public String dailySearchApi(String num) {
+        return getHost() + "/sou?type=daily&filter=last&num=" + num;
     }
 
     public Drive check() {
-        if (path == null) setPath(Uri.parse(getServer()).getPath());
-        if (version == 0) setVersion(OkHttp.string(settingsApi()).contains("v2.") ? 2 : 3);
+        if (path == null)
+            setPath(Uri.parse(getServer()).getPath());
+        if (version == 0)
+            setVersion(OkHttp.string(settingsApi()).contains("v2.") ? 2 : 3);
         return this;
-    }
-
-    public String params(String keyword) {
-        if (isNew()) {
-            Map<String, Object> params = new HashMap<>();
-            params.put("keywords", keyword);
-            params.put("page", 1);
-            params.put("parent", "/");
-            params.put("per_page", 100);
-            return new Gson().toJson(params);
-        } else {
-            Map<String, Object> params = new HashMap<>();
-            params.put("keyword", keyword);
-            params.put("path", "/");
-            return new Gson().toJson(params);
-        }
     }
 
     public HashMap<String, String> getHeader() {
         HashMap<String, String> headers = new HashMap<>();
         headers.put("User-Agent", Util.CHROME);
-        if (!getToken().isEmpty()) headers.put("Authorization", token);
+        if (!getToken().isEmpty())
+            headers.put("Authorization", token);
         return headers;
-    }
-
-    public String findPass(String path) {
-        for (Param param : getParams()) if (path.startsWith(param.getPath())) return param.getPass();
-        return "";
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (!(obj instanceof Drive)) return false;
+        if (this == obj)
+            return true;
+        if (!(obj instanceof Drive))
+            return false;
         Drive it = (Drive) obj;
         return getName().equals(it.getName());
     }
