@@ -65,17 +65,26 @@ public class Drive {
             JSONObject json = new JSONObject(str);
             Gson gson = new Gson();
             Drive drive = gson.fromJson(str, Drive.class);
-            
-            // 手动处理 params（如果 JSONObject 解析失败）
-            if (json.has("params")) {
-                drive.params = json.getJSONObject("params");
+    
+            // 处理 drives 数组中的 params
+            if (json.has("drives")) {
+                JSONArray drivesArray = json.getJSONArray("drives");
+                for (int i = 0; i < drivesArray.length(); i++) {
+                    JSONObject driveJson = drivesArray.getJSONObject(i);
+                    if (driveJson.has("params")) {
+                        // 确保 drives 列表不为空，并且索引有效
+                        if (drive.getDrives() != null && i < drive.getDrives().size()) {
+                            drive.getDrives().get(i).params = driveJson.getJSONObject("params");
+                        }
+                    }
+                }
             }
             return drive;
         } catch (JSONException e) {
             throw new JsonParseException("Failed to parse JSON: " + e.getMessage());
         }
     }
-
+    
     public static Drive __objectFrom(String str) {
         Gson gson = new GsonBuilder()
             .registerTypeAdapter(JSONObject.class, new JsonDeserializer<JSONObject>() {
