@@ -334,7 +334,7 @@ public class LocalIndexService {
         }
     }
 
-    private void buildInvertedIndex() {
+    private void _buildInvertedIndex() {
         Logger.log("buildInvertedIndex start");
         long startTime = System.currentTimeMillis();
         try {
@@ -351,6 +351,34 @@ public class LocalIndexService {
             Logger.log("Inverted index built with " + invertedIndex.size() + " keywords");
         } catch (Throwable e) {
             Logger.log("buildInvertedIndex() error: " + e.toString());
+        } finally {
+            Logger.log("buildInvertedIndex completed in " + (System.currentTimeMillis() - startTime) + "ms");
+        }
+    }
+
+    private void buildInvertedIndex() {
+        Logger.log("buildInvertedIndex start");
+        long startTime = System.currentTimeMillis();
+        try {
+            invertedIndex = new HashMap<String, List<Integer>>(); // 显式指定泛型
+            int i = 0;
+            for (String line : inputList) {
+                String[] fields = line.split("#");
+                if (fields.length >= 2) {
+                    String keyword = fields[1].trim();
+                    
+                    // 完全兼容 Android 4.4 的实现
+                    if (!invertedIndex.containsKey(keyword)) {
+                        invertedIndex.put(keyword, new ArrayList<Integer>());
+                    }
+                    invertedIndex.get(keyword).add(i);
+                }
+                i++;
+            }
+            Logger.log("Inverted index built with " + invertedIndex.size() + " keywords");
+        } catch (Throwable e) {
+            Logger.log("buildInvertedIndex error: " + e.toString());
+            throw new RuntimeException("构建倒排索引失败", e);
         } finally {
             Logger.log("buildInvertedIndex completed in " + (System.currentTimeMillis() - startTime) + "ms");
         }
