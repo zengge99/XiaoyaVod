@@ -126,7 +126,6 @@ public class LocalIndexService {
             return instances.get(url);
         } catch (Exception e) {
             Logger.log("get() error: " + e.toString());
-            return new ArrayList<>();
         } finally {
             Logger.log("get() completed in " + (System.currentTimeMillis() - startTime) + "ms");
         }
@@ -351,7 +350,6 @@ public class LocalIndexService {
             Logger.log("Inverted index built with " + invertedIndex.size() + " keywords");
         } catch (Exception e) {
             Logger.log("buildInvertedIndex() error: " + e.toString());
-            return new ArrayList<>();
         } finally {
             Logger.log("buildInvertedIndex completed in " + (System.currentTimeMillis() - startTime) + "ms");
         }
@@ -514,7 +512,7 @@ public class LocalIndexService {
             return null;
         } catch (Exception e) {
             Logger.log("findVodByPath() error: " + e.toString());
-            return new ArrayList<>();
+            return null;
         } finally {
             Logger.log("findVodByPath completed in " + (System.currentTimeMillis() - startTime) + "ms");
         }
