@@ -378,7 +378,6 @@ public class LocalIndexService {
             Logger.log("Inverted index built with " + invertedIndex.size() + " keywords");
         } catch (Throwable e) {
             Logger.log("buildInvertedIndex error: " + e.toString());
-            throw new RuntimeException("构建倒排索引失败", e);
         } finally {
             Logger.log("buildInvertedIndex completed in " + (System.currentTimeMillis() - startTime) + "ms");
         }
