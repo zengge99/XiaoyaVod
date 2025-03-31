@@ -126,6 +126,7 @@ public class LocalIndexService {
             return instances.get(url);
         } catch (Exception e) {
             Logger.log("get() error: " + e.toString());
+            return null;
         } finally {
             Logger.log("get() completed in " + (System.currentTimeMillis() - startTime) + "ms");
         }
