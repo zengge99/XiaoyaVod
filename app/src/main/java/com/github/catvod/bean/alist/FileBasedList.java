@@ -58,38 +58,44 @@ public class FileBasedList<T> implements List<T> {
 
     // 清空缓存目录
     public static void clearCacheDirectory() {
-        Logger.log("clearCacheDirectory1");
-        String cacheDirPath = getCacheDirPath();
-        Logger.log("clearCacheDirectory2");
-        Logger.log(cacheDirPath);
-        File cacheDir = new File(cacheDirPath);
-        Logger.log("clearCacheDirectory3");
-        if (!cacheDir.exists()) {
-            Logger.log("clearCacheDirectory4");
-            return;
-        }
-        Logger.log("clearCacheDirectory5");
-        if (!cacheDir.isDirectory()) {
-            Logger.log("clearCacheDirectory6");
-            throw new RuntimeException("Cache directory path is not a directory: " + cacheDirPath);
-        }
-        Logger.log("clearCacheDirectory7");
-        File[] files = cacheDir.listFiles((dir, name) -> name.endsWith(".list"));
-        Logger.log(files);
-        Logger.log("clearCacheDirectory8");
-        if (files == null) {
-            Logger.log("clearCacheDirectory9");
-            return;
-        }
-        Logger.log("clearCacheDirectory10");
-        for (File file : files) {
-            try {
-                Files.delete(file.toPath());
-            } catch (IOException e) {
-                Logger.log(e);
+        try {
+            Logger.log("clearCacheDirectory1");
+            String cacheDirPath = getCacheDirPath();
+            Logger.log("clearCacheDirectory2");
+            Logger.log(cacheDirPath);
+            File cacheDir = new File(cacheDirPath);
+            Logger.log("clearCacheDirectory3");
+            if (!cacheDir.exists()) {
+                Logger.log("clearCacheDirectory4");
+                return;
             }
+            Logger.log("clearCacheDirectory5");
+            if (!cacheDir.isDirectory()) {
+                Logger.log("clearCacheDirectory6");
+                throw new RuntimeException("Cache directory path is not a directory: " + cacheDirPath);
+            }
+            Logger.log("clearCacheDirectory7");
+            File[] files = cacheDir.listFiles((dir, name) -> name.endsWith(".list"));
+            Logger.log(files);
+            Logger.log("clearCacheDirectory8");
+            if (files == null) {
+                Logger.log("clearCacheDirectory9");
+                return;
+            }
+            Logger.log("clearCacheDirectory10");
+            for (File file : files) {
+                try {
+                    Files.delete(file.toPath());
+                } catch (IOException e) {
+                    Logger.log(e);
+                }
+            }
+            Logger.log("clearCacheDirectory11");
+
+        } catch (Exception e) {
+            Logger.log("clearCacheDirectory12");
+            Logger.log(e);
         }
-        Logger.log("clearCacheDirectory11");
     }
 
     // 确保文件存在
