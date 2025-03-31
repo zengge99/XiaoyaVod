@@ -4,7 +4,7 @@ pluginManagement {
         google()
         mavenCentral()
         maven { url "https://plugins.gradle.org/m2/" }
-        maven { url "https://mvnrepository.com/artifact/" }
+        maven { url "https://repo1.maven.org/maven2/" }
     }
 }
 dependencyResolutionManagement {
@@ -13,7 +13,7 @@ dependencyResolutionManagement {
         google()
         mavenCentral()
         maven { url 'https://jitpack.io' }
-        maven { url "https://mvnrepository.com/artifact/" }
+        maven { url "https://repo1.maven.org/maven2/" }
     }
 }
 rootProject.name = "CatVodSpider"
