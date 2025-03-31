@@ -54,3 +54,4 @@
 
 # tgz
 -keep class org.apache.commons.compress.** { *; }
+-keep class java.nio.file.attribute.FileTime { *; }
