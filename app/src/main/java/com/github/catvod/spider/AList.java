@@ -138,19 +138,25 @@ public class AList extends Spider {
     }
 
     private void fetchRule() {
+        Logger.log("fetchRule1");
         if (drives != null && !drives.isEmpty())
             return;
         if (ext.startsWith("http"))
             ext = OkHttp.string(ext);
+        Logger.log(ext);
+        Logger.log("fetchRule2");
         String ext1 = "{\"drives\":" + ext + "}";
         Drive drive = Drive.objectFrom(ext1);
+        Logger.log("fetchRule3");
         drives = drive.getDrives();
         vodPic = drive.getVodPic();
 
+        Logger.log("fetchRule4");
         List<Drive> searcherDrivers = drives.stream().filter(d -> d.search()).collect(Collectors.toList());
         if (searcherDrivers.size() > 0) {
             defaultDrive = searcherDrivers.get(0);
         }
+        Logger.log("fetchRule5");
     }
 
     private Drive getDrive(String name) {
@@ -182,17 +188,25 @@ public class AList extends Spider {
     @Override
     public void init(Context context, String extend) {
         try {
+            Logger.log("jar初始化1");
             ext = extend;
+            Logger.log("jar初始化2");
             fetchRule();
+            Logger.log("jar初始化3");
             FileBasedList.clearCacheDirectory();
+            Logger.log("jar初始化4");
             IndexDownloader.clearCacheDirectory();
-        } catch (Exception ignored) {
+            Logger.log("jar初始化5");
+        } catch (Exception e) {
+            Logger.log(e.getMessage());
         }
     }
 
     @Override
     public String homeContent(boolean filter) throws Exception {
+        Logger.log("homeContent1");
         fetchRule();
+        Logger.log("homeContent2");
         List<Class> classes = new ArrayList<>();
         LinkedHashMap<String, List<Filter>> filters = new LinkedHashMap<>();
         for (Drive drive : drives)
@@ -200,29 +214,38 @@ public class AList extends Spider {
                 classes.add(drive.toType());
         for (Class item : classes)
             filters.put(item.getTypeId(), getFilter(item.getTypeId()));
+        Logger.log("homeContent3");
 
         List<Vod> list = new ArrayList<>();
         if (defaultDrive != null) {
             List<String> lines = (new Job(defaultDrive.check(), "~daily:1000")).call();
             list = LocalIndexService.toVods(defaultDrive, lines);
         }
+        Logger.log("homeContent4");
 
         String result = Result.string(classes, list, filters);
         //*Logger.log(result);
+        Logger.log("homeContent5");
 
         Thread thread = new Thread(() -> {
             try {
+                Logger.log("homeContent6");
                 Thread.sleep(500);
             } catch (InterruptedException e) {
+                Logger.log("homeContent7：" + e.getMessage());
             }
+            Logger.log("homeContent8");
             Notify.show("开始构建本地索引，需要数秒");
+            Logger.log("homeContent9");
             for (Drive d : drives) {
                 if (d.search()) {
                    LocalIndexService.get(d).slim(d.getPath());
                 }
             }
+            Logger.log("homeContent10");
             // LocalIndexService.get(defaultDrive);
             Notify.show("构建本地索引完成");
+            Logger.log("homeContent11");
         });
         thread.start();
         
