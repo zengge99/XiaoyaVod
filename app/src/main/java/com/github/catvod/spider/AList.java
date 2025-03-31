@@ -152,7 +152,12 @@ public class AList extends Spider {
         vodPic = drive.getVodPic();
 
         Logger.log("fetchRule4");
-        List<Drive> searcherDrivers = drives.stream().filter(d -> d.search()).collect(Collectors.toList());
+        List<Drive> searcherDrivers = new ArrayList<>();
+        for (Drive d : drives) {
+            if (d.search()) {
+                searcherDrivers.add(d);
+            }
+        }
         if (searcherDrivers.size() > 0) {
             defaultDrive = searcherDrivers.get(0);
         }
