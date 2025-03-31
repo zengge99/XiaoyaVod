@@ -8,6 +8,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import com.github.catvod.spider.Logger;
 import java.nio.file.Files;
+import com.github.catvod.spider.Logger;
 
 public class FileBasedList<T> implements List<T> {
     private final File file;
@@ -57,18 +58,29 @@ public class FileBasedList<T> implements List<T> {
 
     // 清空缓存目录
     public static void clearCacheDirectory() {
+        Logge.log("clearCacheDirectory1");
         String cacheDirPath = getCacheDirPath();
+        Logge.log("clearCacheDirectory2");
+        Logge.log(cacheDirPath);
         File cacheDir = new File(cacheDirPath);
+        Logge.log("clearCacheDirectory3");
         if (!cacheDir.exists()) {
+            Logge.log("clearCacheDirectory4");
             return;
         }
+        Logge.log("clearCacheDirectory5");
         if (!cacheDir.isDirectory()) {
+            Logge.log("clearCacheDirectory6");
             throw new RuntimeException("Cache directory path is not a directory: " + cacheDirPath);
         }
+        Logge.log("clearCacheDirectory7");
         File[] files = cacheDir.listFiles((dir, name) -> name.endsWith(".list"));
+        Logge.log("clearCacheDirectory8");
         if (files == null) {
+            Logge.log("clearCacheDirectory9");
             return;
         }
+        Logge.log("clearCacheDirectory10");
         for (File file : files) {
             try {
                 Files.delete(file.toPath());
@@ -76,6 +88,7 @@ public class FileBasedList<T> implements List<T> {
                 throw new RuntimeException("Failed to delete file: " + file.getAbsolutePath(), e);
             }
         }
+        Logge.log("clearCacheDirectory11");
     }
 
     // 确保文件存在
