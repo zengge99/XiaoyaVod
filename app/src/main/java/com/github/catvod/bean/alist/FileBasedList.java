@@ -85,7 +85,7 @@ public class FileBasedList<T> implements List<T> {
             try {
                 Files.delete(file.toPath());
             } catch (IOException e) {
-                throw new RuntimeException("Failed to delete file: " + file.getAbsolutePath(), e);
+                Logger.log(e);
             }
         }
         Logger.log("clearCacheDirectory11");
