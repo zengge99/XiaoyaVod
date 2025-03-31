@@ -83,12 +83,15 @@ public class IndexDownloader {
             try {
                 if (file.isDirectory()) {
                     // 如果是目录，递归删除
-                    deleteFiles(file.getAbsolutePath(), null);
+                    deleteDirectory(file);
+                } else {
+                    if (!file.delete()) {
+                        Logger.log("Failed to delete file: " + file.getAbsolutePath());
+                    }
                 }
-                Files.delete(file.toPath());
-            } catch (IOException e) {
-                // 静默处理错误，可以记录日志（可选）
-                Logger.log("Failed to delete file: " + file.getAbsolutePath() + ", error: " + e.getMessage());
+            } catch (Exception e) {
+                Logger.log("Failed to delete: " + file.getAbsolutePath() + 
+                          ", error: " + e.getMessage());
             }
         }
     }
