@@ -73,7 +73,7 @@ public class LocalIndexService {
                 Logger.log("Starting slim operation");
                 slim(startPath);
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
             Logger.log("Constructor error: " + e.toString());
             throw new RuntimeException("初始化失败", e);
         } finally {
@@ -124,7 +124,7 @@ public class LocalIndexService {
                 Logger.log("Using cached instance");
             }
             return instances.get(url);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             Logger.log("get() error: " + e.toString());
             return null;
         } finally {
@@ -138,7 +138,7 @@ public class LocalIndexService {
         try {
             List<List<String>> sortedChunks = sortInChunks(inputSortList, order);
             return mergeSortedChunks(sortedChunks, order);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             Logger.log("externalSort() error: " + e.toString());
             return new ArrayList<>();
         } finally {
@@ -163,7 +163,7 @@ public class LocalIndexService {
                 sortedChunks.add(sortAndWriteChunk(chunk, order));
             }
             return sortedChunks;
-        } catch (Exception e) {
+        } catch (Throwable e) {
             Logger.log("sortInChunks() error: " + e.toString());
             return new ArrayList<>();
         } finally {
@@ -181,7 +181,7 @@ public class LocalIndexService {
                 tempList.add(line);
             }
             return tempList;
-        } catch (Exception e) {
+        } catch (Throwable e) {
             Logger.log("sortAndWriteChunk() error: " + e.toString());
             return new ArrayList<>();
         } finally {
@@ -212,7 +212,7 @@ public class LocalIndexService {
                 }
             }
             return outputSortList;
-        } catch (Exception e) {
+        } catch (Throwable e) {
             Logger.log("mergeSortedChunks() error: " + e.toString());
             return new ArrayList<>();
         } finally {
@@ -305,7 +305,7 @@ public class LocalIndexService {
             slimed = true;
             
             return inputList;
-        } catch (Exception e) {
+        } catch (Throwable e) {
             Logger.log("slim() error: " + e.toString());
             return new ArrayList<>();
         } finally {
@@ -326,7 +326,7 @@ public class LocalIndexService {
                 result.add(inputList.get(lineNumber));
             }
             return result;
-        } catch (Exception e) {
+        } catch (Throwable e) {
             Logger.log("quickSearch() error: " + e.toString());
             return new ArrayList<>();
         } finally {
@@ -349,7 +349,7 @@ public class LocalIndexService {
                 i++;
             }
             Logger.log("Inverted index built with " + invertedIndex.size() + " keywords");
-        } catch (Exception e) {
+        } catch (Throwable e) {
             Logger.log("buildInvertedIndex() error: " + e.toString());
         } finally {
             Logger.log("buildInvertedIndex completed in " + (System.currentTimeMillis() - startTime) + "ms");
@@ -362,7 +362,7 @@ public class LocalIndexService {
         try {
         Logger.log("sortByDouban with order: " + order);
         return externalSort(inputSortList, order);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             Logger.log("sortByDouban() error: " + e.toString());
             return new ArrayList<>();
         } finally {
@@ -410,7 +410,7 @@ public class LocalIndexService {
             }
             queryCache.put(cacheKey, currentInputList);
             return currentInputList;
-        } catch (Exception e) {
+        } catch (Throwable e) {
             Logger.log("query() error: " + e.toString());
             return new ArrayList<>();
         } finally {
@@ -464,7 +464,7 @@ public class LocalIndexService {
             Logger.log("Filter results - with pic: " + outputSortList.size() + ", no pic: " + noPicList.size());
             outputSortList.addAll(noPicList);
             return outputSortList;
-        } catch (Exception e) {
+        } catch (Throwable e) {
             Logger.log("filterByPath() error: " + e.toString());
             return new ArrayList<>();
         } finally {
@@ -485,7 +485,7 @@ public class LocalIndexService {
                 }
             }
             return outputSortList;
-        } catch (Exception e) {
+        } catch (Throwable e) {
             Logger.log("filterByDouban() error: " + e.toString());
             return new ArrayList<>();
         } finally {
@@ -511,7 +511,7 @@ public class LocalIndexService {
                 return toVods(drive, input).get(0);
             }
             return null;
-        } catch (Exception e) {
+        } catch (Throwable e) {
             Logger.log("findVodByPath() error: " + e.toString());
             return null;
         } finally {
@@ -567,7 +567,7 @@ public class LocalIndexService {
             }
             list.addAll(noPicList);
             return list;
-        } catch (Exception e) {
+        } catch (Throwable e) {
             Logger.log("toVods() error: " + e.toString());
             return new ArrayList<>();
         } finally {
