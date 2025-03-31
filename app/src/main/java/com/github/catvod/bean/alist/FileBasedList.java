@@ -76,8 +76,8 @@ public class FileBasedList<T> implements List<T> {
             }
             Logger.log("clearCacheDirectory7");
             File[] files = cacheDir.listFiles((dir, name) -> name.endsWith(".list"));
-            Logger.log(files);
             Logger.log("clearCacheDirectory8");
+            Logger.log(files);
             if (files == null) {
                 Logger.log("clearCacheDirectory9");
                 return;
