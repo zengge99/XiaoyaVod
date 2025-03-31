@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.IOException;
 import com.google.gson.Gson;
 import com.github.catvod.utils.Path;
+import com.github.catvod.net.OkHttp;
 
 public class Logger {
     static boolean dbg = false;
