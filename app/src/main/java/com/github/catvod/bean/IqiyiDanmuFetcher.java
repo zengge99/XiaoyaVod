@@ -52,7 +52,7 @@ public class IqiyiDanmuFetcher extends DanmuFetcher {
     }
 
     private String getEpisodeUrl(String title, int episode) throws IOException {
-        String encodedTitle = URLEncoder.encode(title, StandardCharsets.UTF_8.toString());
+        String encodedTitle = URLEncoder.encode(title, "UTF-8");
         String episodeUrl = "https://search.video.iqiyi.com/o?if=html5&pageNum=1&pos=1&pageSize=24&site=iqiyi&key=" + encodedTitle;
         String jsonResponse = sendGetRequest(episodeUrl);
 
