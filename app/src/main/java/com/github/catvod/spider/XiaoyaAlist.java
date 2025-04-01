@@ -11,10 +11,13 @@ public class XiaoyaAlist extends Spider {
 
     @Override
     public void init(Context context, String extend) {
-        if (core == null) {
-            core = new AList();
+        try {
+            if (core == null) {
+                core = new AList();
+            }
+            core.init(context, extend); 
+        } catch (Exception e) {
         }
-        core.init(context, extend);
     }
 
     @Override
