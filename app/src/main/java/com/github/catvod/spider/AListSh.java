@@ -206,13 +206,11 @@ public class AListSh extends Spider {
             } catch (InterruptedException e) {
             }
             Notify.show("开始构建本地索引，需要数秒");
-            Logger.log("homeContent9");
             for (Drive d : drives) {
                 if (d.search()) {
-                   LocalIndexService.get(d);
+                   d.exec("cat index.video.txt index.115.txt > index.all.txt");
                 }
             }
-            Notify.show("构建本地索引完成");
         });
         thread.start();
         
