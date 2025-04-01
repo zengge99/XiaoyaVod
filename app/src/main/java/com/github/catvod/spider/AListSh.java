@@ -199,8 +199,8 @@ public class AListSh extends Spider {
             Notify.show("开始构建本地索引，需要数秒");
             for (Drive d : drives) {
                 if (!d.search()) {
-                    d.exec("{ cat index.video.txt index.115.txt;echo '' } > index.all.txt");
-                    d.exec("{ cat index.video.txt index.115.txt;echo '' } | awk -F '#' '{print $4,$0}' | sort -r | cut -d ' ' -f 2- > index.all.desc.txt");
+                    d.exec("{ cat index.video.txt index.115.txt;echo ''; } > index.all.txt");
+                    d.exec("{ cat index.video.txt index.115.txt;echo ''; } | awk -F '#' '{print $4,$0}' | sort -r | cut -d ' ' -f 2- > index.all.desc.txt");
                 }
             }
             Notify.show("构建本地索引完成");
