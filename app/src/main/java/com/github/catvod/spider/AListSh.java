@@ -200,7 +200,7 @@ public class AListSh extends Spider {
             for (Drive d : drives) {
                 if (!d.noPoster()) {
                     d.exec("{ cat index.video.txt index.115.txt;echo '' } > index.all.txt");
-                    d.exec("cat index.all.txt | grep '^[.]/" + d.getPath() + "' | awk -F '#' '{print $4,$0}' | sort -r | cut -d ' ' -f 2- > index.all.desc.txt");
+                    d.exec("cat index.all.txt | grep '^[.]" + d.getPath() + "' | awk -F '#' '{print $4,$0}' | sort -r | cut -d ' ' -f 2- > index.all.desc.txt");
                 }
             }
             Notify.show("构建本地索引完成");
