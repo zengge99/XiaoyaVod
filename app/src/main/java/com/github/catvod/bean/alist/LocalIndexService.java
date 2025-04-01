@@ -26,6 +26,109 @@ public class LocalIndexService {
     private Map<String, List<Integer>> invertedIndex;
     private String startPath;
 
+    public static LocalIndexService get(String url) {
+        return get(url, "");
+    }
+
+    public static LocalIndexService get(Drive drive) {
+        return get(drive.getName() + "/" + drive.getServer(), drive.getPath());
+    }
+
+    public static LocalIndexService get(String url, String startPath) {
+        Logger.log("get() called for url: " + url);
+        long startTime = System.currentTimeMillis();
+        try {
+            String realUrl = url;
+            if (!url.startsWith("http")) {
+                realUrl = url.substring(url.indexOf("/") + 1);
+            }
+            if (isOnline(realUrl)) {
+                Logger.log("Creating new online instance");
+                return new LocalIndexService(realUrl, startPath);
+            }
+            if (!instances.containsKey(url)) {
+                Logger.log("Creating and caching new instance");
+                instances.put(url, new LocalIndexService(realUrl, startPath));
+            } else {
+                Logger.log("Using cached instance");
+            }
+            return instances.get(url);
+        } catch (Throwable e) {
+            Logger.log("get() error: " + e.toString());
+            return null;
+        } finally {
+            Logger.log("get() completed in " + (System.currentTimeMillis() - startTime) + "ms");
+        }
+    }
+
+    public List<String> quickSearch(String keyword) {
+        Logger.log("quickSearch for keyword: " + keyword);
+        long startTime = System.currentTimeMillis();
+        try {
+            if (invertedIndex == null) {
+                throw new IllegalStateException("Inverted index not built. Call slim() first.");
+            }
+            List<Integer> lineNumbers = invertedIndex.get(keyword);
+            lineNumbers = lineNumbers != null ? lineNumbers : new ArrayList<>();
+            List<String> result = new ArrayList<>();
+            for (int lineNumber : lineNumbers) {
+                result.add(inputList.get(lineNumber));
+            }
+            return result;
+        } catch (Throwable e) {
+            Logger.log("quickSearch() error: " + e.toString());
+            return new ArrayList<>();
+        } finally {
+            Logger.log("quickSearch completed in " + (System.currentTimeMillis() - startTime) + "ms");
+        }
+    }
+
+    public List<String> query(LinkedHashMap<String, String> queryParams) {
+        Logger.log("query() called with params: " + queryParams);
+        long startTime = System.currentTimeMillis();
+        try {
+            List<String> currentInputList = inputList;
+            if (queryParams.containsKey("random")) {
+                queryParams.remove("random");
+            }
+            String cacheKey = generateCacheKey(queryParams);
+            if (queryCache.get(cacheKey) != null) {
+                Logger.log("Query cache hit for key: " + cacheKey);
+                currentInputList = queryCache.get(cacheKey);
+                return currentInputList;
+            }
+            Logger.log("Query cache miss for key: " + cacheKey);
+            
+            for (Map.Entry<String, String> entry : queryParams.entrySet()) {
+                String method = entry.getKey();
+                String param = entry.getValue();
+                List<String> tempOutputList;
+                
+                switch (method) {
+                    case "subpath":
+                        tempOutputList = filterByPath(currentInputList, param);
+                        break;
+                    case "doubansort":
+                        tempOutputList = sortByDouban(currentInputList, param);
+                        break;
+                    case "douban":
+                        tempOutputList = filterByDouban(currentInputList, param);
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Unknown query method: " + method);
+                }
+                currentInputList = tempOutputList;
+            }
+            queryCache.put(cacheKey, currentInputList);
+            return currentInputList;
+        } catch (Throwable e) {
+            Logger.log("query() error: " + e.toString());
+            return new ArrayList<>();
+        } finally {
+            Logger.log("query() completed in " + (System.currentTimeMillis() - startTime) + "ms");
+        }
+    }
+
     private LocalIndexService(String url, String startPath) {
         Logger.log("LocalIndexService constructor start - url:" + url);
         long startTime = System.currentTimeMillis();
@@ -97,42 +200,7 @@ public class LocalIndexService {
         return result;
     }
 
-    public static LocalIndexService get(String url) {
-        return get(url, "");
-    }
-
-    public static LocalIndexService get(Drive drive) {
-        return get(drive.getName() + "/" + drive.getServer(), drive.getPath());
-    }
-
-    public static LocalIndexService get(String url, String startPath) {
-        Logger.log("get() called for url: " + url);
-        long startTime = System.currentTimeMillis();
-        try {
-            String realUrl = url;
-            if (!url.startsWith("http")) {
-                realUrl = url.substring(url.indexOf("/") + 1);
-            }
-            if (isOnline(realUrl)) {
-                Logger.log("Creating new online instance");
-                return new LocalIndexService(realUrl, startPath);
-            }
-            if (!instances.containsKey(url)) {
-                Logger.log("Creating and caching new instance");
-                instances.put(url, new LocalIndexService(realUrl, startPath));
-            } else {
-                Logger.log("Using cached instance");
-            }
-            return instances.get(url);
-        } catch (Throwable e) {
-            Logger.log("get() error: " + e.toString());
-            return null;
-        } finally {
-            Logger.log("get() completed in " + (System.currentTimeMillis() - startTime) + "ms");
-        }
-    }
-
-    public List<String> externalSort(List<String> inputSortList, String order) throws IOException {
+    private List<String> externalSort(List<String> inputSortList, String order) throws IOException {
         Logger.log("externalSort start with order: " + order);
         long startTime = System.currentTimeMillis();
         try {
@@ -282,7 +350,7 @@ public class LocalIndexService {
         }
     }
 
-    public List<String> slim(String path) {
+    private List<String> slim(String path) {
         Logger.log("slim() called for path: " + path);
         long startTime = System.currentTimeMillis();
         try {
@@ -313,50 +381,6 @@ public class LocalIndexService {
         }
     }
 
-    public List<String> quickSearch(String keyword) {
-        Logger.log("quickSearch for keyword: " + keyword);
-        long startTime = System.currentTimeMillis();
-        try {
-            if (invertedIndex == null) {
-                throw new IllegalStateException("Inverted index not built. Call slim() first.");
-            }
-            List<Integer> lineNumbers = invertedIndex.get(keyword);
-            lineNumbers = lineNumbers != null ? lineNumbers : new ArrayList<>();
-            List<String> result = new ArrayList<>();
-            for (int lineNumber : lineNumbers) {
-                result.add(inputList.get(lineNumber));
-            }
-            return result;
-        } catch (Throwable e) {
-            Logger.log("quickSearch() error: " + e.toString());
-            return new ArrayList<>();
-        } finally {
-            Logger.log("quickSearch completed in " + (System.currentTimeMillis() - startTime) + "ms");
-        }
-    }
-
-    private void _buildInvertedIndex() {
-        Logger.log("buildInvertedIndex start");
-        long startTime = System.currentTimeMillis();
-        try {
-            invertedIndex = new HashMap<>();
-            int i = 0;
-            for (String line : inputList) {
-                String[] fields = line.split("#");
-                if (fields.length >= 2) {
-                    String keyword = fields[1].trim();
-                    invertedIndex.computeIfAbsent(keyword, k -> new ArrayList<>()).add(i);
-                }
-                i++;
-            }
-            Logger.log("Inverted index built with " + invertedIndex.size() + " keywords");
-        } catch (Throwable e) {
-            Logger.log("buildInvertedIndex() error: " + e.toString());
-        } finally {
-            Logger.log("buildInvertedIndex completed in " + (System.currentTimeMillis() - startTime) + "ms");
-        }
-    }
-
     private void buildInvertedIndex() {
         Logger.log("buildInvertedIndex start");
         long startTime = System.currentTimeMillis();
@@ -381,68 +405,6 @@ public class LocalIndexService {
             Logger.log("buildInvertedIndex error: " + e.toString());
         } finally {
             Logger.log("buildInvertedIndex completed in " + (System.currentTimeMillis() - startTime) + "ms");
-        }
-    }
-
-    
-    private List<String> sortByDouban(List<String> inputSortList, String order) throws IOException {
-        long startTime = System.currentTimeMillis();
-        try {
-        Logger.log("sortByDouban with order: " + order);
-        return externalSort(inputSortList, order);
-        } catch (Throwable e) {
-            Logger.log("sortByDouban() error: " + e.toString());
-            return new ArrayList<>();
-        } finally {
-            Logger.log("sortByDouban耗时: " + (System.currentTimeMillis() - startTime) + "ms");
-        }
-    }
-
-
-
-    public List<String> query(LinkedHashMap<String, String> queryParams) {
-        Logger.log("query() called with params: " + queryParams);
-        long startTime = System.currentTimeMillis();
-        try {
-            List<String> currentInputList = inputList;
-            if (queryParams.containsKey("random")) {
-                queryParams.remove("random");
-            }
-            String cacheKey = generateCacheKey(queryParams);
-            if (queryCache.get(cacheKey) != null) {
-                Logger.log("Query cache hit for key: " + cacheKey);
-                currentInputList = queryCache.get(cacheKey);
-                return currentInputList;
-            }
-            Logger.log("Query cache miss for key: " + cacheKey);
-            
-            for (Map.Entry<String, String> entry : queryParams.entrySet()) {
-                String method = entry.getKey();
-                String param = entry.getValue();
-                List<String> tempOutputList;
-                
-                switch (method) {
-                    case "subpath":
-                        tempOutputList = filterByPath(currentInputList, param);
-                        break;
-                    case "doubansort":
-                        tempOutputList = sortByDouban(currentInputList, param);
-                        break;
-                    case "douban":
-                        tempOutputList = filterByDouban(currentInputList, param);
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Unknown query method: " + method);
-                }
-                currentInputList = tempOutputList;
-            }
-            queryCache.put(cacheKey, currentInputList);
-            return currentInputList;
-        } catch (Throwable e) {
-            Logger.log("query() error: " + e.toString());
-            return new ArrayList<>();
-        } finally {
-            Logger.log("query() completed in " + (System.currentTimeMillis() - startTime) + "ms");
         }
     }
 
@@ -524,85 +486,16 @@ public class LocalIndexService {
         }
     }
 
-    public Vod findVodByPath(Drive drive, String path) {
-        Logger.log("findVodByPath for path: " + path);
+    private List<String> sortByDouban(List<String> inputSortList, String order) throws IOException {
         long startTime = System.currentTimeMillis();
         try {
-            String normalizedPath = normalizePath(path);
-            List<String> input = new ArrayList<>();
-            for (String line : inputList) {
-                String[] splits = line.split("#");
-                String normalizedTargetPath = normalizePath(splits[0]);
-                if (normalizedTargetPath.equals(normalizedPath)) {
-                    input.add(line);
-                    break;
-                }
-            }
-            if (input.size() > 0) {
-                return toVods(drive, input).get(0);
-            }
-            return null;
+        Logger.log("sortByDouban with order: " + order);
+        return externalSort(inputSortList, order);
         } catch (Throwable e) {
-            Logger.log("findVodByPath() error: " + e.toString());
-            return null;
-        } finally {
-            Logger.log("findVodByPath completed in " + (System.currentTimeMillis() - startTime) + "ms");
-        }
-    }
-
-    private String normalizePath(String path) {
-        if (path == null || path.isEmpty()) {
-            return path;
-        }
-        if (path.startsWith("/")) {
-            path = path.substring(1);
-        }
-        if (path.endsWith("/")) {
-            path = path.substring(0, path.length() - 1);
-        }
-        return path;
-    }
-
-    public static List<Vod> toVods(Drive drive, List<String> lines) {
-        Logger.log("toVods() converting " + lines.size() + " lines");
-        long startTime = System.currentTimeMillis();
-        try {
-            List<Vod> list = new ArrayList<>();
-            List<Vod> noPicList = new ArrayList<>();
-            for (String line : lines) {
-                String[] splits = line.split("#");
-                int index = splits[0].lastIndexOf("/");
-                if (splits[0].endsWith("/")) {
-                    splits[0] = splits[0].substring(0, index);
-                    index = splits[0].lastIndexOf("/");
-                }
-                Item item = new Item();
-                item.setType(0);
-                item.doubanInfo.setId(splits.length >= 3 ? splits[2] : "");
-                item.doubanInfo.setRating(splits.length >= 4 ? splits[3] : "");
-                item.setThumb(splits.length >= 5 ? splits[4] : "");
-                item.setPath("/" + splits[0].substring(0, index));
-                String fileName = splits[0].substring(index + 1);
-                item.setName(fileName);
-                item.doubanInfo.setName(splits.length >= 2 ? splits[1] : fileName);
-                Vod vod = item.getVod(drive.getName(), drive.getVodPic());
-                vod.setVodRemarks(item.doubanInfo.getRating());
-                vod.setVodName(item.doubanInfo.getName());
-                vod.doubanInfo = item.doubanInfo;
-                vod.setVodId(vod.getVodId() + "/~xiaoya");
-                if (TextUtils.isEmpty(item.getThumb())) {
-                    noPicList.add(vod);
-                } else {
-                    list.add(vod);
-                }
-            }
-            list.addAll(noPicList);
-            return list;
-        } catch (Throwable e) {
-            Logger.log("toVods() error: " + e.toString());
+            Logger.log("sortByDouban() error: " + e.toString());
             return new ArrayList<>();
         } finally {
-            Logger.log("toVods() completed in " + (System.currentTimeMillis() - startTime) + "ms");
+            Logger.log("sortByDouban耗时: " + (System.currentTimeMillis() - startTime) + "ms");
         }
     }
 
