@@ -201,6 +201,7 @@ public class AListSh extends Spider {
                 if (d.search()) {
                    d.exec("{ cat index.video.txt index.115.txt;echo '' } > index.all.txt");
                    d.exec("cat index.all.txt | sort -n -r -t '#' -k 4,4 > index.all.desc.txt");
+                   d.exec("echo '' >> index.all.desc.txt");
                 }
             }
             Notify.show("构建本地索引完成");
