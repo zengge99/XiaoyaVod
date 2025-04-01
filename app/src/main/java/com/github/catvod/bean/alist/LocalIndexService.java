@@ -320,7 +320,8 @@ public class LocalIndexService {
             if (invertedIndex == null) {
                 throw new IllegalStateException("Inverted index not built. Call slim() first.");
             }
-            List<Integer> lineNumbers = invertedIndex.getOrDefault(keyword, Collections.emptyList());
+            List<Integer> lineNumbers = invertedIndex.get(keyword);
+            lineNumbers = lineNumbers != null ? lineNumbers : new ArrayList<>();
             List<String> result = new ArrayList<>();
             for (int lineNumber : lineNumbers) {
                 result.add(inputList.get(lineNumber));
