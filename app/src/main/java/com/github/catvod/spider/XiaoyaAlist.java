@@ -10,14 +10,11 @@ public class XiaoyaAlist extends Spider {
     private Spider core = null;
 
     @Override
-    public void init(Context context, String extend) {
-        try {
-            if (core == null) {
-                core = new AList();
-            }
-            core.init(context, extend); 
-        } catch (Exception e) {
+    public void init(Context context, String extend) throws Exception {
+        if (core == null) {
+            core = new AList();
         }
+        core.init(context, extend); 
     }
 
     @Override
@@ -42,7 +39,7 @@ public class XiaoyaAlist extends Spider {
     }
 
     @Override
-    public String playerContent(String flag, String id, List<String> vipFlags) {
+    public String playerContent(String flag, String id, List<String> vipFlags) throws Exception {
         return core.playerContent(flag, id, vipFlags);
     }
 }
