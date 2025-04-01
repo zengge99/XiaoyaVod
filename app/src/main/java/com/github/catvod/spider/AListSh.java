@@ -194,7 +194,7 @@ public class AListSh extends Spider {
 
         List<Vod> list = new ArrayList<>();
         if (defaultDrive != null) {
-            List<String> lines = Arrays.asList(defaultDrive.exec("cat index.daily.txt"));
+            List<String> lines = Arrays.asList(defaultDrive.exec("cat index.daily.txt").split("\n"));
             list = toVods(defaultDrive, lines);
         }
 
@@ -496,7 +496,7 @@ public class AListSh extends Spider {
         Pager pager = drivePagerMap.get(drive.getName());;
         if(lines == null || pg.equals("1")) {
             if (drive.getName().equals("每日更新")) {
-                lines = Arrays.asList(defaultDrive.exec("cat index.daily.txt"));
+                lines = Arrays.asList(defaultDrive.exec("cat index.daily.txt").split("\n"));
             } else {
                 lines = (new Job(drive.check(), drive.getPath())).call();
             }
@@ -521,7 +521,6 @@ public class AListSh extends Spider {
         driveLinesMap.put(drive.getName(), lines);
         drivePagerMap.put(drive.getName(), pager);
         result = Result.get().vod(list).page(Integer.parseInt(pg), pager.count, pager.limit, pager.count).string();
-        //Logger.log(result);
         return result;
     }
 
