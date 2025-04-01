@@ -160,6 +160,8 @@ public class AList extends Spider {
         }
         if (searcherDrivers.size() > 0) {
             defaultDrive = searcherDrivers.get(0);
+        } else {
+            defaultDrive = drives.get(0);
         }
         Logger.log("fetchRule5");
     }
