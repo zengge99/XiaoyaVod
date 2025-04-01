@@ -28,7 +28,7 @@ public class XiaoyaAlist extends Spider {
     @Override
     public String categoryContent(String tid, String pg, boolean filter, HashMap<String, String> extend)
             throws Exception {
-        return categoryContent(tid, pg, filter, extend);
+        return core.categoryContent(tid, pg, filter, extend);
     }
 
     @Override
@@ -43,6 +43,6 @@ public class XiaoyaAlist extends Spider {
 
     @Override
     public String playerContent(String flag, String id, List<String> vipFlags) {
-        return playerContent(flag, id, vipFlags);
+        return core.playerContent(flag, id, vipFlags);
     }
 }
