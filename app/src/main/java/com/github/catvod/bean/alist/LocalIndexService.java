@@ -129,75 +129,6 @@ public class LocalIndexService {
         }
     }
 
-    public static List<Vod> toVods(Drive drive, List<String> lines) {
-        Logger.log("toVods() converting " + lines.size() + " lines");
-        long startTime = System.currentTimeMillis();
-        try {
-            List<Vod> list = new ArrayList<>();
-            List<Vod> noPicList = new ArrayList<>();
-            for (String line : lines) {
-                String[] splits = line.split("#");
-                int index = splits[0].lastIndexOf("/");
-                if (splits[0].endsWith("/")) {
-                    splits[0] = splits[0].substring(0, index);
-                    index = splits[0].lastIndexOf("/");
-                }
-                Item item = new Item();
-                item.setType(0);
-                item.doubanInfo.setId(splits.length >= 3 ? splits[2] : "");
-                item.doubanInfo.setRating(splits.length >= 4 ? splits[3] : "");
-                item.setThumb(splits.length >= 5 ? splits[4] : "");
-                item.setPath("/" + splits[0].substring(0, index));
-                String fileName = splits[0].substring(index + 1);
-                item.setName(fileName);
-                item.doubanInfo.setName(splits.length >= 2 ? splits[1] : fileName);
-                Vod vod = item.getVod(drive.getName(), drive.getVodPic());
-                vod.setVodRemarks(item.doubanInfo.getRating());
-                vod.setVodName(item.doubanInfo.getName());
-                vod.doubanInfo = item.doubanInfo;
-                vod.setVodId(vod.getVodId() + "/~xiaoya");
-                if (TextUtils.isEmpty(item.getThumb())) {
-                    noPicList.add(vod);
-                } else {
-                    list.add(vod);
-                }
-            }
-            list.addAll(noPicList);
-            return list;
-        } catch (Throwable e) {
-            Logger.log("toVods() error: " + e.toString());
-            return new ArrayList<>();
-        } finally {
-            Logger.log("toVods() completed in " + (System.currentTimeMillis() - startTime) + "ms");
-        }
-    }
-
-    public Vod findVodByPath(Drive drive, String path) {
-        Logger.log("findVodByPath for path: " + path);
-        long startTime = System.currentTimeMillis();
-        try {
-            String normalizedPath = normalizePath(path);
-            List<String> input = new ArrayList<>();
-            for (String line : inputList) {
-                String[] splits = line.split("#");
-                String normalizedTargetPath = normalizePath(splits[0]);
-                if (normalizedTargetPath.equals(normalizedPath)) {
-                    input.add(line);
-                    break;
-                }
-            }
-            if (input.size() > 0) {
-                return toVods(drive, input).get(0);
-            }
-            return null;
-        } catch (Throwable e) {
-            Logger.log("findVodByPath() error: " + e.toString());
-            return null;
-        } finally {
-            Logger.log("findVodByPath completed in " + (System.currentTimeMillis() - startTime) + "ms");
-        }
-    }
-
     private LocalIndexService(String url, String startPath) {
         Logger.log("LocalIndexService constructor start - url:" + url);
         long startTime = System.currentTimeMillis();
@@ -566,19 +497,6 @@ public class LocalIndexService {
         } finally {
             Logger.log("sortByDouban耗时: " + (System.currentTimeMillis() - startTime) + "ms");
         }
-    }
-
-    private String normalizePath(String path) {
-        if (path == null || path.isEmpty()) {
-            return path;
-        }
-        if (path.startsWith("/")) {
-            path = path.substring(1);
-        }
-        if (path.endsWith("/")) {
-            path = path.substring(0, path.length() - 1);
-        }
-        return path;
     }
 
     public static void test() {

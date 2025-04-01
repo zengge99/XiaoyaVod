@@ -226,7 +226,7 @@ public class AList extends Spider {
         List<Vod> list = new ArrayList<>();
         if (defaultDrive != null) {
             List<String> lines = (new Job(defaultDrive.check(), "~daily:1000")).call();
-            list = LocalIndexService.toVods(defaultDrive, lines);
+            list = toVods(defaultDrive, lines);
         }
         Logger.log("homeContent4");
 
@@ -335,7 +335,7 @@ public class AList extends Spider {
             try {
                 List<String> tmpLines = future.get(15, TimeUnit.SECONDS);
                 Drive tmpDrive = drives.get(drives.indexOf(new Drive(driveName))).check();
-                list.addAll(LocalIndexService.toVods(tmpDrive, tmpLines));
+                list.addAll(toVods(tmpDrive, tmpLines));
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
                 e.printStackTrace();
             }
@@ -406,7 +406,7 @@ public class AList extends Spider {
         }
         Vod vod = null;
         if (id.endsWith("~xiaoya")) {
-            vod = LocalIndexService.get(drive).findVodByPath(drive, path.substring(path.indexOf("/") + 1));
+            vod = findVodByPath(drive, path.substring(path.indexOf("/") + 1));
         }
         if (vod == null) {
             vod = new Vod();
@@ -452,7 +452,7 @@ public class AList extends Spider {
         Drive drive = getDrive(key);
         Vod vod = null;
         if (id.endsWith("~xiaoya")) {
-            vod = LocalIndexService.get(drive).findVodByPath(drive, path.substring(path.indexOf("/") + 1));
+            vod = findVodByPath(drive, path.substring(path.indexOf("/") + 1));
         }
         if (vod == null) {
             vod = new Vod();
@@ -568,7 +568,7 @@ public class AList extends Spider {
 
         }
 
-        List<Vod> list = LocalIndexService.toVods(drive, pager.page(Integer.parseInt(pg)));
+        List<Vod> list = toVods(drive, pager.page(Integer.parseInt(pg)));
 
         driveLinesMap.put(drive.getName(), lines);
         drivePagerMap.put(drive.getName(), pager);
@@ -842,6 +842,89 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
             sub.add(Sub.create().name(name).ext(ext).url(url));
         }
         return sub;
+    }
+
+    private List<Vod> toVods(Drive drive, List<String> lines) {
+        Logger.log("toVods() converting " + lines.size() + " lines");
+        long startTime = System.currentTimeMillis();
+        try {
+            List<Vod> list = new ArrayList<>();
+            List<Vod> noPicList = new ArrayList<>();
+            for (String line : lines) {
+                String[] splits = line.split("#");
+                int index = splits[0].lastIndexOf("/");
+                if (splits[0].endsWith("/")) {
+                    splits[0] = splits[0].substring(0, index);
+                    index = splits[0].lastIndexOf("/");
+                }
+                Item item = new Item();
+                item.setType(0);
+                item.doubanInfo.setId(splits.length >= 3 ? splits[2] : "");
+                item.doubanInfo.setRating(splits.length >= 4 ? splits[3] : "");
+                item.setThumb(splits.length >= 5 ? splits[4] : "");
+                item.setPath("/" + splits[0].substring(0, index));
+                String fileName = splits[0].substring(index + 1);
+                item.setName(fileName);
+                item.doubanInfo.setName(splits.length >= 2 ? splits[1] : fileName);
+                Vod vod = item.getVod(drive.getName(), drive.getVodPic());
+                vod.setVodRemarks(item.doubanInfo.getRating());
+                vod.setVodName(item.doubanInfo.getName());
+                vod.doubanInfo = item.doubanInfo;
+                vod.setVodId(vod.getVodId() + "/~xiaoya");
+                if (TextUtils.isEmpty(item.getThumb())) {
+                    noPicList.add(vod);
+                } else {
+                    list.add(vod);
+                }
+            }
+            list.addAll(noPicList);
+            return list;
+        } catch (Throwable e) {
+            Logger.log("toVods() error: " + e.toString());
+            return new ArrayList<>();
+        } finally {
+            Logger.log("toVods() completed in " + (System.currentTimeMillis() - startTime) + "ms");
+        }
+    }
+
+    private Vod findVodByPath(Drive drive, String path) {
+        Logger.log("findVodByPath for path: " + path);
+        long startTime = System.currentTimeMillis();
+        try {
+            List<String> inputList = LocalIndexService.get(drive).query(new LinkedHashMap<>());
+            String normalizedPath = normalizePath(path);
+            List<String> input = new ArrayList<>();
+            for (String line : inputList) {
+                String[] splits = line.split("#");
+                String normalizedTargetPath = normalizePath(splits[0]);
+                if (normalizedTargetPath.equals(normalizedPath)) {
+                    input.add(line);
+                    break;
+                }
+            }
+            if (input.size() > 0) {
+                return toVods(drive, input).get(0);
+            }
+            return null;
+        } catch (Throwable e) {
+            Logger.log("findVodByPath() error: " + e.toString());
+            return null;
+        } finally {
+            Logger.log("findVodByPath completed in " + (System.currentTimeMillis() - startTime) + "ms");
+        }
+    }
+
+    private String normalizePath(String path) {
+        if (path == null || path.isEmpty()) {
+            return path;
+        }
+        if (path.startsWith("/")) {
+            path = path.substring(1);
+        }
+        if (path.endsWith("/")) {
+            path = path.substring(0, path.length() - 1);
+        }
+        return path;
     }
 
     class Job implements Callable<List<String>> {
