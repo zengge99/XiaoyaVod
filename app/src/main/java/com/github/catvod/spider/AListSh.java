@@ -183,9 +183,7 @@ public class AListSh extends Spider {
 
     @Override
     public String homeContent(boolean filter) throws Exception {
-        Logger.log("homeContent1");
         fetchRule();
-        Logger.log("homeContent2");
         List<Class> classes = new ArrayList<>();
         LinkedHashMap<String, List<Filter>> filters = new LinkedHashMap<>();
         for (Drive drive : drives)
@@ -193,27 +191,20 @@ public class AListSh extends Spider {
                 classes.add(drive.toType());
         for (Class item : classes)
             filters.put(item.getTypeId(), getFilter(item.getTypeId()));
-        Logger.log("homeContent3");
 
         List<Vod> list = new ArrayList<>();
         if (defaultDrive != null) {
-            List<String> lines = (new Job(defaultDrive.check(), "~daily:1000")).call();
+            List<String> lines = Arrays.asList(defaultDrive.exec("cat index.daily.txt"));
             list = toVods(defaultDrive, lines);
         }
-        Logger.log("homeContent4");
 
         String result = Result.string(classes, list, filters);
-        //Logger.log(result);
-        Logger.log("homeContent5");
 
         Thread thread = new Thread(() -> {
             try {
-                Logger.log("homeContent6");
                 Thread.sleep(500);
             } catch (InterruptedException e) {
-                Logger.log("homeContent7：" + e.getMessage());
             }
-            Logger.log("homeContent8");
             Notify.show("开始构建本地索引，需要数秒");
             Logger.log("homeContent9");
             for (Drive d : drives) {
@@ -221,10 +212,7 @@ public class AListSh extends Spider {
                    LocalIndexService.get(d);
                 }
             }
-            Logger.log("homeContent10");
-            // LocalIndexService.get(defaultDrive);
             Notify.show("构建本地索引完成");
-            Logger.log("homeContent11");
         });
         thread.start();
         
