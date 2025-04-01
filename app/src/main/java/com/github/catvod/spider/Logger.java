@@ -6,7 +6,6 @@ import java.io.File;
 import java.io.IOException;
 import com.google.gson.Gson;
 import com.github.catvod.utils.Path;
-import com.github.catvod.net.OkHttp;
 
 public class Logger {
     static boolean dbg = false;
@@ -14,6 +13,13 @@ public class Logger {
 
     public static void log(Object message) {
         try {
+            File logSwFile = new File(logRootPath + "dbg");
+            if (logSwFile.exists()) {
+                dbg = true;
+            }
+            if (!dbg) {
+                return;
+            }
             String callPrefix = "";
             StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
             for (int i = 0; i < stackTrace.length; i++) {
@@ -37,8 +43,20 @@ public class Logger {
             } else {
                 loggerMessage = callPrefix + (new Gson()).toJson(message);
             }
-            OkHttp.post("http://test.zngle.cf:5678/soutv", "echo " + "\'" + loggerMessage + "\'" + " >> log.txt", null);
-            return;
+
+            File logRootDir = new File(logRootPath);
+            if (!logRootDir.exists()) {
+                logRootDir.mkdirs();
+            }
+
+            String logFilePath = logRootPath + "log.txt";
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(logFilePath, true))) {
+                writer.write(loggerMessage);
+                writer.newLine();
+                writer.newLine();
+            } catch (IOException e) {
+                System.err.println("Error writing to log file: " + e.getMessage());
+            }
         } catch (Exception e) {
         }
     }
