@@ -182,7 +182,7 @@ public class AList extends Spider {
         try {
             code = new JSONObject(response).getInt("code");
         } catch (Exception e) {
-            Logger.log(e);
+            Logger.log("post" + e);
         }
         if (retry && code == 401 && (loginByFile(drive) || loginByUser(drive))) {
             return post(drive, url, param, false);

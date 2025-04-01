@@ -52,7 +52,7 @@ public class KanDanmuFetcher extends DanmuFetcher {
             // Step 4: Convert to Bilibili XML format
             return thisObject.convertToBilibiliXML(danmakuData);
         } catch (Exception e) {
-            Logger.log(e);
+            Logger.log("getBilibiliDanmakuXML" + e);
             return "";
         }
     }
