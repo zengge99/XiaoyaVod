@@ -113,30 +113,6 @@ public class AList extends Spider {
         return items;
     }
 
-    // 临时方案
-    private String getXiaoyaAlistToken() {
-
-        if (xiaoyaAlistToken != null) {
-            return xiaoyaAlistToken;
-        }
-
-        String url = defaultDrive.getServer() + "/tvbox/libs/alist.min.js";
-
-        String regex = "'\\s*Authorization\\s*':\\s*'([^']*)'";
-        Pattern pattern = Pattern.compile(regex);
-        Matcher matcher = pattern.matcher(OkHttp.string(url));
-
-        // 查找并提取目标部分
-        if (matcher.find()) {
-            String token = matcher.group(1); // 获取捕获组的内容
-            xiaoyaAlistToken = token;
-        } else {
-            xiaoyaAlistToken = "";
-        }
-        Logger.log("token:" + xiaoyaAlistToken);
-        return xiaoyaAlistToken;
-    }
-
     private void fetchRule() {
         Logger.log("fetchRule1");
         if (drives != null && !drives.isEmpty())
@@ -176,10 +152,6 @@ public class AList extends Spider {
 
     private String post(Drive drive, String url, String param, boolean retry) {
         String response = OkHttp.post(url, param, drive.getHeader()).getBody();
-        SpiderDebug.log(response);
-        // if (retry && (response.contains("Guest user is disabled") || response.contains("token is invalidated") || 
-        //     response.contains("without permission") || response.contains("token is expired")) && (loginByFile(drive) || loginByUser(drive)))
-        //     return post(drive, url, param, false);
         int code = 200;
         try {
             code = new JSONObject(response).getInt("code");
@@ -285,7 +257,6 @@ public class AList extends Spider {
         Boolean isFile = id.endsWith("~playlist") ? false : true;
         String path = id.substring(id.indexOf("/"));
         if (id.endsWith("~xiaoya")) {
-            //path = path.substring(0, path.lastIndexOf("/"));
             isFile = getList(path, false).size() == 0 ? true : false;
             isFile = isFile && Util.isMedia(path);
         }
@@ -297,13 +268,6 @@ public class AList extends Spider {
                 return listDetailContent(ids);
             }
         }
-
-        // if (id.endsWith("~soulist") || id.endsWith("~playlist")) {
-        //     return listDetailContent(ids);
-        // }
-        // if (id.endsWith("~soufile")) {
-        //     return fileDetailContent(ids);
-        // }
 
         return defaultDetailContent(ids);
     }
@@ -355,8 +319,6 @@ public class AList extends Spider {
         Drive drive = getDrive(key);
         String url = getDetail(ids[0]).getUrl();
         String result = Result.get().url(url).header(drive.getHeader()).subs(getSubs(ids)).string();
-        // String result =
-        // Result.get().url(url).header(getPlayHeader(url)).subs(getSubs(ids)).string();
         if(ids[ids.length - 1].contains("danmu:")) {
             String[] danmuParams = ids[ids.length - 1].replace("danmu:", "").split(",");
             if (danmuParams.length == 3) {
@@ -398,7 +360,6 @@ public class AList extends Spider {
         Drive drive = getDrive(key);
         StringBuilder from = new StringBuilder();
         StringBuilder url = new StringBuilder();
-        //if (id.endsWith("~soulist")) {
         if (id.endsWith("~xiaoya")) {
             walkFolder(drive, path, from, url, true);
         } else {
@@ -417,7 +378,6 @@ public class AList extends Spider {
 
         vod.setVodPlayFrom(from.toString());
 
-        //if (id.endsWith("~soulist") && vod.doubanInfo.getYear().isEmpty() && !vod.doubanInfo.getId().isEmpty()) {
         if (id.endsWith("~xiaoya") && vod.doubanInfo.getYear().isEmpty() && !vod.doubanInfo.getId().isEmpty()) {
             vod.doubanInfo = DoubanParser.getDoubanInfo(vod.doubanInfo.getId(), vod.doubanInfo);
             vod.setVodContent(vod.doubanInfo.getPlot() + "\r\n\r\n文件路径: " + path.substring(path.indexOf("/") + 1));
