@@ -476,6 +476,9 @@ public class LocalIndexService {
                 fieldValue = fieldValue.substring(1);
                 Logger.log("Adjusted fieldValue to: " + fieldValue);
             }
+            if (fieldValue.isEmpty()) {
+                return inputSortList;
+            }
             Logger.log("Filtering list size: " + inputSortList.size());
             List<String> outputSortList = creatHugeList();
             List<String> noPicList = creatHugeList();
