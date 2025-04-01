@@ -496,7 +496,7 @@ public class AListSh extends Spider {
         Pager pager = drivePagerMap.get(drive.getName());;
         if(lines == null || pg.equals("1")) {
             if (drive.getName().equals("每日更新")) {
-                lines = (new Job(drive.check(), "~daily:100000")).call();
+                lines = Arrays.asList(defaultDrive.exec("cat index.daily.txt"));
             } else {
                 lines = (new Job(drive.check(), drive.getPath())).call();
             }
