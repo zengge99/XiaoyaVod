@@ -229,7 +229,7 @@ public class AList extends Spider {
         Logger.log("homeContent4");
 
         String result = Result.string(classes, list, filters);
-        Logger.log(result);
+        //Logger.log(result);
         Logger.log("homeContent5");
 
         Thread thread = new Thread(() -> {
@@ -340,7 +340,7 @@ public class AList extends Spider {
         }
 
         String result = Result.get().vod(list).page().string();
-        Logger.log(result);
+        //Logger.log(result);
         return result;
     }
 
@@ -571,7 +571,7 @@ public class AList extends Spider {
         driveLinesMap.put(drive.getName(), lines);
         drivePagerMap.put(drive.getName(), pager);
         result = Result.get().vod(list).page(Integer.parseInt(pg), pager.count, pager.limit, pager.count).string();
-        Logger.log(result);
+        //Logger.log(result);
         return result;
     }
 
@@ -644,7 +644,7 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
         }
 
         String result = Result.get().vod(list).page().string();
-        Logger.log(result);
+        //Logger.log(result);
         return result;
     }
 
