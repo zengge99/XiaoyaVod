@@ -167,15 +167,10 @@ public class AListSh extends Spider {
     @Override
     public void init(Context context, String extend) {
         try {
-            Logger.log("jar初始化1");
             ext = extend;
-            Logger.log("jar初始化2");
             fetchRule();
-            Logger.log("jar初始化3");
             FileBasedList.clearCacheDirectory();
-            Logger.log("jar初始化4");
             IndexDownloader.clearCacheDirectory();
-            Logger.log("jar初始化5");
         } catch (Exception e) {
             Logger.log(e.getMessage());
         }
@@ -201,14 +196,11 @@ public class AListSh extends Spider {
         String result = Result.string(classes, list, filters);
 
         Thread thread = new Thread(() -> {
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException e) {
-            }
             Notify.show("开始构建本地索引，需要数秒");
             for (Drive d : drives) {
                 if (d.search()) {
-                   d.exec("cat index.video.txt index.115.txt > index.all.txt");
+                   d.exec("{ cat index.video.txt index.115.txt;echo '' } > index.all.txt");
+                   d.exec("cat index.all.txt | sort -n -r -t '#' -k 4,4 > index.all.desc.txt");
                 }
             }
             Notify.show("构建本地索引完成");
