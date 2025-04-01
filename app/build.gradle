@@ -51,5 +51,5 @@ dependencies {
     implementation 'com.orhanobut:logger:2.2.0'
     implementation 'org.jsoup:jsoup:1.15.3'
     implementation 'org.bouncycastle:bcprov-jdk15on:1.68'
-    implementation 'org.apache.commons:commons-compress:1.24.0'
+    implementation 'org.apache.commons:commons-compress:1.17'
 }

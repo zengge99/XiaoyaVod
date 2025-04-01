@@ -41,7 +41,7 @@ public class DanmuFetcher {
                 Path.write(danmuFile, danmu.getBytes());
                 thisObject.sendGetRequest("http://127.0.0.1:9978/action?do=refresh&type=danmaku&path=" + "file://" + danmuPath);
             } catch (Exception e) {
-                Logger.log(e);
+                Logger.log("pushDanmu" + e);
             }
         });
         thread.start();
@@ -79,14 +79,14 @@ public class DanmuFetcher {
             // Step 4: Convert to Bilibili XML format
             return thisObject.convertToBilibiliXML(danmakuData);
         } catch (Exception e) {
-            Logger.log(e);
+            Logger.log("getBilibiliDanmakuXML" + e);
             return "";
         }
     }
 
     private String searchShowId(String title, int year) throws IOException {
         // URL 编码影片名
-        String encodedTitle = URLEncoder.encode(title, StandardCharsets.UTF_8.toString());
+        String encodedTitle = URLEncoder.encode(title, "UTF-8");
         String searchUrl = "https://search.youku.com/api/search?pg=1&keyword=" + encodedTitle;
         String jsonResponse = sendGetRequest(searchUrl);
 
@@ -201,7 +201,7 @@ public class DanmuFetcher {
             JsonArray danmuku = response.getAsJsonArray("danmuku");
             return gson.fromJson(danmuku, List.class);
         } catch (Exception e) {
-            Logger.log(e);
+            Logger.log("fetchDanmakuFromUrl" + e);
             return null;
         }
     }

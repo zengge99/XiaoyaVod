@@ -51,3 +51,7 @@
     public static **[] values();
     public static ** valueOf(java.lang.String);
 }
+
+# tgz
+# -keep class org.apache.commons.compress.** { *; }
+# -keep class java.nio.file.attribute.FileTime { *; }

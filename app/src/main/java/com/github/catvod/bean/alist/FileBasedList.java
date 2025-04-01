@@ -8,6 +8,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import com.github.catvod.spider.Logger;
 import java.nio.file.Files;
+import com.github.catvod.spider.Logger;
 
 public class FileBasedList<T> implements List<T> {
     private final File file;
@@ -55,26 +56,109 @@ public class FileBasedList<T> implements List<T> {
         return com.github.catvod.utils.Path.cache() + "/TV/list/";
     }
 
-    // 清空缓存目录
     public static void clearCacheDirectory() {
-        String cacheDirPath = getCacheDirPath();
-        File cacheDir = new File(cacheDirPath);
-        if (!cacheDir.exists()) {
-            return;
-        }
-        if (!cacheDir.isDirectory()) {
-            throw new RuntimeException("Cache directory path is not a directory: " + cacheDirPath);
-        }
-        File[] files = cacheDir.listFiles((dir, name) -> name.endsWith(".list"));
-        if (files == null) {
-            return;
-        }
-        for (File file : files) {
-            try {
-                Files.delete(file.toPath());
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to delete file: " + file.getAbsolutePath(), e);
+        try {
+            Logger.log("clearCacheDirectory - Start");
+            File cacheDir = new File(getCacheDirPath());
+            
+            if (!cacheDir.exists() || !cacheDir.isDirectory()) {
+                Logger.log("clearCacheDirectory - Invalid directory: " + cacheDir.getAbsolutePath());
+                return;
             }
+
+            File[] files = cacheDir.listFiles((dir, name) -> name.endsWith(".list"));
+            if (files == null || files.length == 0) {
+                Logger.log("clearCacheDirectory - No files to delete");
+                return;
+            }
+
+            // 增强删除逻辑
+            for (File file : files) {
+                deleteFileWithRetry(file);  // 封装删除操作
+            }
+            Logger.log("clearCacheDirectory - Completed");
+
+        } catch (Throwable t) {
+            Logger.log("clearCacheDirectory - Critical error: " + t.getClass().getSimpleName());
+            Logger.log(t);
+        }
+    }
+
+    /**
+     * 带重试机制的文件删除
+     */
+    private static void deleteFileWithRetry(File file) {
+        final int MAX_RETRY = 3;
+        for (int i = 1; i <= MAX_RETRY; i++) {
+            try {
+                Logger.log("Attempt " + i + ": Deleting " + file.getName());
+                
+                if (!file.exists()) {
+                    Logger.log("File already deleted: " + file.getName());
+                    return;
+                }
+
+                boolean deleted = file.delete();  // 改用传统delete方法
+                if (deleted) {
+                    Logger.log("Successfully deleted: " + file.getName());
+                    return;
+                }
+
+                // 删除失败时的诊断
+                Logger.log("Delete failed - File: " + file.getAbsolutePath() + 
+                        ", Readable: " + file.canRead() + 
+                        ", Writable: " + file.canWrite());
+                
+                if (i < MAX_RETRY) {
+                    Thread.sleep(500);  // 延迟后重试
+                }
+            } catch (Throwable t) {
+                Logger.log("Attempt " + i + " error: " + t.getClass().getSimpleName());
+                Logger.log(t);
+            }
+        }
+        Logger.log("Gave up deleting: " + file.getName());
+    }
+
+    // 清空缓存目录
+    public static void __clearCacheDirectory() {
+        try {
+            Logger.log("clearCacheDirectory1");
+            String cacheDirPath = getCacheDirPath();
+            Logger.log("clearCacheDirectory2");
+            Logger.log(cacheDirPath);
+            File cacheDir = new File(cacheDirPath);
+            Logger.log("clearCacheDirectory3");
+            if (!cacheDir.exists()) {
+                Logger.log("clearCacheDirectory4");
+                return;
+            }
+            Logger.log("clearCacheDirectory5");
+            if (!cacheDir.isDirectory()) {
+                Logger.log("clearCacheDirectory6");
+                throw new RuntimeException("Cache directory path is not a directory: " + cacheDirPath);
+            }
+            Logger.log("clearCacheDirectory7");
+            File[] files = cacheDir.listFiles((dir, name) -> name.endsWith(".list"));
+            Logger.log("clearCacheDirectory8");
+            Logger.log(files);
+            if (files == null) {
+                Logger.log("clearCacheDirectory9");
+                return;
+            }
+            Logger.log("clearCacheDirectory10");
+            for (File file : files) {
+                try {
+                    Files.delete(file.toPath());
+                } catch (IOException e) {
+                    Logger.log(e);
+                }
+            }
+            Logger.log("clearCacheDirectory11");
+
+        } catch (Exception e) {
+            Logger.log("clearCacheDirectory12");
+            Logger.log(e);
         }
     }
 
