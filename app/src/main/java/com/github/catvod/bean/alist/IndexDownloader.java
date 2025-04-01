@@ -53,7 +53,7 @@ public class IndexDownloader {
     }
 
     private static String getCacheDirPath() {
-        return com.github.catvod.utils.Path.cache().getPath() + "/TV/index/";
+        return com.github.catvod.utils.Path.root().getPath() + "/TV/index/";
     }
 
     public static void clearCacheDirectory() {
