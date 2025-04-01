@@ -86,7 +86,7 @@ public class DanmuFetcher {
 
     private String searchShowId(String title, int year) throws IOException {
         // URL 编码影片名
-        String encodedTitle = URLEncoder.encode(title, StandardCharsets.UTF_8.toString());
+        String encodedTitle = URLEncoder.encode(title, "UTF-8");
         String searchUrl = "https://search.youku.com/api/search?pg=1&keyword=" + encodedTitle;
         String jsonResponse = sendGetRequest(searchUrl);
 
