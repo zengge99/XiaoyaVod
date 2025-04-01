@@ -59,7 +59,7 @@ public class KanDanmuFetcher extends DanmuFetcher {
 
     private String searchEnId(String title, int year) throws IOException {
         // URL 编码影片名
-        String encodedTitle = URLEncoder.encode(title, StandardCharsets.UTF_8.toString());
+        String encodedTitle = URLEncoder.encode(title, "UTF-8");
         // 使用步骤1的API搜索节目ID
         String searchUrl = "https://api.so.360kan.com/index?force_v=1&from=&pageno=1&v_ap=1&tab=all&kw=" + encodedTitle;
         String jsonResponse = sendGetRequest(searchUrl);
