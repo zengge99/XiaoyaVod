@@ -865,10 +865,10 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
             }
             shortKeyword = shortKeyword.length() < 30 ? shortKeyword : shortKeyword.substring(0, 30);
             if (keyword.startsWith("~daily:")) {
-                LocalIndexService service = LocalIndexService.get(drive.getName() + "/"+ drive.dailySearchApi(shortKeyword));
+                LocalIndexService service = LocalIndexService.get(drive.getName() + "/"+ drive.dailySearchApi(shortKeyword), drive.getPath());
                 return doFilter(service, drive.fl);
             } else if (keyword.startsWith("~search:")) {
-                LocalIndexService service = LocalIndexService.get(drive.getName() + "/"+ drive.searchApi(shortKeyword));
+                LocalIndexService service = LocalIndexService.get(drive.getName() + "/"+ drive.searchApi(shortKeyword), drive.getPath());
                 return service.query(new LinkedHashMap<String, String>());
             } else if (keyword.startsWith("~quick:")) {
                 return LocalIndexService.get(drive).quickSearch(shortKeyword);
