@@ -246,7 +246,7 @@ public class AList extends Spider {
             Logger.log("homeContent9");
             for (Drive d : drives) {
                 if (d.search()) {
-                   LocalIndexService.get(d).slim(d.getPath());
+                   LocalIndexService.get(d);
                 }
             }
             Logger.log("homeContent10");
