@@ -473,9 +473,9 @@ public class AListSh extends Spider {
         String cmd = String.format("{ cat index.daily.txt;echo ''; } | tac", drive.getPath());
         String subpath = fl.get("subpath");
         if (subpath != null && !subpath.equals("~all")) {
-            cmd +=  String.format(" | grep '^[.]/%s'", subpath);
+            cmd +=  String.format(" | grep '^[.]%s'", subpath);
         } else {
-            cmd +=  String.format(" | grep '^[.]/%s'", drive.getPath());
+            cmd +=  String.format(" | grep '^[.]%s'", drive.getPath());
         }
         String douban = fl.get("douban");
         if (douban != null && !douban.equals("0")) {
@@ -483,7 +483,7 @@ public class AListSh extends Spider {
         }
 
         int pageNum = Integer.parseInt(pg);
-        int startLine = (pageNum - 1) * 72;
+        int startLine = (pageNum - 1) * 72 + 1;
         cmd +=  String.format(" | tail -n +%d | head -n 72", startLine);
         List<String> lines = Arrays.asList(drive.exec(cmd).split("\n"));
         List<Vod> list = toVods(drive, lines);
