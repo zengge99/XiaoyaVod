@@ -485,7 +485,7 @@ public class AListSh extends Spider {
         int pageNum = Integer.parseInt(pg);
         int startLine = (pageNum - 1) * 72;
         cmd +=  String.format(" | tail -n +%d | head -n 72", startLine);
-        List<String> lines = Arrays.asList(drive.exec(cmd).split('\n'));
+        List<String> lines = Arrays.asList(drive.exec(cmd).split("\n"));
         List<Vod> list = toVods(drive, lines);
         result = Result.get().vod(list).page(Integer.parseInt(pg), 100000, 72, 10000).string();
         return result;
