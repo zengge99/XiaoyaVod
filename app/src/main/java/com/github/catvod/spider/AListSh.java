@@ -470,7 +470,12 @@ public class AListSh extends Spider {
         Drive drive = getDrive(key);
         HashMap<String, String> fl = extend;
         drive.fl = fl;
-        String cmd = String.format("{ cat index.daily.txt;echo ''; } | tac", drive.getPath());
+        String cmd;
+        if (drive.getName().equals("每日更新")) {
+            cmd = String.format("{ cat index.daily.txt;echo ''; } | tac", drive.getPath());
+        } else {
+            cmd = String.format("{ cat index.video.txt index.115.txt;echo ''; }", drive.getPath());
+        }
         String subpath = fl.get("subpath");
         if (subpath != null && !subpath.equals("~all")) {
             cmd +=  String.format(" | grep '^[.]%s'", subpath);
