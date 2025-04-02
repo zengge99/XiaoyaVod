@@ -490,7 +490,7 @@ public class AListSh extends Spider {
 
         cmd = String.format("{ %s | grep http; %s | grep -v http; }", cmd, cmd);
 
-        String douban = fl.get("doubansort");
+        String doubansort = fl.get("doubansort");
         if (doubansort != null && doubansort.equals("1")) {
             cmd +=  String.format(" | awk -F '#' '{print $4,$0}' | sort -r | cut -d ' ' -f 2-");
         }
