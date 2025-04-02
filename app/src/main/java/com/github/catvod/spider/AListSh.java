@@ -490,6 +490,14 @@ public class AListSh extends Spider {
 
         cmd = String.format("{ %s | grep http; %s | grep -v http; }", cmd, cmd);
 
+        String douban = fl.get("doubansort");
+        if (doubansort != null && doubansort.equals("1")) {
+            cmd +=  String.format(" | awk -F '#' '{print $4,$0}' | sort -r | cut -d ' ' -f 2-");
+        }
+        if (doubansort != null && doubansort.equals("2")) {
+            cmd +=  String.format(" | awk -F '#' '{print $4,$0}' | sort | cut -d ' ' -f 2-");
+        }
+
         int limit = 72;
         int count = (total + limit - 1) / limit;
         int pageNum = Integer.parseInt(pg);
