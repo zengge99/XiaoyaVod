@@ -12,7 +12,7 @@ public class XiaoyaAlist extends Spider {
     @Override
     public void init(Context context, String extend) throws Exception {
         if (core == null) {
-            core = new AListSh();
+            core = new AList();
         }
         core.init(context, extend); 
     }
