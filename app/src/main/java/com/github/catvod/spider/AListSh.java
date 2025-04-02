@@ -486,7 +486,7 @@ public class AListSh extends Spider {
         if (douban != null && !douban.equals("0")) {
             cmd +=  String.format(" | awk -F '#' '$4 >= %s'", douban);
         }
-        int total = Integer.parseInt(drive.exec(cmd + " | wc -l").split("\n")[0]);
+        int total = Integer.parseInt(drive.exec(cmd + " | grep -n '' | tail -n 1 | cut -d ':' -f 1").split("\n")[0]);
 
         cmd = String.format("{ %s | grep http; %s | grep -v http; }", cmd, cmd);
 
