@@ -481,13 +481,15 @@ public class AListSh extends Spider {
         if (douban != null && !douban.equals("0")) {
             cmd +=  String.format(" | awk -F '#' '$4 >= %s'", douban);
         }
-
+        int total = Integer.parse(drive.exec(cmd + " | wc -l").split("\n")[0]);
+        int limit = 72;
+        int count = (total + limit - 1) / limit;
         int pageNum = Integer.parseInt(pg);
-        int startLine = (pageNum - 1) * 72 + 1;
-        cmd +=  String.format(" | tail -n +%d | head -n 72", startLine);
+        int startLine = (pageNum - 1) * limit + 1;
+        cmd +=  String.format(" | tail -n +%d | head -n %d", startLine, limit);
         List<String> lines = Arrays.asList(drive.exec(cmd).split("\n"));
         List<Vod> list = toVods(drive, lines);
-        result = Result.get().vod(list).page(Integer.parseInt(pg), 100000, 72, 10000).string();
+        result = Result.get().vod(list).page(Integer.parseInt(pg), total, 72, count).string();
         return result;
     }
 
