@@ -194,19 +194,6 @@ public class AListSh extends Spider {
         }
 
         String result = Result.string(classes, list, filters);
-
-        Thread thread = new Thread(() -> {
-            Notify.show("开始构建本地索引，需要数秒");
-            for (Drive d : drives) {
-                if (d.search()) {
-                    d.exec("{ cat index.video.txt index.115.txt;echo ''; } > index.all.txt");
-                    d.exec("{ cat index.video.txt index.115.txt;echo ''; } | awk -F '#' '{print $4,$0}' | sort -r | cut -d ' ' -f 2- > index.all.desc.txt");
-                }
-            }
-            Notify.show("构建本地索引完成");
-        });
-        thread.start();
-        
         return result;
     }
 
@@ -483,35 +470,24 @@ public class AListSh extends Spider {
         Drive drive = getDrive(key);
         HashMap<String, String> fl = extend;
         drive.fl = fl;
-        List<String> lines = driveLinesMap.get(drive.getName());
-        Pager pager = drivePagerMap.get(drive.getName());;
-        if(lines == null || pg.equals("1")) {
-            if (drive.getName().equals("每日更新")) {
-                lines = Arrays.asList(defaultDrive.exec("{ cat index.daily.txt;echo ''; } | tac").split("\n"));
-            } else {
-                lines = (new Job(drive.check(), drive.getPath())).call();
-            }
-
-            boolean keepOrder = false;
-            String doubansort = fl.get("doubansort");
-            if (doubansort != null && !doubansort.equals("0")) {
-                keepOrder = true;
-            }
-
-            String random = fl.get("random");
-            if (random != null && !random.equals("0")) {
-                pager = new Pager(lines, Integer.parseInt(random), keepOrder);
-            } else {
-                pager = new Pager(lines, 0, false);
-            }
-
+        String cmd = String.format("{ cat index.daily.txt;echo ''; } | tac", drive.getPath());
+        String subpath = fl.get("subpath");
+        if (subpath != null && !subpath.equals("~all")) {
+            cmd +=  String.format(" | grep '^[.]/%s'", subpath);
+        } else {
+            cmd +=  String.format(" | grep '^[.]/%s'", drive.getPath());
+        }
+        String douban = fl.get("douban");
+        if (douban != null && !douban.equals("0")) {
+            cmd +=  String.format(" | awk -F '#' '$4 >= %s'", douban);
         }
 
-        List<Vod> list = toVods(drive, pager.page(Integer.parseInt(pg)));
-
-        driveLinesMap.put(drive.getName(), lines);
-        drivePagerMap.put(drive.getName(), pager);
-        result = Result.get().vod(list).page(Integer.parseInt(pg), pager.count, pager.limit, pager.count).string();
+        int pageNum = Integer.parseInt(pg);
+        int startLine = (pageNum - 1) * 72;
+        cmd +=  String.format(" | tail -n +%d | head -n 72", startLine);
+        List<String> lines = Arrays.asList(drive.exex(cmd).split('\n'));
+        List<Vod> list = toVods(drive, lines);
+        result = Result.get().vod(list).page(Integer.parseInt(pg), 100000, 72, 10000).string();
         return result;
     }
 
