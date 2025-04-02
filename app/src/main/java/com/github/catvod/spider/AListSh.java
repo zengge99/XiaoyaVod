@@ -487,6 +487,9 @@ public class AListSh extends Spider {
             cmd +=  String.format(" | awk -F '#' '$4 >= %s'", douban);
         }
         int total = Integer.parseInt(drive.exec(cmd + " | wc -l").split("\n")[0]);
+
+        cmd += "awk -F '#' 'length($5) {non_empty = non_empty $0 '\n'; next} {empty = empty $0 "\n"} END {printf "%s%s", non_empty, empty}'";
+
         int limit = 72;
         int count = (total + limit - 1) / limit;
         int pageNum = Integer.parseInt(pg);
