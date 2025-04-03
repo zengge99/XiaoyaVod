@@ -56,7 +56,6 @@ public class Pager {
     }
 
      public Pager(Drive drive, String cmd, int total, int randomOutputSize, boolean isKeepOrder) {
-        Logger.log("yyyyyy" + cmd);
         this.cmd = cmd;
         this.total = total;
         this.drive = drive;
@@ -129,12 +128,11 @@ public class Pager {
             for (int i = startIndex + 1; i < endIndex; i++) {
                 lineString = String.format("%s|%d", lineString, randomIndices.get(i) + 1);
             }
-            Logger.log("xxxxxx" + cmd);
             lineString = String.format("(%s)", lineString);
             cmd += String.format(" | grep '^%s:'", lineString);
             List<String> tmpList = Arrays.asList(drive.exec(cmd).split("\n"));
             for (int i = startIndex; i < endIndex; i++) {
-                String prefix = String.format("%i:", randomIndices.get(i) + 1);
+                String prefix = String.format("%d:", randomIndices.get(i) + 1);
                 for (String s : tmpList) {
                     if (s.startsWith(prefix)) {
                         s = s.split(":")[1];
