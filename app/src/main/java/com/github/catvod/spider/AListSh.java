@@ -97,6 +97,7 @@ public class AListSh extends AList {
         }
         Pager pager = drivePagerMap.get(drive.getName());
         //if (pager == null || pg.equals("1")) {
+            Logger.log("alistsh:" + cmd);
             pager = new Pager(drive, cmd, total, randomNum, keepOrder);
             drivePagerMap.put(drive.getName(), pager);
         //}

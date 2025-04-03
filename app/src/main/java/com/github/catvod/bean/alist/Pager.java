@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Random;
 import com.github.catvod.bean.alist.Drive;
 import java.util.Arrays;
+import com.github.catvod.spider.Logger;
 
 public class Pager {
     private List<String> inputList;
@@ -130,6 +131,7 @@ public class Pager {
             }
             lineString = String.format("(%s)", lineString);
             cmd += String.format(" | grep '^%s:'", lineString);
+            Logger.log("page:" + cmd);
             List<String> tmpList = Arrays.asList(drive.exec(cmd).split("\n"));
             List<String> resultList = new ArrayList<>();
             for (int i = startIndex; i < endIndex; i++) {
