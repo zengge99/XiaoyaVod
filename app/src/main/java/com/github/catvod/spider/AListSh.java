@@ -48,6 +48,13 @@ public class AListSh extends AList {
     }
 
     @Override
+    public String searchContent(String keyword, boolean quick) throws Exception {
+        if (!quick) {
+            return base.searchContent(keyword, quick);
+        }
+    }
+
+    @Override
     protected synchronized String xiaoyaCategoryContent(String tid, String pg, boolean filter, HashMap<String, String> extend)
             throws Exception {
         Logger.log(tid);
