@@ -78,19 +78,17 @@ public class AListSh extends AList {
 
         cmd = String.format("{ %s | grep http; %s | grep -v http; }", cmd, cmd);
 
+        boolean keepOrder = false;
         String doubansort = fl.get("doubansort");
         if (doubansort != null && doubansort.equals("1")) {
             cmd +=  String.format(" | awk -F '#' '{print $4,$0}' | sort -r | cut -d ' ' -f 2-");
+            keepOrder = true;
         }
         if (doubansort != null && doubansort.equals("2")) {
             cmd +=  String.format(" | awk -F '#' '{print $4,$0}' | sort | cut -d ' ' -f 2-");
-        }
-
-        boolean keepOrder = false;
-        String doubansort = fl.get("doubansort");
-        if (doubansort != null && !doubansort.equals("0")) {
             keepOrder = true;
         }
+
         int randomNum = 0;
         String random = fl.get("random");
         if (random != null && !random.equals("0")) {
