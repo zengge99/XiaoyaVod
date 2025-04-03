@@ -15,7 +15,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 
 public class AListSh extends AList {
-    private fallback = true;
+    private boolean fallback = true;
 
     @Override
     public void init(Context context, String extend) throws Exception  {
