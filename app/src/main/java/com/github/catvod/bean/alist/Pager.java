@@ -138,7 +138,7 @@ public class Pager {
                     if (s.startsWith(prefix)) {
                         s = s.split(":")[1];
                         if (s.startsWith("./")) {
-                            s = s.subList(2);
+                            s = s.substring(2);
                         }
                         resultList.add(s);
                         break;
