@@ -50,7 +50,7 @@ public class AListSh extends AList {
     @Override
     public String searchContent(String keyword, boolean quick) throws Exception {
         if (!quick) {
-            return base.searchContent(keyword, quick);
+            return super.searchContent(keyword, quick);
         }
         String cmd = String.format("{ cat index.video.txt index.115.txt;echo ''; } | grep '#%s#' | sed 's|^[.]/||'", keyword);
         List<String> lines = Arrays.asList(defaultDrive.exec(cmd).split("\n"));
