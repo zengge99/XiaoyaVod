@@ -123,7 +123,7 @@ public class Pager {
             }
             return pageContent;
         } else {
-            pageContent = pageSh(pageNum)
+            pageContent = pageSh(pageNum);
             return pageContent;
         }
     }
