@@ -165,7 +165,7 @@ public class AList extends Spider {
     }
 
     @Override
-    public void init(Context context, String extend) {
+    public void init(Context context, String extend)  throws Exception {
         try {
             Logger.log("jar初始化1");
             ext = extend;

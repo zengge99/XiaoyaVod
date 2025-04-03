@@ -17,13 +17,9 @@ import java.util.List;
 public class AListSh extends AList {
 
     @Override
-    public void init(Context context, String extend) {
-        try {
-            ext = extend;
-            fetchRule();
-        } catch (Exception e) {
-            Logger.log(e.getMessage());
-        }
+    public void init(Context context, String extend) throws Exception  {
+        ext = extend;
+        fetchRule();
     }
 
     @Override
