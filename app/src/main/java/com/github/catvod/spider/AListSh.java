@@ -15,15 +15,28 @@ import java.util.LinkedHashMap;
 import java.util.List;
 
 public class AListSh extends AList {
+    private fallback = true;
 
     @Override
     public void init(Context context, String extend) throws Exception  {
-        ext = extend;
-        fetchRule();
+        try {
+            ext = extend;
+            fetchRule();
+            if (defaultDrive.exec("echo ok").equals("ok")) {
+                fallback = false;
+            }
+        } catch (Exception e) {
+        }
+        if (fallback) {
+            super.init(context, extend);
+        }
     }
 
     @Override
     public String homeContent(boolean filter) throws Exception {
+        if (fallback) {
+            return super.homeContent(filter);
+        }
         fetchRule();
         List<Class> classes = new ArrayList<>();
         LinkedHashMap<String, List<Filter>> filters = new LinkedHashMap<>();
@@ -45,6 +58,9 @@ public class AListSh extends AList {
 
     @Override
     public String searchContent(String keyword, boolean quick) throws Exception {
+        if (fallback) {
+            return super.searchContent(keyword, quick);
+        }
         if (!quick) {
             return super.searchContent(keyword, quick);
         }
@@ -58,6 +74,9 @@ public class AListSh extends AList {
     @Override
     protected synchronized String xiaoyaCategoryContent(String tid, String pg, boolean filter, HashMap<String, String> extend)
             throws Exception {
+        if (fallback) {
+            return super.xiaoyaCategoryContent(tid, pg, filter, extend);
+        }
         Logger.log(tid);
         String result = "";
         fetchRule();
@@ -116,6 +135,9 @@ public class AListSh extends AList {
 
     @Override
     protected Vod findVodByPath(Drive drive, String path) {
+        if (fallback) {
+            return super.findVodByPath(drive, path);
+        }
         String cmd = String.format("{ cat index.video.txt index.115.txt;echo ''; } | grep '^[.]/%s' | sed 's|^[.]/||'", path);
         List<String> lines = Arrays.asList(defaultDrive.exec(cmd).split("\n"));
         return toVods(drive, lines).get(0);
