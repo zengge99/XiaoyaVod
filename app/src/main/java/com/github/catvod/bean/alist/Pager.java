@@ -129,7 +129,7 @@ public class Pager {
                 lineString = String.format("%s|%d", lineString, randomIndices.get(i) + 1);
             }
             lineString = String.format("(%s)", lineString);
-            cmd += String.format(" | grep ^%s: | cut -d ':' -f 2-", lineString);
+            cmd += String.format(" | grep '^%s:' | cut -d ':' -f 2-", lineString);
             return Arrays.asList(drive.exec(cmd).split("\n"));
         }
     }
