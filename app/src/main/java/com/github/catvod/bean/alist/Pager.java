@@ -13,6 +13,7 @@ public class Pager {
     private static final int PAGE_SIZE = 72; 
     private String cmd;
     private Drive drive;
+    public int limit = 0;
     public int total = 0;
     public int count = 0;
 

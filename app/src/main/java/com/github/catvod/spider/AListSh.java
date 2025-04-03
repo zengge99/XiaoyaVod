@@ -137,7 +137,7 @@ public class AListSh extends AList {
         List<String> lines = pager.page(Integer.parseInt(pg));
 
         List<Vod> list = toVods(drive, lines);
-        result = Result.get().vod(list).page(Integer.parseInt(pg), total, 72, count).string();
+        result = Result.get().vod(list).page(Integer.parseInt(pg), total, 72, 100).string();
         return result;
     }
 }
