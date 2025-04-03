@@ -1,59 +1,19 @@
 package com.github.catvod.spider;
 
 import android.content.Context;
-import android.net.Uri;
-import android.text.TextUtils;
-import java.net.URLEncoder;
-
 import com.github.catvod.bean.Class;
 import com.github.catvod.bean.Filter;
 import com.github.catvod.bean.Result;
-import com.github.catvod.bean.DoubanParser;
-import com.github.catvod.bean.Sub;
 import com.github.catvod.bean.Vod;
 import com.github.catvod.bean.alist.Drive;
-import com.github.catvod.bean.alist.Item;
-import com.github.catvod.bean.alist.Sorter;
-import com.github.catvod.crawler.Spider;
-import com.github.catvod.crawler.SpiderDebug;
-import com.github.catvod.net.OkHttp;
-import com.github.catvod.utils.Util;
-import com.github.catvod.utils.Notify;
-import com.github.catvod.bean.alist.FileBasedList;
-import com.github.catvod.bean.alist.LocalIndexService;
 import com.github.catvod.bean.alist.Pager;
-import com.github.catvod.bean.alist.IndexDownloader;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
+import com.github.catvod.crawler.Spider;
+import com.github.catvod.utils.Logger;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.WeakHashMap;
-import static java.util.AbstractMap.SimpleEntry;
-import java.util.AbstractMap;
-import java.util.concurrent.TimeoutException;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
-import com.github.catvod.bean.alist.LoginDlg;
-import android.widget.Toast;
-import com.github.catvod.utils.Path;
-import java.io.File;
-import com.github.catvod.bean.DanmuFetcher;
 
 public class AListSh extends AList {
 
