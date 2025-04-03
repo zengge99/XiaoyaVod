@@ -123,12 +123,12 @@ public class Pager {
             }
             return pageContent;
         } else {
-            pageContent = _page(pageNum)
+            pageContent = pageSh(pageNum)
             return pageContent;
         }
     }
 
-    public List<String> _page(int pageNum) {
+    public List<String> pageSh(int pageNum) {
         int startIndex = (pageNum - 1) * PAGE_SIZE;
         int endIndex = Math.min(startIndex + PAGE_SIZE, randomIndices.size());
         List<String> pageContent = new ArrayList<>();
