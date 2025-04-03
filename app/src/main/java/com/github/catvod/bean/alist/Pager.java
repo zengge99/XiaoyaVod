@@ -110,7 +110,6 @@ public class Pager {
         int startIndex = (pageNum - 1) * PAGE_SIZE;
         int endIndex = Math.min(startIndex + PAGE_SIZE, randomIndices.size());
         List<String> pageContent = new ArrayList<>();
-        String cmd = this.cmd;
         if (cmd == null || cmd.isEmpty()) {
             if (pageNum < 1 || randomIndices.isEmpty()) {
                 return pageContent;
@@ -124,28 +123,37 @@ public class Pager {
             }
             return pageContent;
         } else {
-            cmd += " | grep -n ''";
-            String lineString = String.format("%d", randomIndices.get(startIndex) + 1);
-            for (int i = startIndex + 1; i < endIndex; i++) {
-                lineString = String.format("%s|%d", lineString, randomIndices.get(i) + 1);
-            }
-            lineString = String.format("(%s)", lineString);
-            cmd += String.format(" | grep '^%s:'", lineString);
-            List<String> tmpList = Arrays.asList(drive.exec(cmd).split("\n"));
-            for (int i = startIndex; i < endIndex; i++) {
-                String prefix = String.format("%d:", randomIndices.get(i) + 1);
-                for (String s : tmpList) {
-                    if (s.startsWith(prefix)) {
-                        s = s.substring(s.indexOf(":") + 1);
-                        if (s.startsWith("./")) {
-                            s = s.substring(2);
-                        }
-                        pageContent.add(s);
-                        break;
-                    }
-                }
-            }
+            pageContent = _page(pageNum)
             return pageContent;
         }
+    }
+
+    public List<String> _page(int pageNum) {
+        int startIndex = (pageNum - 1) * PAGE_SIZE;
+        int endIndex = Math.min(startIndex + PAGE_SIZE, randomIndices.size());
+        List<String> pageContent = new ArrayList<>();
+        String cmd = this.cmd;
+        cmd += " | grep -n ''";
+        String lineString = String.format("%d", randomIndices.get(startIndex) + 1);
+        for (int i = startIndex + 1; i < endIndex; i++) {
+            lineString = String.format("%s|%d", lineString, randomIndices.get(i) + 1);
+        }
+        lineString = String.format("(%s)", lineString);
+        cmd += String.format(" | grep '^%s:'", lineString);
+        List<String> tmpList = Arrays.asList(drive.exec(cmd).split("\n"));
+        for (int i = startIndex; i < endIndex; i++) {
+            String prefix = String.format("%d:", randomIndices.get(i) + 1);
+            for (String s : tmpList) {
+                if (s.startsWith(prefix)) {
+                    s = s.substring(s.indexOf(":") + 1);
+                    if (s.startsWith("./")) {
+                        s = s.substring(2);
+                    }
+                    pageContent.add(s);
+                    break;
+                }
+            }
+        }
+        return pageContent;
     }
 }
