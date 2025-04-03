@@ -110,6 +110,7 @@ public class Pager {
         int startIndex = (pageNum - 1) * PAGE_SIZE;
         int endIndex = Math.min(startIndex + PAGE_SIZE, randomIndices.size());
         List<String> pageContent = new ArrayList<>();
+        String cmd = this.cmd;
         if (cmd == null || cmd.isEmpty()) {
             if (pageNum < 1 || randomIndices.isEmpty()) {
                 return pageContent;
