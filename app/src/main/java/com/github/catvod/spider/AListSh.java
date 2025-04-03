@@ -138,7 +138,7 @@ public class AListSh extends AList {
         if (fallback) {
             return super.findVodByPath(drive, path);
         }
-        String cmd = String.format("{ cat index.video.txt index.115.txt;echo ''; } | grep '^[.]/%s' | sed 's|^[.]/||'", path);
+        String cmd = String.format("{ cat index.video.txt index.115.txt;echo ''; } | grep '^[.]/%s' | sed 's|^[.]/||' | sed 's|/$||'", path);
         List<String> lines = Arrays.asList(defaultDrive.exec(cmd).split("\n"));
         List<String> match = new ArrayList<>();
         for (String line : lines) {
