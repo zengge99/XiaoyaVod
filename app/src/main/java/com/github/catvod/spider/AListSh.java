@@ -126,12 +126,16 @@ public class AListSh extends AList {
             cmd +=  String.format(" | awk -F '#' '{print $4,$0}' | sort | cut -d ' ' -f 2-");
         }
 
-        int limit = 72;
-        int count = (total + limit - 1) / limit;
-        int pageNum = Integer.parseInt(pg);
-        int startLine = (pageNum - 1) * limit + 1;
-        cmd +=  String.format(" | tail -n +%d | head -n %d", startLine, limit);
-        List<String> lines = Arrays.asList(drive.exec(cmd).split("\n"));
+        // int limit = 72;
+        // int count = (total + limit - 1) / limit;
+        // int pageNum = Integer.parseInt(pg);
+        // int startLine = (pageNum - 1) * limit + 1;
+        // cmd +=  String.format(" | tail -n +%d | head -n %d", startLine, limit);
+        // List<String> lines = Arrays.asList(drive.exec(cmd).split("\n"));
+
+        Pager pager = new Pager(drive, cmd, total, 200, false);
+        List<String> lines = pager.page(Integer.parseInt(pg));
+
         List<Vod> list = toVods(drive, lines);
         result = Result.get().vod(list).page(Integer.parseInt(pg), total, 72, count).string();
         return result;
