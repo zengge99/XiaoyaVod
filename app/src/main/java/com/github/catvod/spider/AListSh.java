@@ -142,6 +142,8 @@ public class AListSh extends AList {
         List<String> lines = Arrays.asList(defaultDrive.exec(cmd).split("\n"));
         List<String> match = new ArrayList<>();
         for (String line : lines) {
+            Logger.log(line);
+            Logger.log(path);
             String s = line.split("#")[0];
             if (s.equals(path)) {
                 match.add(s);
