@@ -140,6 +140,17 @@ public class AListSh extends AList {
         }
         String cmd = String.format("{ cat index.video.txt index.115.txt;echo ''; } | grep '^[.]/%s' | sed 's|^[.]/||'", path);
         List<String> lines = Arrays.asList(defaultDrive.exec(cmd).split("\n"));
-        return toVods(drive, lines).get(0);
+        List<String> match = new ArrayList<>();
+        for (String line : lines) {
+            String s = line.split("#")[0];
+            if (s.startsWith("./")) {
+                s = s.substring(2);
+            }
+            if (s.equals(path)) {
+                match.add(s);
+                break;
+            }
+        }
+        return toVods(drive, match).get(0);
     }
 }
