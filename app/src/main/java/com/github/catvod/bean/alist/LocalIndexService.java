@@ -136,7 +136,9 @@ public class LocalIndexService {
         try {
             if (isOnline(url)) {
                 Logger.log("Online mode detected");
-                inputList = creatHugeList();
+                //inputList = creatHugeList();
+                //在线搜索内容不多，都不用文件列表。
+                inputList = new ArrayList<>();
                 
                 Logger.log("Starting HTTP request");
                 long httpStart = System.currentTimeMillis();

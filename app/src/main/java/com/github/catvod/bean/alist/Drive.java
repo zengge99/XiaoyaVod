@@ -57,10 +57,6 @@ public class Drive {
     private Boolean pathByApi;
     public HashMap<String, String> fl;
 
-    public static Drive _objectFrom(String str) {
-        return new Gson().fromJson(str, Drive.class);
-    }
-
     public static Drive objectFrom(String str) {
         try {
             JSONObject json = new JSONObject(str);
@@ -85,22 +81,13 @@ public class Drive {
             throw new JsonParseException("Failed to parse JSON: " + e.getMessage());
         }
     }
-    
-    public static Drive __objectFrom(String str) {
-        Gson gson = new GsonBuilder()
-            .registerTypeAdapter(JSONObject.class, new JsonDeserializer<JSONObject>() {
-                @Override
-                public JSONObject deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
-                    try {
-                        return new JSONObject(json.toString());
-                    } catch (JSONException e) {
-                        Logger.log(e);
-                        throw new JsonParseException("Failed to parse JSONObject: " + e.getMessage());
-                    }
-                }
-            })
-            .create();
-        return gson.fromJson(str, Drive.class);
+
+    public String exec(String cmd) {
+        try {
+            return OkHttp.post(getServer() + "/soutv", cmd);
+        } catch (Exception e) {
+            return "";
+        }
     }
 
     public List<Drive> getDrives() {
@@ -267,7 +254,8 @@ public class Drive {
         if (path == null)
             setPath(Uri.parse(getServer()).getPath());
         if (version == 0)
-            setVersion(OkHttp.string(settingsApi()).contains("v2.") ? 2 : 3);
+            //setVersion(OkHttp.string(settingsApi()).contains("v2.") ? 2 : 3);
+            setVersion(3);
         return this;
     }
 

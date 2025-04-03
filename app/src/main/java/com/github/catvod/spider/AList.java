@@ -57,17 +57,17 @@ import com.github.catvod.bean.DanmuFetcher;
 
 public class AList extends Spider {
 
-    private List<Drive> drives;
-    private Drive defaultDrive;
-    private String vodPic;
-    private String ext;
-    private String xiaoyaAlistToken;
-    private Map<String, Vod> vodMap = new HashMap<>();
-    private Map<String, List<String>> driveLinesMap = new HashMap<>();
-    private Map<String, Pager> drivePagerMap = new HashMap<>();
-    private ExecutorService executor = Executors.newCachedThreadPool();
+    protected List<Drive> drives;
+    protected Drive defaultDrive;
+    protected String vodPic;
+    protected String ext;
+    protected String xiaoyaAlistToken;
+    protected Map<String, Vod> vodMap = new HashMap<>();
+    protected Map<String, List<String>> driveLinesMap = new HashMap<>();
+    protected Map<String, Pager> drivePagerMap = new HashMap<>();
+    protected ExecutorService executor = Executors.newCachedThreadPool();
 
-    private List<Filter> getFilter(String tid) {
+    protected List<Filter> getFilter(String tid) {
         List<Filter> items = new ArrayList<>();
         Drive drive = getDrive(tid);
 
@@ -113,7 +113,7 @@ public class AList extends Spider {
         return items;
     }
 
-    private void fetchRule() {
+    protected void fetchRule() {
         Logger.log("fetchRule1");
         if (drives != null && !drives.isEmpty())
             return;
@@ -142,15 +142,15 @@ public class AList extends Spider {
         Logger.log("fetchRule5");
     }
 
-    private Drive getDrive(String name) {
+    protected Drive getDrive(String name) {
         return drives.get(drives.indexOf(new Drive(name))).check();
     }
 
-    private String post(Drive drive, String url, String param) {
+    protected String post(Drive drive, String url, String param) {
         return post(drive, url, param, true);
     }
 
-    private String post(Drive drive, String url, String param, boolean retry) {
+    protected String post(Drive drive, String url, String param, boolean retry) {
         String response = OkHttp.post(url, param, drive.getHeader()).getBody();
         int code = 200;
         try {
@@ -165,7 +165,7 @@ public class AList extends Spider {
     }
 
     @Override
-    public void init(Context context, String extend) {
+    public void init(Context context, String extend)  throws Exception {
         try {
             Logger.log("jar初始化1");
             ext = extend;
@@ -335,7 +335,7 @@ public class AList extends Spider {
         return result;
     }
 
-    private String defaultDetailContent(List<String> ids) throws Exception {
+    protected String defaultDetailContent(List<String> ids) throws Exception {
         Logger.log(ids);
         fetchRule();
         String id = ids.get(0);
@@ -351,7 +351,7 @@ public class AList extends Spider {
         return Result.string(vod);
     }
 
-    private String listDetailContent(List<String> ids) throws Exception {
+    protected String listDetailContent(List<String> ids) throws Exception {
         fetchRule();
         String id = ids.get(0);
         String key = id.contains("/") ? id.substring(0, id.indexOf("/")) : id;
@@ -403,7 +403,7 @@ public class AList extends Spider {
         return result;
     }
 
-    private String fileDetailContent(List<String> ids) throws Exception {
+    protected String fileDetailContent(List<String> ids) throws Exception {
         fetchRule();
         String id = ids.get(0);
         String key = id.contains("/") ? id.substring(0, id.indexOf("/")) : id;
@@ -442,7 +442,7 @@ public class AList extends Spider {
         return result;
     }
 
-    private void walkFolder(Drive drive, String path, StringBuilder from, StringBuilder url, Boolean recursive)
+    protected void walkFolder(Drive drive, String path, StringBuilder from, StringBuilder url, Boolean recursive)
             throws Exception {
         List<Item> items = getList(path, false);
         String name = path.substring(path.lastIndexOf("/") + 1);
@@ -481,7 +481,7 @@ public class AList extends Spider {
         }
     }
 
-    private static Map<String, String> getPlayHeader(String url) {
+    protected static Map<String, String> getPlayHeader(String url) {
         try {
             Uri uri = Uri.parse(url);
             Map<String, String> header = new HashMap<>();
@@ -495,7 +495,7 @@ public class AList extends Spider {
         }
     }
 
-    private synchronized String xiaoyaCategoryContent(String tid, String pg, boolean filter, HashMap<String, String> extend)
+    protected synchronized String xiaoyaCategoryContent(String tid, String pg, boolean filter, HashMap<String, String> extend)
             throws Exception {
         Logger.log(tid);
         String result = "";
@@ -561,7 +561,7 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
         return service.query(queryParams);
     }
 
-    private String alistCategoryContent(String tid, String pg, boolean filter, HashMap<String, String> extend)
+    protected String alistCategoryContent(String tid, String pg, boolean filter, HashMap<String, String> extend)
             throws Exception {
         Logger.log(tid);
         fetchRule();
@@ -610,7 +610,7 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
         return result;
     }
 
-    private boolean loginByUser(Drive drive) {
+    protected boolean loginByUser(Drive drive) {
         try {
             JSONObject params = new JSONObject();
             String userName = LoginDlg.showLoginDlg("用户名(留空默认guest)");
@@ -636,7 +636,7 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
         }
     }
     
-    private boolean loginByFile(Drive drive) {
+    protected boolean loginByFile(Drive drive) {
         try {
             JSONObject params = new JSONObject();
             String loginPath = Path.files() + "/" + drive.getServer().replace("://", "_").replace(":", "_") + ".login";
@@ -663,7 +663,7 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
     }
 
 
-    private String getSize(long sz) {
+    protected String getSize(long sz) {
         if (sz <= 0) {
             return "";
         }
@@ -691,7 +691,7 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
         return String.format("%.2f %s", size, filesize);
     }
 
-    private Item getDetail(String id) {
+    protected Item getDetail(String id) {
         String key = id.contains("/") ? id.substring(0, id.indexOf("/")) : id;
         String path = id.contains("/") ? id.substring(id.indexOf("/")) : "";
         Drive drive = getDrive(key);
@@ -705,7 +705,7 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
         return item;
     }
 
-    private Item getDetailBy302(String id) {
+    protected Item getDetailBy302(String id) {
         try {
             String key = id.contains("/") ? id.substring(0, id.indexOf("/")) : id;
             String path = id.contains("/") ? id.substring(id.indexOf("/")) : "";
@@ -721,7 +721,7 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
         }
     }
 
-    private Item getDetailByApi(String id) {
+    protected Item getDetailByApi(String id) {
         try {
             String key = id.contains("/") ? id.substring(0, id.indexOf("/")) : id;
             String path = id.contains("/") ? id.substring(id.indexOf("/")) : "";
@@ -736,7 +736,7 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
         }
     }
 
-    private List<Item> getList(String id, boolean filter) {
+    protected List<Item> getList(String id, boolean filter) {
         try {
             String key = id.contains("/") ? id.substring(0, id.indexOf("/")) : id;
             String path = id.contains("/") ? id.substring(id.indexOf("/")) : "";
@@ -757,7 +757,7 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
         }
     }
 
-    private String getListJson(boolean isNew, String response) throws Exception {
+    protected String getListJson(boolean isNew, String response) throws Exception {
         if (isNew) {
             return new JSONObject(response).getJSONObject("data").getJSONArray("content").toString();
         } else {
@@ -765,7 +765,7 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
         }
     }
 
-    private String getDetailJson(boolean isNew, String response) throws Exception {
+    protected String getDetailJson(boolean isNew, String response) throws Exception {
         if (isNew) {
             return new JSONObject(response).getJSONObject("data").toString();
         } else {
@@ -773,7 +773,7 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
         }
     }
 
-    private String getSearchJson(boolean isNew, String response) throws Exception {
+    protected String getSearchJson(boolean isNew, String response) throws Exception {
         if (isNew) {
             return new JSONObject(response).getJSONObject("data").getJSONArray("content").toString();
         } else {
@@ -781,7 +781,7 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
         }
     }
 
-    private String findSubs(String path, List<Item> items) {
+    protected String findSubs(String path, List<Item> items) {
         StringBuilder sb = new StringBuilder();
         for (Item item : items)
             if (Util.isSub(item.getExt()))
@@ -790,7 +790,7 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
         return sb.toString();
     }
 
-    private List<Sub> getSubs(String[] ids) {
+    protected List<Sub> getSubs(String[] ids) {
         List<Sub> sub = new ArrayList<>();
         for (String text : ids) {
             if (!text.contains("@@@"))
@@ -804,7 +804,7 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
         return sub;
     }
 
-    private List<Vod> toVods(Drive drive, List<String> lines) {
+    protected List<Vod> toVods(Drive drive, List<String> lines) {
         Logger.log("toVods() converting " + lines.size() + " lines");
         long startTime = System.currentTimeMillis();
         try {
@@ -847,7 +847,7 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
         }
     }
 
-    private Vod findVodByPath(Drive drive, String path) {
+    protected Vod findVodByPath(Drive drive, String path) {
         Logger.log("findVodByPath for path: " + path);
         long startTime = System.currentTimeMillis();
         try {
@@ -874,7 +874,7 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
         }
     }
 
-    private String normalizePath(String path) {
+    protected String normalizePath(String path) {
         if (path == null || path.isEmpty()) {
             return path;
         }
@@ -889,8 +889,8 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
 
     class Job implements Callable<List<String>> {
 
-        private final Drive drive;
-        private final String keyword;
+        protected final Drive drive;
+        protected final String keyword;
 
         public Job(Drive drive, String keyword) {
             this.drive = drive;
@@ -902,7 +902,7 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
             return xiaoya();
         }
 
-        private List<String> xiaoya() {
+        protected List<String> xiaoya() {
             Logger.log("xiaoya:" + keyword + "drive:" + drive.getName());
             String shortKeyword = keyword;
             if (keyword.contains(":")) {
