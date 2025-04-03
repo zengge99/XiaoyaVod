@@ -136,7 +136,7 @@ public class Pager {
                 String prefix = String.format("%d:", randomIndices.get(i) + 1);
                 for (String s : tmpList) {
                     if (s.startsWith(prefix)) {
-                        s = s.split(":")[1];
+                        s = s.substring(s.indexOf(":") + 1);
                         if (s.startsWith("./")) {
                             s = s.substring(2);
                         }
