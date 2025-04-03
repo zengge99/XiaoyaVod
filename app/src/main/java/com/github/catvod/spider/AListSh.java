@@ -143,9 +143,6 @@ public class AListSh extends AList {
         List<String> match = new ArrayList<>();
         for (String line : lines) {
             String s = line.split("#")[0];
-            if (s.startsWith("./")) {
-                s = s.substring(2);
-            }
             if (s.equals(path)) {
                 match.add(s);
                 break;
