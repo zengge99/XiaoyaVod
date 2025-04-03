@@ -8,7 +8,6 @@ import com.github.catvod.bean.Vod;
 import com.github.catvod.bean.alist.Drive;
 import com.github.catvod.bean.alist.Pager;
 import com.github.catvod.crawler.Spider;
-import com.github.catvod.utils.Logger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
