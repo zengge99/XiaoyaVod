@@ -53,6 +53,9 @@ public class AListSh extends AList {
             return base.searchContent(keyword, quick);
         }
         String cmd = String.format("{ cat index.video.txt index.115.txt;echo ''; } | grep '#%s#'", keyword);
+        List<String> lines = Arrays.asList(defaultDrive.exec(cmd).split("\n"));
+        List<Vod> list = toVods(defaultDrive, lines);
+        return list;
     }
 
     @Override
