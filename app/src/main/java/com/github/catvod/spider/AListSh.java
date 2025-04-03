@@ -47,12 +47,12 @@ public class AListSh extends AList {
         return result;
     }
 
-    @Override
-    public String searchContent(String keyword, boolean quick) throws Exception {
-        if (!quick) {
-            return base.searchContent(keyword, quick);
-        }
-    }
+    // @Override
+    // public String searchContent(String keyword, boolean quick) throws Exception {
+    //     if (!quick) {
+    //         return base.searchContent(keyword, quick);
+    //     }
+    // }
 
     @Override
     protected synchronized String xiaoyaCategoryContent(String tid, String pg, boolean filter, HashMap<String, String> extend)
