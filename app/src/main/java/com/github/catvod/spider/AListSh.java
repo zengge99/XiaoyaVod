@@ -114,31 +114,10 @@ public class AListSh extends AList {
         return result;
     }
 
-    // @Override
-    // protected Vod findVodByPath(Drive drive, String path) {
-    //     Logger.log("findVodByPath for path: " + path);
-    //     long startTime = System.currentTimeMillis();
-    //     try {
-    //         List<String> inputList = LocalIndexService.get(drive).query(new LinkedHashMap<>());
-    //         String normalizedPath = normalizePath(path);
-    //         List<String> input = new ArrayList<>();
-    //         for (String line : inputList) {
-    //             String[] splits = line.split("#");
-    //             String normalizedTargetPath = normalizePath(splits[0]);
-    //             if (normalizedTargetPath.equals(normalizedPath)) {
-    //                 input.add(line);
-    //                 break;
-    //             }
-    //         }
-    //         if (input.size() > 0) {
-    //             return toVods(drive, input).get(0);
-    //         }
-    //         return null;
-    //     } catch (Throwable e) {
-    //         Logger.log("findVodByPath() error: " + e.toString());
-    //         return null;
-    //     } finally {
-    //         Logger.log("findVodByPath completed in " + (System.currentTimeMillis() - startTime) + "ms");
-    //     }
-    // }
+    @Override
+    protected Vod findVodByPath(Drive drive, String path) {
+        String cmd = String.format("{ cat index.video.txt index.115.txt;echo ''; } | grep '^[.]/%s' | sed 's|^[.]/||'", path);
+        List<String> lines = Arrays.asList(defaultDrive.exec(cmd).split("\n"));
+        return toVods(drive, lines).get(0);
+    }
 }
