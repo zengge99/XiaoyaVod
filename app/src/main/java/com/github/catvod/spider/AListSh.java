@@ -96,10 +96,10 @@ public class AListSh extends AList {
             randomNum = Integer.parseInt(random);
         }
         Pager pager = drivePagerMap.get(drive.getName());
-        if (pager == null || pg.equals("1")) {
+        //if (pager == null || pg.equals("1")) {
             pager = new Pager(drive, cmd, total, randomNum, keepOrder);
             drivePagerMap.put(drive.getName(), pager);
-        }
+        //}
         List<String> lines = pager.page(Integer.parseInt(pg));
         List<Vod> list = toVods(drive, lines);
         result = Result.get().vod(list).page(Integer.parseInt(pg), pager.total, pager.limit, pager.count).string();
