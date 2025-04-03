@@ -146,6 +146,7 @@ public class AListSh extends AList {
             Logger.log(path);
             String s = line.split("#")[0];
             if (s.equals(path)) {
+                Logger.log(s);
                 match.add(s);
                 break;
             }
