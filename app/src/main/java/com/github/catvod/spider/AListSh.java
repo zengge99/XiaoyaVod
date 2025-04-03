@@ -80,7 +80,7 @@ public class AListSh extends AList {
 
         List<Vod> list = new ArrayList<>();
         if (defaultDrive != null) {
-            List<String> lines = Arrays.asList(defaultDrive.exec("{ cat index.daily.txt;echo ''; } | tac").split("\n"));
+            List<String> lines = Arrays.asList(defaultDrive.exec("{ cat index.daily.txt;echo ''; } | tac |  sed 's|^[.]/||'").split("\n"));
             list = toVods(defaultDrive, lines);
         }
 
@@ -126,18 +126,26 @@ public class AListSh extends AList {
             cmd +=  String.format(" | awk -F '#' '{print $4,$0}' | sort | cut -d ' ' -f 2-");
         }
 
-        // int limit = 72;
-        // int count = (total + limit - 1) / limit;
-        // int pageNum = Integer.parseInt(pg);
-        // int startLine = (pageNum - 1) * limit + 1;
-        // cmd +=  String.format(" | tail -n +%d | head -n %d", startLine, limit);
-        // List<String> lines = Arrays.asList(drive.exec(cmd).split("\n"));
-
-        Pager pager = new Pager(drive, cmd, total, 200, false);
+        boolean keepOrder = false;
+        String doubansort = fl.get("doubansort");
+        if (doubansort != null && !doubansort.equals("0")) {
+            keepOrder = true;
+        }
+        int randomNum = 0;
+        String random = fl.get("random");
+        if (random != null && !random.equals("0")) {
+            randomNum = 0;
+        } else {
+            randomNum = Integer.parseInt(random);
+        }
+        Pager pager = drivePagerMap.get(drive.getName());
+        if (pager == null || pg.equals("1")) {
+            pager = new Pager(drive, cmd, total, randomNum, keepOrder);
+            drivePagerMap.put(drive.getName(), pager);
+        }
         List<String> lines = pager.page(Integer.parseInt(pg));
-
         List<Vod> list = toVods(drive, lines);
-        result = Result.get().vod(list).page(Integer.parseInt(pg), total, 72, 100).string();
+        result = Result.get().vod(list).page(Integer.parseInt(pg), pager.total, pager.limit, pager.count).string();
         return result;
     }
 }

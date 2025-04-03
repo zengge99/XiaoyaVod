@@ -129,8 +129,23 @@ public class Pager {
                 lineString = String.format("%s|%d", lineString, randomIndices.get(i) + 1);
             }
             lineString = String.format("(%s)", lineString);
-            cmd += String.format(" | grep '^%s:' | cut -d ':' -f 2-", lineString);
-            return Arrays.asList(drive.exec(cmd).split("\n"));
+            cmd += String.format(" | grep '^%s:'", lineString);
+            List<String> tmpList = Arrays.asList(drive.exec(cmd).split("\n"));
+            List<String> resultList = new ArrayList<>();
+            for (int i = startIndex; i < endIndex; i++) {
+                String prefix = String.format("%i:", randomIndices.get(i) + 1);
+                for (String s : tmpList) {
+                    if (s.startsWith(prefix)) {
+                        s = s.split(":")[1];
+                        if (s.startsWith("./")) {
+                            s = s.subList(2);
+                        }
+                        resultList.add(s);
+                        break;
+                    }
+                }
+            }
+            return resultList;
         }
     }
 }
