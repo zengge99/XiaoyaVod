@@ -39,7 +39,7 @@ public class AListSh extends AList {
 
         List<Vod> list = new ArrayList<>();
         if (defaultDrive != null) {
-            List<String> lines = Arrays.asList(defaultDrive.exec("{ cat index.daily.txt;echo ''; } | tac |  sed 's|^[.]/||'").split("\n"));
+            List<String> lines = Arrays.asList(defaultDrive.exec("{ cat index.daily.txt;echo ''; } | tac | sed 's|^[.]/||'").split("\n"));
             list = toVods(defaultDrive, lines);
         }
 
@@ -52,7 +52,7 @@ public class AListSh extends AList {
         if (!quick) {
             return base.searchContent(keyword, quick);
         }
-        String cmd = String.format("{ cat index.video.txt index.115.txt;echo ''; } | grep '#%s#'", keyword);
+        String cmd = String.format("{ cat index.video.txt index.115.txt;echo ''; } | grep '#%s#' | sed 's|^[.]/||'", keyword);
         List<String> lines = Arrays.asList(defaultDrive.exec(cmd).split("\n"));
         List<Vod> list = toVods(defaultDrive, lines);
         return list;
