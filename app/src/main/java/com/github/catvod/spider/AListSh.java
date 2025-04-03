@@ -22,7 +22,7 @@ public class AListSh extends AList {
         try {
             ext = extend;
             fetchRule();
-            if (defaultDrive.exec("echo ok").equals("ok")) {
+            if (defaultDrive.exec("echo ok").split("\n")[0].equals("ok")) {
                 fallback = false;
             }
         } catch (Exception e) {
