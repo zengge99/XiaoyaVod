@@ -107,16 +107,16 @@ public class Pager {
     }
 
     public List<String> page(int pageNum) {
-        if (pageNum < 1 || randomIndices.isEmpty()) {
-            return new ArrayList<>();
-        }
         int startIndex = (pageNum - 1) * PAGE_SIZE;
-        if (startIndex >= randomIndices.size()) {
-            return new ArrayList<>();
-        }
         int endIndex = Math.min(startIndex + PAGE_SIZE, randomIndices.size());
         List<String> pageContent;
         if (cmd == null || cmd.isEmpty()) {
+            if (pageNum < 1 || randomIndices.isEmpty()) {
+                return new ArrayList<>();
+            }
+            if (startIndex >= randomIndices.size()) {
+                return new ArrayList<>();
+            }
             pageContent = new ArrayList<>();
             for (int i = startIndex; i < endIndex; i++) {
                 int index = randomIndices.get(i);
@@ -131,7 +131,6 @@ public class Pager {
             }
             lineString = String.format("(%s)", lineString);
             cmd += String.format(" | grep '^%s:'", lineString);
-            Logger.log("page:" + cmd);
             List<String> tmpList = Arrays.asList(drive.exec(cmd).split("\n"));
             List<String> resultList = new ArrayList<>();
             for (int i = startIndex; i < endIndex; i++) {
