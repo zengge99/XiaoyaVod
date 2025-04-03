@@ -47,12 +47,13 @@ public class AListSh extends AList {
         return result;
     }
 
-    // @Override
-    // public String searchContent(String keyword, boolean quick) throws Exception {
-    //     if (!quick) {
-    //         return base.searchContent(keyword, quick);
-    //     }
-    // }
+    @Override
+    public String searchContent(String keyword, boolean quick) throws Exception {
+        if (!quick) {
+            return base.searchContent(keyword, quick);
+        }
+        String cmd = String.format("{ cat index.video.txt index.115.txt;echo ''; } | grep '#%s#'", keyword);
+    }
 
     @Override
     protected synchronized String xiaoyaCategoryContent(String tid, String pg, boolean filter, HashMap<String, String> extend)
@@ -66,9 +67,9 @@ public class AListSh extends AList {
         drive.fl = fl;
         String cmd;
         if (drive.getName().equals("每日更新")) {
-            cmd = String.format("{ cat index.daily.txt;echo ''; } | tac", drive.getPath());
+            cmd = "{ cat index.daily.txt;echo ''; } | tac";
         } else {
-            cmd = String.format("{ cat index.video.txt index.115.txt;echo ''; }", drive.getPath());
+            cmd = "{ cat index.video.txt index.115.txt;echo ''; }";
         }
         String subpath = fl.get("subpath");
         if (subpath != null && !subpath.equals("~all")) {
