@@ -254,7 +254,8 @@ public class Drive {
         if (path == null)
             setPath(Uri.parse(getServer()).getPath());
         if (version == 0)
-            setVersion(OkHttp.string(settingsApi()).contains("v2.") ? 2 : 3);
+            //setVersion(OkHttp.string(settingsApi()).contains("v2.") ? 2 : 3);
+            setVersion(3);
         return this;
     }
 
