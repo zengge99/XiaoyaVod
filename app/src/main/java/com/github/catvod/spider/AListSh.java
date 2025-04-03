@@ -98,15 +98,15 @@ public class AListSh extends AList {
         int randomNum = 0;
         String random = fl.get("random");
         if (random != null && !random.equals("0")) {
-            randomNum = 0;
-        } else {
             randomNum = Integer.parseInt(random);
+        } else {
+            randomNum = 0;
         }
         Pager pager = drivePagerMap.get(drive.getName());
-        //if (pager == null || pg.equals("1")) {
+        if (pager == null || pg.equals("1")) {
             pager = new Pager(drive, cmd, total, randomNum, keepOrder);
             drivePagerMap.put(drive.getName(), pager);
-        //}
+        }
         List<String> lines = pager.page(Integer.parseInt(pg));
         List<Vod> list = toVods(drive, lines);
         result = Result.get().vod(list).page(Integer.parseInt(pg), pager.total, pager.limit, pager.count).string();
