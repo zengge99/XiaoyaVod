@@ -86,9 +86,9 @@ public class AListSh extends AList {
         drive.fl = fl;
         String cmd;
         if (drive.getName().equals("每日更新")) {
-            cmd = "{ cat index.daily.txt;echo ''; } | tac";
+            cmd = "{ cat index.daily.txt;echo ''; } | tac | grep -v -e '^$' -e '^[^/]*$'";
         } else {
-            cmd = "{ cat index.video.txt index.115.txt;echo ''; }";
+            cmd = "{ cat index.video.txt index.115.txt;echo '' | grep -v -e '^$' -e '^[^/]*$'; }";
         }
         String subpath = fl.get("subpath");
         if (subpath != null && !subpath.equals("~all")) {
