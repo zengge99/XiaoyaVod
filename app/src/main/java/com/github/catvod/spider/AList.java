@@ -255,10 +255,13 @@ public class AList extends Spider {
         ids.set(0, id);
         
         Boolean isFile = id.endsWith("~playlist") ? false : true;
-        String path = id.substring(id.indexOf("/"));
+        //String path = id.substring(id.indexOf("/"));
         if (id.endsWith("~xiaoya")) {
+            String path = id.substring(0, id.lastIndexOf("/"));
+            Logger.log("path is: " + path);
             isFile = getList(path, false).size() == 0 ? true : false;
             isFile = isFile && Util.isMedia(path);
+            Logger.log(isFile);
         }
 
         if (id.endsWith("~xiaoya") || id.endsWith("~playlist")) {
