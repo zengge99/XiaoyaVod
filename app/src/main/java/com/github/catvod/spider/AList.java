@@ -87,7 +87,7 @@ public class AList extends Spider {
             if (item.isFolder())
                 values.add(new Filter.Value(item.getName(), drive.getPath() + "/" + item.getName()));
         }
-        if (values.size() > 0) {
+        if (values.size() > 0 || !drive.getPath().equals("/")) {
             items.add(new Filter("subpath", "目录", values));
         }
 
