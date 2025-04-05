@@ -207,8 +207,8 @@ public class AListSh extends AList {
         Vod vod = toVods(drive, match).get(0);
         Thread thread = new Thread(() -> {
             synchronized (quickCach) {
-                for (String kw : quickCach) {
-                    if (kw.contains(String.format("#%s#", vod.getVodName()))) {
+                for (String l : quickCach) {
+                    if (l.contains(String.format("#%s#", vod.getVodName()))) {
                         return;
                     }
                 }
