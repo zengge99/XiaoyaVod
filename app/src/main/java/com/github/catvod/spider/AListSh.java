@@ -18,6 +18,7 @@ import org.json.JSONObject;
 
 public class AListSh extends AList {
     private boolean fallback = true;
+    private List<String> quickCach = new ArrayList<>();
 
     @Override
     public void init(Context context, String extend) throws Exception  {
@@ -66,8 +67,16 @@ public class AListSh extends AList {
         if (!quick) {
             return super.searchContent(keyword, quick);
         }
-        String cmd = String.format("{ cat index.video.txt index.115.txt;echo ''; } | grep '#%s#' | sed 's|^[.]/||' | grep -v -e '^$' -e '^[^/]*$'", keyword);
-        List<String> lines = Arrays.asList(defaultDrive.exec(cmd).split("\n"));
+        List<String> lines = new ArrayList<>();
+        for (String s : quickCach) {
+            if (s.contains(String.format("#%s#", keyword))) {
+                lines.add(s);
+            }
+        }
+        if (lines.size() == 0) {
+            String cmd = String.format("{ cat index.video.txt index.115.txt;echo ''; } | grep '#%s#' | sed 's|^[.]/||' | grep -v -e '^$' -e '^[^/]*$'", keyword);
+            lines = Arrays.asList(defaultDrive.exec(cmd).split("\n"));
+        }
         List<Vod> list = toVods(defaultDrive, lines);
         String result = Result.get().vod(list).page().string();
         return result;
@@ -190,6 +199,17 @@ public class AListSh extends AList {
                 break;
             }
         }
-        return toVods(drive, match).get(0);
+        if (match.size() == 0) {
+            return null;
+        }
+        Vod vod = toVods(drive, match).get(0);
+        quickCach.clear();
+        Thread thread = new Thread(() -> {
+            String cmd = String.format("#%s#", vod.getName());
+            List<String> tmpLines = Arrays.asList(defaultDrive.exec(cmd).split("\n"))
+            quickCach.addAll(tmpLines);
+        });
+        thread.start();
+        return vod;
     }
 }
