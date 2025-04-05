@@ -127,6 +127,12 @@ public class AListSh extends AList {
         } else {
             cmd +=  String.format(" | grep '^[.]%s'", drive.getPath());
         }
+
+        String category = fl.get("category");
+        if (category != null) {
+            cmd +=  String.format(" | grep '%s'", category);
+        }
+
         String douban = fl.get("douban");
         if (douban != null && !douban.equals("0")) {
             cmd +=  String.format(" | awk -F '#' '$4 >= %s'", douban);
