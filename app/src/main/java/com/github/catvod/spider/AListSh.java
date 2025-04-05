@@ -210,7 +210,7 @@ public class AListSh extends AList {
         }
         Thread thread = new Thread(() -> {
             synchronized (quickCach) {
-                String cmd1 = String.format("#%s#", vod.getVodName());
+                String cmd1 = String.format("{ cat index.video.txt index.115.txt;echo ''; } | grep -F '#%s#'", vod.getVodName());
                 List<String> tmpLines = Arrays.asList(defaultDrive.exec(cmd1).split("\n"));
                 quickCach.addAll(tmpLines);
             }   
