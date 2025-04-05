@@ -68,9 +68,11 @@ public class AListSh extends AList {
             return super.searchContent(keyword, quick);
         }
         List<String> lines = new ArrayList<>();
-        for (String s : quickCach) {
-            if (s.contains(String.format("#%s#", keyword))) {
-                lines.add(s);
+        synchronized (quickCach) {
+            for (String s : quickCach) {
+                if (s.contains(String.format("#%s#", keyword))) {
+                    lines.add(s);
+                }
             }
         }
         if (lines.size() == 0) {
@@ -203,11 +205,15 @@ public class AListSh extends AList {
             return null;
         }
         Vod vod = toVods(drive, match).get(0);
-        quickCach.clear();
+        synchronized (quickCach) {
+            quickCach.clear();
+        }
         Thread thread = new Thread(() -> {
-            String cmd = String.format("#%s#", vod.getName());
-            List<String> tmpLines = Arrays.asList(defaultDrive.exec(cmd).split("\n"));
-            quickCach.addAll(tmpLines);
+            synchronized (quickCach) {
+                String cmd1 = String.format("#%s#", vod.getVodName());
+                List<String> tmpLines = Arrays.asList(defaultDrive.exec(cmd1).split("\n"));
+                quickCach.addAll(tmpLines);
+            }   
         });
         thread.start();
         return vod;
