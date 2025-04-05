@@ -82,13 +82,29 @@ public class AList extends Spider {
         }
 
         List<Filter.Value> values = new ArrayList<>();
-        values.add(new Filter.Value("全部分类", "~all"));
+        values.add(new Filter.Value("全部目录", "~all"));
         for (Item item : getList(tid, true)) {
             if (item.isFolder())
                 values.add(new Filter.Value(item.getName(), drive.getPath() + "/" + item.getName()));
         }
         if (values.size() > 0) {
-            items.add(new Filter("subpath", "分类", values));
+            items.add(new Filter("subpath", "目录", values));
+        }
+
+        List<String> keys = new ArrayList<>();
+        JSONObject customFilters = drive.getFilters();
+        Logger.log(customFilters);
+        Iterator<String> iterator = customFilters.keys();
+        List<Filter.Value> customFilterValues = new ArrayList<>();
+        while (iterator.hasNext()) {
+            keys.add(iterator.next());
+        }
+        for (String key : keys) {
+            customFilterValues.add(key, customFilters.get(key).toString());
+        }
+        Logger.log(customFilterValues);
+        if (customFilterValues.size() > 0) {
+            items.add(new Filter("category", "分类", customFilterValues));
         }
 
         items.add(new Filter("douban", "豆瓣评分：", Arrays.asList(

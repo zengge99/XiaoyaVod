@@ -33,6 +33,8 @@ public class Drive {
     private List<Drive> drives;
     @SerializedName("params")
     private JSONObject params;
+    @SerializedName("filters")
+    private JSONObject filters;
     @SerializedName("login")
     private Login login;
     @SerializedName("vodPic")
@@ -63,15 +65,18 @@ public class Drive {
             Gson gson = new Gson();
             Drive drive = gson.fromJson(str, Drive.class);
     
-            // 处理 drives 数组中的 params
             if (json.has("drives")) {
                 JSONArray drivesArray = json.getJSONArray("drives");
                 for (int i = 0; i < drivesArray.length(); i++) {
                     JSONObject driveJson = drivesArray.getJSONObject(i);
                     if (driveJson.has("params")) {
-                        // 确保 drives 列表不为空，并且索引有效
                         if (drive.getDrives() != null && i < drive.getDrives().size()) {
                             drive.getDrives().get(i).params = driveJson.getJSONObject("params");
+                        }
+                    }
+                    if (driveJson.has("filters")) {
+                        if (drive.getDrives() != null && i < drive.getDrives().size()) {
+                            drive.getDrives().get(i).filters = driveJson.getJSONObject("filters");
                         }
                     }
                 }
@@ -96,6 +101,10 @@ public class Drive {
 
     public JSONObject getParams() {
         return params == null ? new JSONObject() : params;
+    }
+
+    public JSONObject getFilters() {
+        return filters == null ? new JSONObject() : filters;
     }
 
     public JSONObject getParamByPath(String path) {
