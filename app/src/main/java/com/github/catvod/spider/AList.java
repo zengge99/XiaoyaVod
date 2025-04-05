@@ -100,7 +100,7 @@ public class AList extends Spider {
             keys.add(iterator.next());
         }
         for (String key : keys) {
-            customFilterValues.add(key, customFilters.get(key).toString());
+            customFilterValues.add(new Filter.Value(key, customFilters.get(key).toString()));
         }
         Logger.log(customFilterValues);
         if (customFilterValues.size() > 0) {
