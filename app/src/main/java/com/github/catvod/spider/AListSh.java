@@ -72,6 +72,37 @@ public class AListSh extends AList {
     }
 
     @Override
+    protected List<Filter> getFilter(String tid) {
+        if (fallback) {
+            return super.getFilter(tid);
+        }
+        List<Filter> items = new ArrayList<>();
+        Drive drive = getDrive(tid);
+
+        List<String> keys = new ArrayList<>();
+        JSONObject customFilters = drive.getFilters();
+        Iterator<String> iterator = customFilters.keys();
+        List<Filter.Value> customFilterValues = new ArrayList<>();
+        while (iterator.hasNext()) {
+            keys.add(iterator.next());
+        }
+        for (String key : keys) {
+            try {
+                customFilterValues.add(new Filter.Value(key, customFilters.get(key).toString()));
+            } catch (Exception e) {
+                customFilterValues.clear();
+            }
+        }
+        if (customFilterValues.size() > 0) {
+            items.add(new Filter("category", "分类", customFilterValues));
+        }
+
+        itesm.addAll(super.getFilter(tid));
+
+        return items;
+    }
+
+    @Override
     protected synchronized String xiaoyaCategoryContent(String tid, String pg, boolean filter, HashMap<String, String> extend)
             throws Exception {
         if (fallback) {

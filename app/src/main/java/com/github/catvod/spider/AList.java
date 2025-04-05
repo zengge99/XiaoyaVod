@@ -91,27 +91,6 @@ public class AList extends Spider {
             items.add(new Filter("subpath", "目录", values));
         }
 
-        List<String> keys = new ArrayList<>();
-        JSONObject customFilters = drive.getFilters();
-        Logger.log(customFilters);
-        Iterator<String> iterator = customFilters.keys();
-        List<Filter.Value> customFilterValues = new ArrayList<>();
-        while (iterator.hasNext()) {
-            keys.add(iterator.next());
-        }
-        for (String key : keys) {
-            try {
-                customFilterValues.add(new Filter.Value(key, customFilters.get(key).toString()));
-            } catch (Exception e) {
-                Logger.log(e);
-                customFilterValues.clear();
-            }
-        }
-        Logger.log(customFilterValues);
-        if (customFilterValues.size() > 0) {
-            items.add(new Filter("category", "分类", customFilterValues));
-        }
-
         items.add(new Filter("douban", "豆瓣评分：", Arrays.asList(
                 new Filter.Value("全部评分", "0"),
                 new Filter.Value("9分以上", "9"),
