@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Iterator;
+import org.json.JSONObject;
 
 public class AListSh extends AList {
     private boolean fallback = true;
