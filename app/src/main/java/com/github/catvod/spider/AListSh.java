@@ -206,7 +206,7 @@ public class AListSh extends AList {
         quickCach.clear();
         Thread thread = new Thread(() -> {
             String cmd = String.format("#%s#", vod.getName());
-            List<String> tmpLines = Arrays.asList(defaultDrive.exec(cmd).split("\n"))
+            List<String> tmpLines = Arrays.asList(defaultDrive.exec(cmd).split("\n"));
             quickCach.addAll(tmpLines);
         });
         thread.start();
