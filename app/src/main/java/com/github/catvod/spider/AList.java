@@ -100,6 +100,12 @@ public class AList extends Spider {
             keys.add(iterator.next());
         }
         for (String key : keys) {
+            try {
+                customFilterValues.add(key, customFilters.get(key).toString());
+            } catch (Exception e) {
+                Logger.log(e);
+                customFilterValues.clear();
+            }
             customFilterValues.add(new Filter.Value(key, customFilters.get(key).toString()));
         }
         Logger.log(customFilterValues);
