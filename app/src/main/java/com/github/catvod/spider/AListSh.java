@@ -207,6 +207,11 @@ public class AListSh extends AList {
         Vod vod = toVods(drive, match).get(0);
         Thread thread = new Thread(() -> {
             synchronized (quickCach) {
+                for (String kw : quickCach) {
+                    if (kw.contains(String.format("#%s#", vod.getVodName()))) {
+                        return;
+                    }
+                }
                 quickCach.clear();
                 String cmd1 = String.format("{ cat index.video.txt index.115.txt;echo ''; } | grep -F '#%s#' | sed 's|^[.]/||' | grep -v -e '^$' -e '^[^/]*$'", vod.getVodName());
                 List<String> tmpLines = Arrays.asList(defaultDrive.exec(cmd1).split("\n"));
