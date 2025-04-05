@@ -13,6 +13,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Iterator;
 
 public class AListSh extends AList {
     private boolean fallback = true;
@@ -97,7 +98,7 @@ public class AListSh extends AList {
             items.add(new Filter("category", "分类", customFilterValues));
         }
 
-        itesm.addAll(super.getFilter(tid));
+        items.addAll(super.getFilter(tid));
 
         return items;
     }
