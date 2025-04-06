@@ -158,7 +158,7 @@ public class AList extends Spider {
         } catch (Exception e) {
             Logger.log("post" + e);
         }
-        if (retry && code == 401 && login(drive)) {
+        if (retry && (code == 401 || code == 403) && login(drive)) {
             return post(drive, url, param, false);
         }
         return response;
