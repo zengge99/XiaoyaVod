@@ -187,7 +187,6 @@ public class AList extends Spider {
         fetchRule();
         Logger.log("homeContent2");
         List<Class> classes = new ArrayList<>();
-        LinkedHashMap<String, List<Filter>> filters = new LinkedHashMap<>();
         for (Drive drive : drives)
             if (!drive.hidden())
                 classes.add(drive.toType());
