@@ -205,7 +205,7 @@ public class AList extends Spider {
         for (Map.Entry<String, Future<List<Filter>>> entry : futureMap.entrySet()) {
             try {
                 filters.put(entry.getKey(), entry.getValue().get());
-            } catch (InterruptedException | ExecutionException e) {
+            } catch (Exception e) {
             }
         }
 
