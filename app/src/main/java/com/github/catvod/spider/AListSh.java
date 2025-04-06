@@ -172,8 +172,9 @@ public class AListSh extends AList {
         if (douban != null && !douban.equals("0")) {
             cmd +=  String.format(" | awk -F '#' '$4 >= %s'", douban);
         }
-        int total = Integer.parseInt(drive.exec(cmd + " | grep -n '' | tail -n 1 | cut -d ':' -f 1").split("\n")[0]);
-
+        
+        String totalCmd = cmd + " | grep -n '' | tail -n 1 | cut -d ':' -f 1";
+                
         cmd = String.format("{ %s | grep http; %s | grep -v http; }", cmd, cmd);
 
         boolean keepOrder = false;
@@ -196,6 +197,7 @@ public class AListSh extends AList {
         }
         Pager pager = drivePagerMap.get(drive.getName());
         if (pager == null || pg.equals("1")) {
+            int total = Integer.parseInt(drive.exec(totalCmd).split("\n")[0]);
             pager = new Pager(drive, cmd, total, randomNum, keepOrder);
             drivePagerMap.put(drive.getName(), pager);
         }
