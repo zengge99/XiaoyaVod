@@ -191,9 +191,23 @@ public class AList extends Spider {
         for (Drive drive : drives)
             if (!drive.hidden())
                 classes.add(drive.toType());
-        for (Class item : classes)
-            filters.put(item.getTypeId(), getFilter(item.getTypeId()));
-        Logger.log("homeContent3");
+        
+        // for (Class item : classes)
+        //     filters.put(item.getTypeId(), getFilter(item.getTypeId()));
+        // Logger.log("homeContent3");
+
+        Map<String, Future<List<Filter>>> futureMap = new HashMap<>();
+        for (Class item : classes) {
+            final String typeId = item.getTypeId();
+            Future<List<Filter>> future = executor.submit(() -> getFilter(typeId));
+            futureMap.put(typeId, future);
+        }
+        for (Map.Entry<String, Future<List<Filter>>> entry : futureMap.entrySet()) {
+            try {
+                filters.put(entry.getKey(), entry.getValue().get());
+            } catch (InterruptedException | ExecutionException e) {
+            }
+        }
 
         List<Vod> list = new ArrayList<>();
         if (defaultDrive != null) {
