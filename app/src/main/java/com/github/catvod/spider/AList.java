@@ -195,25 +195,18 @@ public class AList extends Spider {
         //     filters.put(item.getTypeId(), getFilter(item.getTypeId()));
         // Logger.log("homeContent3");
 
-        List<Callable<Map.Entry<String, List<Filter>>>> callableTasks = new ArrayList<>();
+        LinkedHashMap<String, List<Filter>> filters = new LinkedHashMap<>();
+        Map<String, Future<List<Filter>>> futureMap = new HashMap<>();
         for (Class item : classes) {
             final String typeId = item.getTypeId();
-            callableTasks.add(() -> {
-                List<Filter> filters = getFilter(typeId);
-                return new AbstractMap.SimpleEntry<>(typeId, filters);
-            });
+            Future<List<Filter>> future = executor.submit(() -> getFilter(typeId));
+            futureMap.put(typeId, future);
         }
-        LinkedHashMap<String, List<Filter>> filters = new LinkedHashMap<>();
-        try {
-            List<Future<Map.Entry<String, List<Filter>>>> futures = executor.invokeAll(callableTasks);
-            for (Future<Map.Entry<String, List<Filter>>> future : futures) {
-                try {
-                    Map.Entry<String, List<Filter>> entry = future.get();
-                    filters.put(entry.getKey(), entry.getValue());
-                } catch (Exception e) {
-                }
+        for (Map.Entry<String, Future<List<Filter>>> entry : futureMap.entrySet()) {
+            try {
+                filters.put(entry.getKey(), entry.getValue().get());
+            } catch (Exception e) {
             }
-        } catch (Exception e) {
         }
 
         List<Vod> list = new ArrayList<>();

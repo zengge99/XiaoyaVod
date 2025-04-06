@@ -8,6 +8,10 @@ import com.github.catvod.bean.Vod;
 import com.github.catvod.bean.alist.Drive;
 import com.github.catvod.bean.alist.Pager;
 import com.github.catvod.crawler.Spider;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -47,7 +51,6 @@ public class AListSh extends AList {
                 classes.add(drive.toType());
         // for (Class item : classes)
         //     filters.put(item.getTypeId(), getFilter(item.getTypeId()));
-
 
         LinkedHashMap<String, List<Filter>> filters = new LinkedHashMap<>();
         Map<String, Future<List<Filter>>> futureMap = new HashMap<>();
