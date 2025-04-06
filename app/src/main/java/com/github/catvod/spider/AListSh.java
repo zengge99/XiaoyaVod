@@ -42,12 +42,32 @@ public class AListSh extends AList {
         }
         fetchRule();
         List<Class> classes = new ArrayList<>();
-        LinkedHashMap<String, List<Filter>> filters = new LinkedHashMap<>();
         for (Drive drive : drives)
             if (!drive.hidden())
                 classes.add(drive.toType());
-        for (Class item : classes)
-            filters.put(item.getTypeId(), getFilter(item.getTypeId()));
+        // for (Class item : classes)
+        //     filters.put(item.getTypeId(), getFilter(item.getTypeId()));
+
+        List<Callable<Map.Entry<String, List<Filter>>>> callableTasks = new ArrayList<>();
+        for (Class item : classes) {
+            final String typeId = item.getTypeId();
+            callableTasks.add(() -> {
+                List<Filter> filters = getFilter(typeId);
+                return new AbstractMap.SimpleEntry<>(typeId, filters);
+            });
+        }
+        LinkedHashMap<String, List<Filter>> filters = new LinkedHashMap<>();
+        try {
+            List<Future<Map.Entry<String, List<Filter>>>> futures = executor.invokeAll(callableTasks);
+            for (Future<Map.Entry<String, List<Filter>>> future : futures) {
+                try {
+                    Map.Entry<String, List<Filter>> entry = future.get();
+                    filters.put(entry.getKey(), entry.getValue());
+                } catch (Exception e) {
+                }
+            }
+        } catch (Exception e) {
+        }
 
         List<Vod> list = new ArrayList<>();
         if (defaultDrive != null) {
