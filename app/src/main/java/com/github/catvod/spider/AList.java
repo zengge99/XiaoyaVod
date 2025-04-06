@@ -158,7 +158,7 @@ public class AList extends Spider {
         } catch (Exception e) {
             Logger.log("post" + e);
         }
-        if (retry && code == 401 && (loginByFile(drive) || loginByUser(drive))) {
+        if (retry && code == 401 && login(drive)) {
             return post(drive, url, param, false);
         }
         return response;
@@ -625,6 +625,10 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
         String result = Result.get().vod(list).page().string();
         //Logger.log(result);
         return result;
+    }
+
+    protected synchronized boolean login(Drive drive) {
+        return loginByFile(drive) || loginByUser(drive);
     }
 
     protected boolean loginByUser(Drive drive) {
