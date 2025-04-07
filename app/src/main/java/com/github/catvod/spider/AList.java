@@ -872,13 +872,13 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
         String out = "";
         line = line.toLowerCase();
         if (line.contains("115")) {
-            out = " 115";
+            out = " (115)";
         } else if (line.contains("套娃")) {
-            out = " 套娃";
+            out = " (套娃)";
         } else if (line.contains("pikpak")) {
-            out = " pikpak";
+            out = " (pikpak)";
         } else if (line.contains("夸克")) {
-            out = " 夸克";
+            out = " (夸克)";
         }
         return out;
     }
