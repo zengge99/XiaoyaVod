@@ -848,7 +848,7 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
                 item.setName(fileName);
                 item.doubanInfo.setName(splits.length >= 2 ? splits[1] : fileName);
                 Vod vod = item.getVod(drive.getName(), drive.getVodPic());
-                vod.setVodRemarks(item.doubanInfo.getRating());
+                vod.setVodRemarks(item.doubanInfo.getRating() + calcFlag(line));
                 vod.setVodName(item.doubanInfo.getName());
                 vod.doubanInfo = item.doubanInfo;
                 vod.setVodId(vod.getVodId() + "/~xiaoya");
@@ -866,6 +866,21 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
         } finally {
             Logger.log("toVods() completed in " + (System.currentTimeMillis() - startTime) + "ms");
         }
+    }
+
+    protected String calcFlag(String line) {
+        String out = "";
+        line = line.toLowerCase();
+        if (line.contains("115")) {
+            out = " 115";
+        } else if (line.contains("套娃")) {
+            out = " 套娃";
+        } else if (line.contains("pikpak")) {
+            out = " pikpak";
+        } else if (line.contains("夸克")) {
+            out = " 夸克";
+        }
+        return out;
     }
 
     protected Vod findVodByPath(Drive drive, String path) {
