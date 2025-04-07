@@ -854,6 +854,7 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
                 vod.doubanInfo = item.doubanInfo;
                 vod.setVodId(vod.getVodId() + "/~xiaoya");
                 if (TextUtils.isEmpty(item.getThumb())) {
+                    vod.setVodPic(Image.XIAOYA);
                     noPicList.add(vod);
                 } else {
                     list.add(vod);
