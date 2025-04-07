@@ -19,6 +19,7 @@ import com.github.catvod.crawler.SpiderDebug;
 import com.github.catvod.net.OkHttp;
 import com.github.catvod.utils.Util;
 import com.github.catvod.utils.Notify;
+import com.github.catvod.utils.Image;
 import com.github.catvod.bean.alist.FileBasedList;
 import com.github.catvod.bean.alist.LocalIndexService;
 import com.github.catvod.bean.alist.Pager;
@@ -842,7 +843,7 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
                 item.setType(0);
                 item.doubanInfo.setId(splits.length >= 3 ? splits[2] : "");
                 item.doubanInfo.setRating(splits.length >= 4 ? splits[3] : "");
-                item.setThumb(splits.length >= 5 ? splits[4] : "");
+                item.setThumb(splits.length >= 5 ? splits[4] : Image.XIAOYA);
                 item.setPath("/" + splits[0].substring(0, index));
                 String fileName = splits[0].substring(index + 1);
                 item.setName(fileName);
