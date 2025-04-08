@@ -73,7 +73,7 @@ public class AListSh extends AList {
 
         List<Vod> list = new ArrayList<>();
         if (defaultDrive != null) {
-            List<String> lines = Arrays.asList(defaultDrive.exec("{ cat index.daily.txt;echo ''; } | tac | sed 's|^[.]/||' | grep -v -e '^$' -e '^[^/]*$'").split("\n"));
+            List<String> lines = Arrays.asList(defaultDrive.exec("{ cat index.daily.txt;echo ''; } | tac | sed 's|^[.]/||' | grep -v -e '^$' -e '^[^/]*$' | head -n 500").split("\n"));
             list = toVods(defaultDrive, lines);
         }
 
