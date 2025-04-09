@@ -637,6 +637,7 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
             if (drive.getLogin() == null) {
                 return false;
             }
+            JSONObject params = new JSONObject();
             String userName = drive.getLogin().getUsername();
             String password = drive.getLogin().getPassword();
             Logger.log("用户名:" + userName + "密码:" + password);
