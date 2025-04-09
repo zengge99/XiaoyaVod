@@ -629,7 +629,32 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
     }
 
     protected synchronized boolean login(Drive drive) {
-        return loginByFile(drive) || loginByUser(drive);
+        return loginByConfig(drive) || loginByFile(drive) || loginByUser(drive);
+    }
+
+    protected boolean loginByConfig(Drive drive) {
+        try {
+            if (drive.getLogin() == null) {
+                return false;
+            }
+            String userName = drive.getLogin().getUsername();
+            String password = drive.getLogin().getPassword();
+            Logger.log("用户名:" + userName + "密码:" + password);
+            userName = userName.isEmpty() ? "guest" : userName;
+            password = password.isEmpty() ? "guest_Api789" : password;
+            params.put("username", userName);
+            params.put("password", password);
+            if (password.startsWith("alist-")) {
+                drive.setToken(password);
+                return true;
+            } 
+            String response = OkHttp.post(drive.loginApi(), params.toString());
+            drive.setToken(new JSONObject(response).getJSONObject("data").getString("token"));
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     protected boolean loginByUser(Drive drive) {
