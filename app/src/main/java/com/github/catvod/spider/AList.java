@@ -479,9 +479,12 @@ public class AList extends Spider {
         int i = 1;
         for (Item item : items)
             if (item.isMedia()) {
-                playUrls.add(item.getName() + "$" + item.getVodId(path) + findSubs(path, items)
-                 + "~~~" + String.format("danmu:%%NAME%%,%d,%%YEAR%%", i++));
-                //playUrls.add(item.getName() + "$" + item.getVodId(path) + findSubs(path, items));
+                String displayName = item.getName();
+                String playUrl = item.getVodId(path) + findSubs(path, items) + "~~~" + String.format("danmu:%%NAME%%,%d,%%YEAR%%", i++);
+                //对路径中#的特殊处理
+                displayName = displayName.replace("#", "%23");
+                playUrl = playUrl.replace("#", "%23");
+                playUrls.add(displayName + "$" + playUrl);
                 haveFile = true;
             }
         if (haveFile) {
@@ -752,6 +755,8 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
     protected Item getDetail(String id) {
         String key = id.contains("/") ? id.substring(0, id.indexOf("/")) : id;
         String path = id.contains("/") ? id.substring(id.indexOf("/")) : "";
+        //对路径中#的特殊处理
+        path = path.replace("%23", "#");
         Drive drive = getDrive(key);
         Item item;
         if (drive.pathByApi()) {
@@ -769,6 +774,8 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
             String path = id.contains("/") ? id.substring(id.indexOf("/")) : "";
             Drive drive = getDrive(key);
             path = path.startsWith(drive.getPath()) ? path : drive.getPath() + path;
+            //对路径中#的特殊处理
+            path = path.replace("%23", "#");
             Item item = new Item();
             String url = drive.getServer() + "/d" + URLEncoder.encode(path, "UTF-8").replace("+", "%20").replace("%2F", "/");
             Logger.log(url);
