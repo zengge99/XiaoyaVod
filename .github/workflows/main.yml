@@ -22,8 +22,8 @@ jobs:
           $beijingTime = $utcTime.AddHours(8)
           $timestamp = $beijingTime.ToString("yyyy.MMdd.HHmm")
           $filePath = "./app/src/main/java/com/github/catvod/spider/AList.java"
-          (Get-Content $filePath) -replace 'protected String jarVer = "%JARVER%";', "protected String jarVer = `"jar.$timestamp`";" | Set-Content $filePath
-          Write-Host "Replaced %JARVER% with jar.$timestamp (Beijing Time)"
+          (Get-Content $filePath) -replace 'protected String jarVer = "%JARVER%";', "protected String jarVer = `"v.$timestamp(JAR)`";" | Set-Content $filePath
+          Write-Host "Replaced %JARVER% with v.$timestamp(JAR) (Beijing Time)"
 
       - name: Build with Gradle
         run: ./build.bat ec
