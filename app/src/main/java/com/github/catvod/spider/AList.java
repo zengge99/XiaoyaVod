@@ -363,6 +363,9 @@ public class AList extends Spider {
         Vod vod = new Vod();
         vod.setVodPlayFrom(key);
         vod.setVodId(id);
+        //对路径中#的特殊处理
+        name = name.replace("#", "%23");
+        id = id.replace("#", "%23");
         vod.setVodName(name);
         vod.setVodPic(vodPic);
         vod.setVodPlayUrl(name + "$" + id);
