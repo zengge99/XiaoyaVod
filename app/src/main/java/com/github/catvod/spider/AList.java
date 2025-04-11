@@ -439,6 +439,11 @@ public class AList extends Spider {
             vod.setVodName(name);
             vod.setVodPic(vodPic);
         }
+
+        //对路径中#的特殊处理
+        name = name.replace("#", "%23");
+        path = path.replace("#", "%23");
+
         vod.setVodPlayFrom(drive.getName());
         if (id.endsWith("~xiaoya")) {
             vod.setVodPlayUrl(name + "$" + path + String.format("~~~danmu:%s,1,%s", vod.doubanInfo.getName(), vod.doubanInfo.getYear()));
