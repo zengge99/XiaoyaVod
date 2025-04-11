@@ -593,7 +593,9 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
 
         for (Item item : getList(tid, true)) {
             if (item.isFolder()) {
-                folders.add(item);
+                if (!item.getName().equals("元数据")) {
+                    folders.add(item);
+                }
                 if (item.getName().contains("©️")) {
                     Item jarVerItem = item.clone();
                     jarVerItem.setName("©️ " + jarVer);
