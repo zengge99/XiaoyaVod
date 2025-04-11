@@ -43,7 +43,7 @@ public class Item {
         return new Gson().fromJson(str, listType);
     }
 
-    public static Item clone() {
+    public Item clone() {
         String str = new Gson().toJson(this);
         return new Gson().fromJson(str, Item.class);
     }
