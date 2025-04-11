@@ -93,7 +93,7 @@ public class Item {
     }
 
     public String getModified() {
-        return TextUtils.isEmpty(modified) ? "" : modified;;
+        return TextUtils.isEmpty(modified) ? "" : modified;
     }
 
     public Date getDate() {
