@@ -16,12 +16,14 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
-      - name: Replace %JARVER% with current timestamp
+      - name: Replace %JARVER% with Beijing time
         run: |
-          $timestamp = Get-Date -Format "yyyyMMddHHmm"
+          $utcTime = [System.DateTime]::UtcNow
+          $beijingTime = $utcTime.AddHours(8)
+          $timestamp = $beijingTime.ToString("yyyyMMddHHmm")
           $filePath = "./app/src/main/java/com/github/catvod/spider/AList.java"
           (Get-Content $filePath) -replace 'protected String jarVer = "%JARVER%";', "protected String jarVer = `"jar-$timestamp`";" | Set-Content $filePath
-          Write-Host "Replaced %JARVER% with jar-$timestamp in AList.java"
+          Write-Host "Replaced %JARVER% with jar-$timestamp (Beijing Time)"
 
       - name: Build with Gradle
         run: ./build.bat ec
