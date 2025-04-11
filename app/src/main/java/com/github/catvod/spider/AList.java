@@ -67,6 +67,7 @@ public class AList extends Spider {
     protected Map<String, List<String>> driveLinesMap = new HashMap<>();
     protected Map<String, Pager> drivePagerMap = new HashMap<>();
     protected ExecutorService executor = Executors.newCachedThreadPool();
+    protected String jarVer = "%JARVER%";
 
     protected List<Filter> getFilter(String tid) {
         List<Filter> items = new ArrayList<>();
@@ -591,10 +592,18 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
         Drive drive = getDrive(key);
 
         for (Item item : getList(tid, true)) {
-            if (item.isFolder())
+            if (item.isFolder()) {
                 folders.add(item);
-            else
+                if (item.getName().contains("©️")) {
+                    Item jarVerItem = new Item();
+                    jarVerItem.setName("©️ " + jarVer);
+                    jarVerItem.setType(1);
+                    folders.add(jarVerItem);
+                }
+            } else {
                 files.add(item);
+            }
+                
         }
         if (!TextUtils.isEmpty(order)) {
             String splits[] = order.split("_");
