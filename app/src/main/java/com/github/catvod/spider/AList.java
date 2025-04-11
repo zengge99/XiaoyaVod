@@ -595,9 +595,7 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
             if (item.isFolder()) {
                 folders.add(item);
                 if (item.getName().contains("©️")) {
-                    Item jarVerItem = new Item();
-                    jarVerItem.setType(1);
-                    jarVerItem.setPath(item.getPath());
+                    Item jarVerItem = item.clone();
                     jarVerItem.setName("©️ " + jarVer);
                     folders.add(jarVerItem);
                 }

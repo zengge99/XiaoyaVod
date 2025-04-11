@@ -43,6 +43,11 @@ public class Item {
         return new Gson().fromJson(str, listType);
     }
 
+    public static Item clone() {
+        String str = new Gson().toJson(this);
+        return new Gson().fromJson(str, Item.class);
+    }
+
     public String getName() {
         return TextUtils.isEmpty(name) ? "" : name;
     }
@@ -88,7 +93,7 @@ public class Item {
     }
 
     public String getModified() {
-        return modified;
+        return TextUtils.isEmpty(modified) ? "" : modified;;
     }
 
     public Date getDate() {
