@@ -662,8 +662,8 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
             String userName = drive.getLogin().getUsername();
             String password = drive.getLogin().getPassword();
             Logger.log("用户名:" + userName + "密码:" + password);
-            userName = userName.isEmpty() ? "guest" : userName;
-            password = password.isEmpty() ? "guest_Api789" : password;
+            userName = userName.isEmpty() ? "dav" : userName;
+            password = password.isEmpty() ? "1234" : password;
             params.put("username", userName);
             params.put("password", password);
             if (password.startsWith("alist-")) {
@@ -682,11 +682,11 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
     protected boolean loginByUser(Drive drive) {
         try {
             JSONObject params = new JSONObject();
-            String userName = LoginDlg.showLoginDlg("用户名(留空默认guest)");
-            String password = LoginDlg.showLoginDlg("密码(留空默认guest_Api789，\"alist-\"打头会被识别为alist token)");
+            String userName = LoginDlg.showLoginDlg("用户名(留空默认dav)");
+            String password = LoginDlg.showLoginDlg("密码(留空默认1234，\"alist-\"打头会被识别为alist token)");
             Logger.log("用户名:" + userName + "密码:" + password);
-            userName = userName.isEmpty() ? "guest" : userName;
-            password = password.isEmpty() ? "guest_Api789" : password;
+            userName = userName.isEmpty() ? "dav" : userName;
+            password = password.isEmpty() ? "1234" : password;
             String loginPath = Path.files() + "/" + drive.getServer().replace("://", "_").replace(":", "_") + ".login";
             File loginFile = new File(loginPath);
             Path.write(loginFile, (userName + "\n" + password).getBytes());
@@ -714,8 +714,8 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
             String userName = login.split("\n")[0];
             String password = login.split("\n")[1];
             Logger.log("用户名:" + userName + "密码:" + password);
-            userName = userName.isEmpty() ? "guest" : userName;
-            password = password.isEmpty() ? "guest_Api789" : password;
+            userName = userName.isEmpty() ? "dav" : userName;
+            password = password.isEmpty() ? "1234" : password;
             params.put("username", userName);
             params.put("password", password);
             if (password.startsWith("alist-")) {
