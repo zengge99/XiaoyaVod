@@ -137,9 +137,9 @@ public class AListSh extends AList {
 
         List<Filter.Value> yearFilterValues = new ArrayList<>();
         for (int i = thisYear; i > thisYear - 10; i--) {
-            yearFilterValues.add(new Filter.Value(i.toString(), i.toString()));
+            yearFilterValues.add(new Filter.Value(String.valueOf(i), String.valueOf(i)));
         }
-        yearFilterValues.add(new Filter.Value((thisYear - 10).toString() + "及以前", (thisYear - 10).toString() + "-"));
+        yearFilterValues.add(new Filter.Value(String.valueOf(thisYear - 10) + "及以前", String.valueOf(thisYear - 10) + "-"));
         items.add(new Filter("year", "年份", yearFilterValues));
 
         items.addAll(super.getFilter(tid));
