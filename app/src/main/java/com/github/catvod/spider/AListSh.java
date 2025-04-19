@@ -28,14 +28,17 @@ import org.json.JSONObject;
 public class AListSh extends AList {
     private boolean fallback = true;
     private List<String> quickCach = new ArrayList<>();
+    private static int thisYear = 2025;
 
     @Override
     public void init(Context context, String extend) throws Exception  {
         try {
             ext = extend;
             fetchRule();
-            if (defaultDrive.exec("echo ok").split("\n")[0].equals("ok")) {
+            String check = defaultDrive.exec("echo ok;date +%Y");
+            if (check.split("\n")[0].equals("ok")) {
                 fallback = false;
+                thisYear = Integer.parseInt(check.split("\n")[1]);
             }
         } catch (Exception e) {
         }
@@ -132,6 +135,13 @@ public class AListSh extends AList {
             items.add(new Filter("custom", "自定义分类", customFilterValues));
         }
 
+        List<Filter.Value> yearFilterValues = new ArrayList<>();
+        for (int i = thisYear; i > thisYear - 10; i--) {
+            yearFilterValues.add(new Filter.Value(i.toString(), i.toString()));
+        }
+        yearFilterValues.add(new Filter.Value((thisYear - 10).toString() + "及以前", (thisYear - 10).toString() + "-"));
+        items.add(new Filter("year", "年份", yearFilterValues));
+
         items.addAll(super.getFilter(tid));
 
         return items;
@@ -166,6 +176,14 @@ public class AListSh extends AList {
         String custom = fl.get("custom");
         if (custom != null) {
             cmd +=  String.format(" | grep '%s'", custom);
+        }
+
+        String year = fl.get("year");
+        if (year != null && !year.contains("-")) {
+            cmd +=  String.format(" | grep '#%s#'", year);
+        }
+        if (year != null && year.contains("-")) {
+            cmd +=  String.format(" | awk -F '#' '$6 <= %s'", year);
         }
 
         String douban = fl.get("douban");
