@@ -129,7 +129,7 @@ public class AListSh extends AList {
             }
         }
         if (customFilterValues.size() > 0) {
-            items.add(new Filter("category", "分类", customFilterValues));
+            items.add(new Filter("custom", "自定义分类", customFilterValues));
         }
 
         items.addAll(super.getFilter(tid));
@@ -163,9 +163,9 @@ public class AListSh extends AList {
             cmd +=  String.format(" | grep '^[.]%s'", drive.getPath());
         }
 
-        String category = fl.get("category");
-        if (category != null) {
-            cmd +=  String.format(" | grep '%s'", category);
+        String custom = fl.get("custom");
+        if (custom != null) {
+            cmd +=  String.format(" | grep '%s'", custom);
         }
 
         String douban = fl.get("douban");
