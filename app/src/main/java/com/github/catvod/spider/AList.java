@@ -89,9 +89,9 @@ public class AList extends Spider {
             if (item.isFolder())
                 values.add(new Filter.Value(item.getName(), drive.getPath() + "/" + item.getName()));
         }
-        if (values.size() > 0 && !drive.getPath().equals("/")) {
-            items.add(new Filter("subpath", "目录", values));
-        }
+        // if (values.size() > 0 && !drive.getPath().equals("/")) {
+        //     items.add(new Filter("subpath", "目录", values));
+        // }
 
         items.add(new Filter("douban", "豆瓣评分：", Arrays.asList(
                 new Filter.Value("全部评分", "0"),
