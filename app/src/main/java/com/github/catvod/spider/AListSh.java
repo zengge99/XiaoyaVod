@@ -166,7 +166,47 @@ public class AListSh extends AList {
         }
         items.add(new Filter("area", "地区", areaFilterValues));
 
-        items.addAll(super.getFilter(tid));
+        // items.addAll(super.getFilter(tid));
+        if (drive.noPoster()) {
+            items.add(new Filter("order", "排序：", Arrays.asList(
+                    new Filter.Value("默认排序", "def_def"),
+                    new Filter.Value("名字降序", "name_desc"),
+                    new Filter.Value("名字升序", "name_asc"),
+                    new Filter.Value("时间降序", "date_desc"),
+                    new Filter.Value("时间升序", "date_asc"))));
+            return items;
+        }
+
+        List<Filter.Value> values = new ArrayList<>();
+        values.add(new Filter.Value("全部目录", "~all"));
+        for (Item item : getList(tid, true)) {
+            if (item.isFolder())
+                values.add(new Filter.Value(item.getName(), drive.getPath() + "/" + item.getName()));
+        }
+        if (values.size() > 0 && !drive.getPath().equals("/")) {
+            items.add(new Filter("subpath", "目录", values));
+        }
+
+        items.add(new Filter("douban", "豆瓣评分：", Arrays.asList(
+                new Filter.Value("全部评分", "0"),
+                new Filter.Value("9分以上", "9"),
+                new Filter.Value("8分以上", "8"),
+                new Filter.Value("7分以上", "7"),
+                new Filter.Value("6分以上", "6"),
+                new Filter.Value("5分以上", "5"))));
+
+        items.add(new Filter("doubansort", "豆瓣排序：", Arrays.asList(
+                new Filter.Value("原始顺序", "0"),
+                new Filter.Value("豆瓣评分\u2B07\uFE0F", "1"),
+                new Filter.Value("豆瓣评分\u2B06\uFE0F", "2"),
+                new Filter.Value("年份\u2B07\uFE0F", "3"),
+                new Filter.Value("年份\u2B06\uFE0F", "4"))));
+
+        items.add(new Filter("random", "随机显示：", Arrays.asList(
+                new Filter.Value("固定显示", "0"),
+                new Filter.Value("随机显示️", "9999999"),
+                new Filter.Value("随机200个️", "200"),
+                new Filter.Value("随机500个️", "500"))));
 
         return items;
     }
@@ -237,6 +277,14 @@ public class AListSh extends AList {
         }
         if (doubansort != null && doubansort.equals("2")) {
             cmd +=  String.format(" | awk -F '#' '{print $4,$0}' | sort | cut -d ' ' -f 2-");
+            keepOrder = true;
+        }
+        if (doubansort != null && doubansort.equals("3")) {
+            cmd +=  String.format(" | awk -F '#' '{print $6,$0}' | sort -r | cut -d ' ' -f 2-");
+            keepOrder = true;
+        }
+        if (doubansort != null && doubansort.equals("4")) {
+            cmd +=  String.format(" | awk -F '#' '{print $6,$0}' | sort | cut -d ' ' -f 2-");
             keepOrder = true;
         }
 
