@@ -201,6 +201,16 @@ public class AListSh extends AList {
             cmd +=  String.format(" | grep '%s'", custom);
         }
 
+        String type = fl.get("type");
+        if (type != null) {
+            cmd +=  String.format(" | grep '%s'", type);
+        }
+
+        String area = fl.get("area");
+        if (area != null) {
+            cmd +=  String.format(" | grep '%s'", area);
+        }
+
         String year = fl.get("year");
         if (year != null && !year.contains("-")) {
             cmd +=  String.format(" | grep '#%s#'", year);
