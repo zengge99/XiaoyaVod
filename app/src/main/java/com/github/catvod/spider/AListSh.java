@@ -118,6 +118,17 @@ public class AListSh extends AList {
         List<Filter> items = new ArrayList<>();
         Drive drive = getDrive(tid);
 
+        if (drive.noPoster()) {
+            items.add(new Filter("order", "排序：", Arrays.asList(
+                new Filter.Value("默认排序", "def_def"),
+                new Filter.Value("名字降序", "name_desc"),
+                new Filter.Value("名字升序", "name_asc"),
+                new Filter.Value("时间降序", "date_desc"),
+                new Filter.Value("时间升序", "date_asc"))));
+            return items;
+        }
+
+
         List<String> keys = new ArrayList<>();
         JSONObject customFilters = drive.getFilters();
         Iterator<String> iterator = customFilters.keys();
@@ -166,17 +177,6 @@ public class AListSh extends AList {
             areaFilterValues.add(new Filter.Value(s, v));
         }
         items.add(new Filter("area", "地区", areaFilterValues));
-
-        // items.addAll(super.getFilter(tid));
-        if (drive.noPoster()) {
-            items.add(new Filter("order", "排序：", Arrays.asList(
-                    new Filter.Value("默认排序", "def_def"),
-                    new Filter.Value("名字降序", "name_desc"),
-                    new Filter.Value("名字升序", "name_asc"),
-                    new Filter.Value("时间降序", "date_desc"),
-                    new Filter.Value("时间升序", "date_asc"))));
-            return items;
-        }
 
         List<Filter.Value> values = new ArrayList<>();
         values.add(new Filter.Value("全部目录", "~all"));
