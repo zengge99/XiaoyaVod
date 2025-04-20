@@ -281,11 +281,11 @@ public class AListSh extends AList {
             keepOrder = true;
         }
         if (doubansort != null && doubansort.equals("3")) {
-            cmd +=  String.format(" | awk -F '#' '{print $6,$0}' | sort -r | cut -d ' ' -f 2-");
+            cmd +=  String.format(" | awk -F '#' '{if ($6 !~ /^[0-9]{4}$/) $6="0000"; print $6,$0}' | sort -r | cut -d ' ' -f 2-");
             keepOrder = true;
         }
         if (doubansort != null && doubansort.equals("4")) {
-            cmd +=  String.format(" | awk -F '#' '{print $6,$0}' | sort | cut -d ' ' -f 2-");
+            cmd +=  String.format(" | awk -F '#' '{if ($6 !~ /^[0-9]{4}$/) $6="9999"; print $6,$0}' | sort | cut -d ' ' -f 2-");
             keepOrder = true;
         }
 
