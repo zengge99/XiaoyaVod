@@ -136,6 +136,7 @@ public class AListSh extends AList {
         }
 
         List<Filter.Value> yearFilterValues = new ArrayList<>();
+        yearFilterValues.add(new Filter.Value("全部", "全部"));
         for (int i = thisYear; i > thisYear - 10; i--) {
             yearFilterValues.add(new Filter.Value(String.valueOf(i), String.valueOf(i)));
         }
@@ -144,7 +145,7 @@ public class AListSh extends AList {
 
         List<Filter.Value> typeFilterValues = new ArrayList<>();
         List<String> typeList = Arrays.asList(
-            "喜剧", "爱情", "动作", "科幻", "动画", "悬疑", "犯罪", "惊悚", 
+            "全部", "喜剧", "爱情", "动作", "科幻", "动画", "悬疑", "犯罪", "惊悚", 
             "冒险", "音乐", "历史", "奇幻", "恐怖", "战争", "传记", "歌舞", 
             "武侠", "灾难", "西部", "纪录片", "短片", "剧情", "家庭", 
             "儿童", "古装", "运动", "黑色电影");
@@ -155,7 +156,7 @@ public class AListSh extends AList {
 
         List<Filter.Value> areaFilterValues = new ArrayList<>();
         List<String> areaList = Arrays.asList(
-            "中国", "韩国", "日本", "美国", "欧美", "印度", "泰国");
+            "全部", "中国", "韩国", "日本", "美国", "欧美", "印度", "泰国");
         for (String s : areaList) {
             String v = s;
             if (s.equals("欧美")) {
@@ -202,17 +203,17 @@ public class AListSh extends AList {
         }
 
         String type = fl.get("type");
-        if (type != null) {
+        if (type != null && !type.equals("全部")) {
             cmd +=  String.format(" | grep '%s'", type);
         }
 
         String area = fl.get("area");
-        if (area != null) {
+        if (area != null && !area.equals("全部")) {
             cmd +=  String.format(" | grep '%s'", area);
         }
 
         String year = fl.get("year");
-        if (year != null && !year.contains("-")) {
+        if (year != null && !year.equals("全部") && !year.contains("-")) {
             cmd +=  String.format(" | grep '#%s#'", year);
         }
         if (year != null && year.contains("-")) {
