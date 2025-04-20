@@ -206,7 +206,7 @@ public class AListSh extends AList {
             cmd +=  String.format(" | grep '#%s#'", year);
         }
         if (year != null && year.contains("-")) {
-            cmd +=  String.format(" | awk -F '#' '$6 <= %s'", year);
+            cmd +=  String.format(" | awk -F '#' '$6 <= %s'", year.split("-")[0]);
         }
 
         String douban = fl.get("douban");
