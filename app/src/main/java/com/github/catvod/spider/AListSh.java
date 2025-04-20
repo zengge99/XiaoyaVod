@@ -8,6 +8,7 @@ import com.github.catvod.bean.Vod;
 import com.github.catvod.bean.alist.Drive;
 import com.github.catvod.bean.alist.Pager;
 import com.github.catvod.crawler.Spider;
+import com.github.catvod.bean.alist.Item;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutionException;
