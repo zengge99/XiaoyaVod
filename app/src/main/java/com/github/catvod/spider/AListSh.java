@@ -128,7 +128,6 @@ public class AListSh extends AList {
             return items;
         }
 
-
         List<String> keys = new ArrayList<>();
         JSONObject customFilters = drive.getFilters();
         Iterator<String> iterator = customFilters.keys();
