@@ -159,7 +159,7 @@ public class AListSh extends AList {
         for (String s : areaList) {
             String v = s;
             if (s.equals("欧美")) {
-                v = "(美国|英国|法国|德国|意大利|西班牙|瑞典|丹麦|爱尔兰|澳大利亚|巴西)"
+                v = "(美国|英国|法国|德国|意大利|西班牙|瑞典|丹麦|爱尔兰|澳大利亚|巴西)";
             }
             areaFilterValues.add(new Filter.Value(s, v));
         }
