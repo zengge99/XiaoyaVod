@@ -89,7 +89,7 @@ public class Drive {
 
     public String exec(String cmd) {
         try {
-            return OkHttp.post(getServer() + "/soutv", cmd);
+            return OkHttp.post(getServer() + "/soutv", cmd, getHeader());
         } catch (Exception e) {
             return "";
         }
