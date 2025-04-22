@@ -146,13 +146,17 @@ public class AListSh extends AList {
             items.add(new Filter("custom", "自定义分类", customFilterValues));
         }
 
-        List<Filter.Value> yearFilterValues = new ArrayList<>();
-        yearFilterValues.add(new Filter.Value("全部", "全部"));
-        for (int i = thisYear; i > thisYear - 10; i--) {
-            yearFilterValues.add(new Filter.Value(String.valueOf(i), String.valueOf(i)));
+        List<Filter.Value> areaFilterValues = new ArrayList<>();
+        List<String> areaList = Arrays.asList(
+            "全部", "中国", "韩国", "日本", "美国", "欧美", "印度", "泰国");
+        for (String s : areaList) {
+            String v = s;
+            if (s.equals("欧美")) {
+                v = "(美国|英国|法国|德国|意大利|西班牙|瑞典|丹麦|爱尔兰|澳大利亚|巴西)";
+            }
+            areaFilterValues.add(new Filter.Value(s, v));
         }
-        yearFilterValues.add(new Filter.Value(String.valueOf(thisYear - 10) + "及以前", String.valueOf(thisYear - 10) + "-"));
-        items.add(new Filter("year", "年份", yearFilterValues));
+        items.add(new Filter("area", "地区", areaFilterValues));
 
         List<Filter.Value> typeFilterValues = new ArrayList<>();
         List<String> typeList = Arrays.asList(
@@ -165,17 +169,13 @@ public class AListSh extends AList {
         }
         items.add(new Filter("type", "类型", typeFilterValues));
 
-        List<Filter.Value> areaFilterValues = new ArrayList<>();
-        List<String> areaList = Arrays.asList(
-            "全部", "中国", "韩国", "日本", "美国", "欧美", "印度", "泰国");
-        for (String s : areaList) {
-            String v = s;
-            if (s.equals("欧美")) {
-                v = "(美国|英国|法国|德国|意大利|西班牙|瑞典|丹麦|爱尔兰|澳大利亚|巴西)";
-            }
-            areaFilterValues.add(new Filter.Value(s, v));
+        List<Filter.Value> yearFilterValues = new ArrayList<>();
+        yearFilterValues.add(new Filter.Value("全部", "全部"));
+        for (int i = thisYear; i > thisYear - 10; i--) {
+            yearFilterValues.add(new Filter.Value(String.valueOf(i), String.valueOf(i)));
         }
-        items.add(new Filter("area", "地区", areaFilterValues));
+        yearFilterValues.add(new Filter.Value(String.valueOf(thisYear - 10) + "及以前", String.valueOf(thisYear - 10) + "-"));
+        items.add(new Filter("year", "年份", yearFilterValues));
 
         List<Filter.Value> values = new ArrayList<>();
         values.add(new Filter.Value("全部目录", "~all"));
