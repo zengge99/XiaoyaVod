@@ -280,7 +280,7 @@ public class AListSh extends AList {
             keepOrder = true;
         }
         if (doubansort != null && doubansort.equals("3")) {
-            cmd +=  String.format(" | awk -F '#' '{n = ($6 ~ /^[0-9]{4}$/) ? $6 : \"0000\"; print n,$0}' | sort -r | cut -d ' ' -f 2-");
+            cmd +=  String.format(" | awk -F '#' '{n = ($6 ~ /^[0-9]{4}$/ && $6 <= %d) ? $6 : \"0000\"; print n,$0}' | sort -r | cut -d ' ' -f 2-", thisYear);            
             keepOrder = true;
         }
         if (doubansort != null && doubansort.equals("4")) {
