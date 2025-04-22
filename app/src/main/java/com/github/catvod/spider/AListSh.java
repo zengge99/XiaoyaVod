@@ -284,7 +284,7 @@ public class AListSh extends AList {
             keepOrder = true;
         }
         if (doubansort != null && doubansort.equals("4")) {
-            cmd +=  String.format(" | awk -F '#' '{n = ($6 ~ /^[0-9]{4}$/) ? $6 : \"9999\"; print n,$0}' | sort | cut -d ' ' -f 2-");
+            cmd +=  String.format(" | awk -F '#' '{n = ($6 ~ /^[0-9]{4}$/ && $6 <= %d) ? $6 : \"9999\"; print n,$0}' | sort | cut -d ' ' -f 2-");
             keepOrder = true;
         }
 
