@@ -102,7 +102,7 @@ public class AListSh extends AList {
             }
         }
         if (lines.size() == 0) {
-            String cmd = String.format("{ cat index.video.txt index.115.txt;echo ''; } | grep '#%s#' | sed 's|^[.]/||' | grep -v -e '^$' -e '^[^/]*$'", keyword);
+            String cmd = String.format("{ cat index.video.txt;echo ''; } | grep '#%s#' | sed 's|^[.]/||' | grep -v -e '^$' -e '^[^/]*$'", keyword);
             lines = Arrays.asList(defaultDrive.exec(cmd).split("\n"));
         }
         List<Vod> list = toVods(defaultDrive, lines);
@@ -228,7 +228,7 @@ public class AListSh extends AList {
         if (drive.getName().equals("每日更新")) {
             cmd = "{ cat index.daily.txt;echo ''; } | tac | grep -v -e '^$' -e '^[^/]*$'";
         } else {
-            cmd = "{ cat index.video.txt index.115.txt;echo '' | grep -v -e '^$' -e '^[^/]*$'; }";
+            cmd = "{ cat index.video.txt;echo '' | grep -v -e '^$' -e '^[^/]*$'; }";
         }
         String subpath = fl.get("subpath");
         if (subpath != null && !subpath.equals("~all")) {
@@ -312,7 +312,7 @@ public class AListSh extends AList {
         if (fallback) {
             return super.findVodByPath(drive, path);
         }
-        String cmd = String.format("{ cat index.video.txt index.115.txt;echo ''; } | grep -F './%s' | sed 's|^[.]/||'", path);
+        String cmd = String.format("{ cat index.video.txt;echo ''; } | grep -F './%s' | sed 's|^[.]/||'", path);
         List<String> lines = Arrays.asList(defaultDrive.exec(cmd).split("\n"));
         List<String> match = new ArrayList<>();
         for (String line : lines) {
@@ -337,7 +337,7 @@ public class AListSh extends AList {
                     }
                 }
                 quickCach.clear();
-                String cmd1 = String.format("{ cat index.video.txt index.115.txt;echo ''; } | grep -F '#%s#' | sed 's|^[.]/||' | grep -v -e '^$' -e '^[^/]*$'", vod.getVodName());
+                String cmd1 = String.format("{ cat index.video.txt;echo ''; } | grep -F '#%s#' | sed 's|^[.]/||' | grep -v -e '^$' -e '^[^/]*$'", vod.getVodName());
                 List<String> tmpLines = Arrays.asList(defaultDrive.exec(cmd1).split("\n"));
                 quickCach.addAll(tmpLines);
             }   
