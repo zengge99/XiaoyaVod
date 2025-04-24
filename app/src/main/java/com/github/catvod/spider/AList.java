@@ -89,9 +89,9 @@ public class AList extends Spider {
             if (item.isFolder())
                 values.add(new Filter.Value(item.getName(), drive.getPath() + "/" + item.getName()));
         }
-        // if (values.size() > 0 && !drive.getPath().equals("/")) {
-        //     items.add(new Filter("subpath", "目录", values));
-        // }
+        if (values.size() > 0) {
+            items.add(new Filter("subpath", "目录", values));
+        }
 
         items.add(new Filter("douban", "豆瓣评分：", Arrays.asList(
                 new Filter.Value("全部评分", "0"),
@@ -103,8 +103,8 @@ public class AList extends Spider {
 
         items.add(new Filter("doubansort", "豆瓣排序：", Arrays.asList(
                 new Filter.Value("原始顺序", "0"),
-                new Filter.Value("豆瓣评分\u2B07\uFE0F", "1"),
-                new Filter.Value("豆瓣评分\u2B06\uFE0F", "2"))));
+                new Filter.Value("评分\u2B07\uFE0F", "1"),
+                new Filter.Value("评分\u2B06\uFE0F", "2"))));
 
         items.add(new Filter("random", "随机显示：", Arrays.asList(
                 new Filter.Value("固定显示", "0"),

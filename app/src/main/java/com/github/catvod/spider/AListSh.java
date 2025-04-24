@@ -183,7 +183,7 @@ public class AListSh extends AList {
             if (item.isFolder())
                 values.add(new Filter.Value(item.getName(), drive.getPath() + "/" + item.getName()));
         }
-        if (values.size() > 0 && !drive.getPath().equals("/")) {
+        if (values.size() > 0 && customFilterValues.size() == 0) {
             items.add(new Filter("subpath", "目录", values));
         }
 
@@ -197,8 +197,8 @@ public class AListSh extends AList {
 
         items.add(new Filter("doubansort", "豆瓣排序：", Arrays.asList(
                 new Filter.Value("原始顺序", "0"),
-                new Filter.Value("豆瓣评分\u2B07\uFE0F", "1"),
-                new Filter.Value("豆瓣评分\u2B06\uFE0F", "2"),
+                new Filter.Value("评分\u2B07\uFE0F", "1"),
+                new Filter.Value("评分\u2B06\uFE0F", "2"),
                 new Filter.Value("年份\u2B07\uFE0F", "3"),
                 new Filter.Value("年份\u2B06\uFE0F", "4"))));
 
