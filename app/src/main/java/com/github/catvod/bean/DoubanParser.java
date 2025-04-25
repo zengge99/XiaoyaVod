@@ -34,11 +34,11 @@ public class DoubanParser {
 
             // 解析年份
             Element yearElement = doc.selectFirst(".year");
-            String year = yearElement != null ? yearElement.text().replaceAll("[()]", "") : info.year;
+            String year = yearElement != null ? yearElement.text().replaceAll("[()]", "") : info.getYear();
 
             // 解析国家地区
             String region = parseRegion(doc.html());
-            region = region.isEmpty() ? info.region : region;
+            region = region.isEmpty() ? info.getRegion() : region;
 
             // 解析演员列表
             Elements actorElements = doc.select("meta[property^=video:actor]");
@@ -61,11 +61,11 @@ public class DoubanParser {
                 typeList.add(el.text());
             }
             String type = String.join("/", typeList);
-            type = type.isEmpty() ? info.type : type;
+            type = (type == null || type.isEmpty()) ? info.getType() : type;
 
             // 解析评分
             Element ratingElement = doc.selectFirst("strong.ll.rating_num[property=v:average]");
-            String rating = ratingElement != null ? ratingElement.text().trim() : info.rating;
+            String rating = ratingElement != null ? ratingElement.text().trim() : info.getRating();
 
             // 构建结果对象
             info.setPlot(plot);
