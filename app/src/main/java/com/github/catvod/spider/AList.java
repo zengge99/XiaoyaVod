@@ -400,7 +400,7 @@ public class AList extends Spider {
 
         vod.setVodPlayFrom(from.toString());
 
-        if (id.endsWith("~xiaoya") && vod.doubanInfo.getYear().isEmpty() && !vod.doubanInfo.getId().isEmpty()) {
+        if (id.endsWith("~xiaoya") && !vod.doubanInfo.getId().isEmpty()) {
             vod.doubanInfo = DoubanParser.getDoubanInfo(vod.doubanInfo.getId(), vod.doubanInfo);
             vod.setVodContent(vod.doubanInfo.getPlot() + "\r\n\r\n文件路径: " + path.substring(path.indexOf("/") + 1));
             vod.setVodActor(vod.doubanInfo.getActors());
@@ -448,13 +448,8 @@ public class AList extends Spider {
         path = path.replace("#", "%23");
 
         vod.setVodPlayFrom(drive.getName());
-        if (id.endsWith("~xiaoya")) {
-            vod.setVodPlayUrl(name + "$" + path + String.format("~~~danmu:%s,1,%s", vod.doubanInfo.getName(), vod.doubanInfo.getYear()));
-        } else {
-            vod.setVodPlayUrl(name + "$" + path);
-        }
         
-        if (id.endsWith("~xiaoya") && vod.doubanInfo.getYear().isEmpty() && !vod.doubanInfo.getId().isEmpty()) {
+        if (id.endsWith("~xiaoya") && !vod.doubanInfo.getId().isEmpty()) {
             vod.doubanInfo = DoubanParser.getDoubanInfo(vod.doubanInfo.getId(), vod.doubanInfo);
             vod.setVodContent(vod.doubanInfo.getPlot() + "\r\n\r\n文件路径: " + path.substring(path.indexOf("/") + 1));
             vod.setVodActor(vod.doubanInfo.getActors());
@@ -464,6 +459,13 @@ public class AList extends Spider {
             vod.setVodRemarks(vod.doubanInfo.getRating());
             vod.setTypeName(vod.doubanInfo.getType());
         }
+
+        if (id.endsWith("~xiaoya")) {
+            vod.setVodPlayUrl(name + "$" + path + String.format("~~~danmu:%s,1,%s", vod.doubanInfo.getName(), vod.doubanInfo.getYear()));
+        } else {
+            vod.setVodPlayUrl(name + "$" + path);
+        }
+
         String result = Result.get().vod(vod).vodDrive(drive.getName()).string();
         Logger.log(result);
         return result;
@@ -894,6 +896,9 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
                 item.setType(0);
                 item.doubanInfo.setId(splits.length >= 3 ? splits[2] : "");
                 item.doubanInfo.setRating(splits.length >= 4 ? splits[3] : "");
+                item.doubanInfo.setYear(splits.length >= 6 ? splits[5] : "");
+                item.doubanInfo.setRegion(splits.length >= 7 ? splits[6] : "");
+                item.doubanInfo.setType(splits.length >= 8 ? splits[7] : "");
                 item.setThumb(splits.length >= 5 ? splits[4] : "");
                 item.setPath("/" + splits[0].substring(0, index));
                 String fileName = splits[0].substring(index + 1);
