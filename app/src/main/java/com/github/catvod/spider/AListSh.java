@@ -228,7 +228,7 @@ public class AListSh extends AList {
         if (drive.getName().equals("每日更新")) {
             cmd = "{ cat index.daily.txt;echo ''; } | tac | grep -v -e '^$' -e '^[^/]*$'";
         } else {
-            cmd = "{ cat index.video.txt;echo '' | grep -v -e '^$' -e '^[^/]*$'; }";
+            cmd = "{ cat index.video.txt;echo ''; } | grep -v -e '^$' -e '^[^/]*$'";
         }
         String subpath = fl.get("subpath");
         if (subpath != null && !subpath.equals("~all")) {
