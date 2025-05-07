@@ -15,6 +15,7 @@ import com.google.gson.JsonElement;
 import com.github.catvod.spider.Logger;
 import com.github.catvod.utils.Path;
 import java.io.File;
+import java.util.Date;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.security.MessageDigest;
@@ -22,10 +23,12 @@ import java.security.MessageDigest;
 public class DanmuFetcher {
     private static DanmuFetcher thisObject = new DanmuFetcher();
     private static volatile String recent;
+    private String danmuRoot = Path.root() + "/TV/danmu";
 
     public static void pushDanmu(String title, int episode, int year) {
-        String danmuPath = Path.root() + String.format("/TV/danmu/%s.txt", generateMd5(title + String.valueOf(episode) + String.valueOf(year)));
+        String danmuPath = danmuRoot + String.format("/%s.txt", generateMd5(title + String.valueOf(episode) + String.valueOf(year)));
         recent = danmuPath;
+        clearOldDanmu();
         //从缓存文件快速推弹幕
         Thread thread = new Thread(() -> {
             try {
@@ -338,7 +341,7 @@ public class DanmuFetcher {
     }
 
     private static void pushDanmuBg(String title, int episode, int year) {
-        String danmuPath = Path.root() + String.format("/TV/danmu/%s.txt", generateMd5(title + String.valueOf(episode) + String.valueOf(year)));
+        String danmuPath = danmuRoot + String.format("/%s.txt", generateMd5(title + String.valueOf(episode) + String.valueOf(year)));
         Thread thread = new Thread(() -> {
             try {
                 Thread.sleep(100);
@@ -358,6 +361,23 @@ public class DanmuFetcher {
             }
         });
         thread.start();
+    }
+
+    private static void clearOldDanmu() {
+        File directory = new File(danmuRoot);
+        long cutoff = System.currentTimeMillis() - (7 * 24 * 60 * 60 * 1000);
+        
+        if (directory.exists() && directory.isDirectory()) {
+            File[] files = directory.listFiles((dir, name) -> name.endsWith(".txt"));
+            
+            if (files != null) {
+                for (File file : files) {
+                    if (file.lastModified() < cutoff) {
+                        file.delete();
+                    }
+                }
+            }
+        }
     }
 
     public static void test() {
