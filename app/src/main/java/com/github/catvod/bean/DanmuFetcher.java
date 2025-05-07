@@ -24,7 +24,7 @@ public class DanmuFetcher {
     private static volatile String recent;
 
     public static void pushDanmu(String title, int episode, int year) {
-        String danmuPath = Path.cache() + String.format("/TV/danmu/%s.txt", generateMd5(title + String.valueOf(episode) + String.valueOf(year)));
+        String danmuPath = Path.root() + String.format("/TV/danmu/%s.txt", generateMd5(title + String.valueOf(episode) + String.valueOf(year)));
         recent = danmuPath;
         //从缓存文件快速推弹幕
         Thread thread = new Thread(() -> {
@@ -338,7 +338,7 @@ public class DanmuFetcher {
     }
 
     private static void pushDanmuBg(String title, int episode, int year) {
-        String danmuPath = Path.cache() + String.format("/TV/danmu/%s.txt", generateMd5(title + String.valueOf(episode) + String.valueOf(year)));
+        String danmuPath = Path.root() + String.format("/TV/danmu/%s.txt", generateMd5(title + String.valueOf(episode) + String.valueOf(year)));
         Thread thread = new Thread(() -> {
             try {
                 Thread.sleep(100);
