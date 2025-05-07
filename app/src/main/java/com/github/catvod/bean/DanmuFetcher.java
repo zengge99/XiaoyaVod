@@ -21,7 +21,7 @@ import java.security.MessageDigest;
 
 public class DanmuFetcher {
     private static DanmuFetcher thisObject = new DanmuFetcher();
-    private synchronized static String recent;
+    private static volatile String recent;
 
     public static void pushDanmu(String title, int episode, int year) {
         String danmuPath = Path.cache() + String.format("/TV/danmu/%s.txt", generateMd5(title + String.valueOf(episode) + String.valueOf(year)));
@@ -321,10 +321,8 @@ public class DanmuFetcher {
                 sb.append(String.format("%02x", b));
             }
             return sb.toString();
-        } catch (NoSuchAlgorithmException e) {
+        } catch (Exception e) {
             throw new RuntimeException("MD5 algorithm not found", e);
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException("UTF-8 encoding not supported", e);
         }
     }
 
@@ -345,7 +343,7 @@ public class DanmuFetcher {
             try {
                 Thread.sleep(100);
                 String danmu = DanmuFetcher.getAllDanmakuXML(title, episode, year);
-                if (danmaku.isEmpty() && recent.equals(danmuPath)) {
+                if (danmu.isEmpty() && recent.equals(danmuPath)) {
                     pushDanmuBg(title, episode, year);
                     Thread.sleep(60000);
                     return;
