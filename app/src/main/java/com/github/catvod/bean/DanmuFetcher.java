@@ -26,8 +26,8 @@ public class DanmuFetcher {
     private static String danmuRoot = Path.cache() + "/TV/danmu";
 
     public static void pushDanmu(String title, int episode, int year) {
+        recent = title + String.valueOf(episode) + String.valueOf(year);
         String danmuPath = danmuRoot + String.format("/%s.txt", generateMd5(title + String.valueOf(episode) + String.valueOf(year)));
-        recent = danmuPath;
         clearOldDanmu();
         //从缓存文件快速推弹幕
         Thread thread = new Thread(() -> {
@@ -346,7 +346,7 @@ public class DanmuFetcher {
             try {
                 Thread.sleep(100);
                 String danmu = DanmuFetcher.getAllDanmakuXML(title, episode, year);
-                if (danmu.isEmpty() && recent.equals(danmuPath)) {
+                if (danmu.isEmpty() && (recent.equals(title + String.valueOf(episode) + String.valueOf(year)) || recent.equals(title + String.valueOf(episode + 1) + String.valueOf(year)))) {
                     Thread.sleep(60000);
                     pushDanmuBg(title, episode, year);
                     return;
@@ -356,7 +356,7 @@ public class DanmuFetcher {
                 }
                 File danmuFile = new File(danmuPath);
                 Path.write(danmuFile, danmu.getBytes());
-                if (recent.equals(danmuPath)) {
+                if (recent.equals(title + String.valueOf(episode) + String.valueOf(year))) {
                     thisObject.sendGetRequest("http://127.0.0.1:9978/action?do=refresh&type=danmaku&path=" + "file://" + danmuPath);
                 }
             } catch (Exception e) {
