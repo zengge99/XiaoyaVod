@@ -347,8 +347,8 @@ public class DanmuFetcher {
                 Thread.sleep(100);
                 String danmu = DanmuFetcher.getAllDanmakuXML(title, episode, year);
                 if (danmu.isEmpty() && recent.equals(danmuPath)) {
-                    pushDanmuBg(title, episode, year);
                     Thread.sleep(60000);
+                    pushDanmuBg(title, episode, year);
                     return;
                 }
                 if (danmu.isEmpty() ) {
