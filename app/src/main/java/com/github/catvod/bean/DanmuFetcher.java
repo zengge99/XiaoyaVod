@@ -17,34 +17,34 @@ import com.github.catvod.utils.Path;
 import java.io.File;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.security.MessageDigest;
 
 public class DanmuFetcher {
     private static DanmuFetcher thisObject = new DanmuFetcher();
+    private synchronized static String recent;
 
     public static void pushDanmu(String title, int episode, int year) {
+        String danmuPath = Path.cache() + String.format("/TV/danmu/%s.txt", generateMd5(title + String.valueOf(episode) + String.valueOf(year)));
+        recent = danmuPath;
+        //从缓存文件快速推弹幕
         Thread thread = new Thread(() -> {
             try {
                 Thread.sleep(100);
-                String danmu = "";
-                danmu = DanmuFetcher.getBilibiliDanmakuXML(title, episode, year);
-                if (danmu.isEmpty()) {
-                    danmu = KanDanmuFetcher.getBilibiliDanmakuXML(title, episode, year);
-                }
-                if (danmu.isEmpty()) {
-                    danmu = IqiyiDanmuFetcher.getBilibiliDanmakuXML(title, episode, year);
-                }
-                if (danmu.isEmpty()) {
-                    return;
-                }
-                String danmuPath = Path.cache() + "/TV/danmu.txt";
                 File danmuFile = new File(danmuPath);
-                Path.write(danmuFile, danmu.getBytes());
-                thisObject.sendGetRequest("http://127.0.0.1:9978/action?do=refresh&type=danmaku&path=" + "file://" + danmuPath);
+                if (!Path.read(danmuFile).isEmpty()) {
+                    thisObject.sendGetRequest("http://127.0.0.1:9978/action?do=refresh&type=danmaku&path=" + "file://" + danmuPath);
+                }
             } catch (Exception e) {
                 Logger.log("pushDanmu" + e);
             }
         });
         thread.start();
+
+        //后台线程从网络获取最新弹幕并重新推送
+        pushDanmuBg(title, episode, year);
+
+        //加速获取下一集弹幕
+        pushDanmuBg(title, episode + 1, year);
     }
 
     /**
@@ -310,6 +310,56 @@ public class DanmuFetcher {
             }
         }
         return response.toString();
+    }
+
+    protected static String generateMd5(String input) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            byte[] hashBytes = md.digest(input.getBytes("UTF-8"));
+            StringBuilder sb = new StringBuilder();
+            for (byte b : hashBytes) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("MD5 algorithm not found", e);
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException("UTF-8 encoding not supported", e);
+        }
+    }
+
+    protected static String getAllDanmakuXML(String title, int episode, int year) {
+            String danmu = DanmuFetcher.getBilibiliDanmakuXML(title, episode, year);
+            if (danmu.isEmpty()) {
+                danmu = KanDanmuFetcher.getBilibiliDanmakuXML(title, episode, year);
+            }
+            if (danmu.isEmpty()) {
+                danmu = IqiyiDanmuFetcher.getBilibiliDanmakuXML(title, episode, year);
+            }
+            return danmu;
+    }
+
+    private static void pushDanmuBg(String title, int episode, int year) {
+        String danmuPath = Path.cache() + String.format("/TV/danmu/%s.txt", generateMd5(title + String.valueOf(episode) + String.valueOf(year)));
+        Thread thread = new Thread(() -> {
+            try {
+                Thread.sleep(100);
+                String danmu = DanmuFetcher.getAllDanmakuXML(title, episode, year);
+                if (danmaku.isEmpty() && recent.equals(danmuPath)) {
+                    pushDanmuBg(title, episode, year);
+                    Thread.sleep(60000);
+                    return;
+                }
+                File danmuFile = new File(danmuPath);
+                Path.write(danmuFile, danmu.getBytes());
+                if (recent.equals(danmuPath)) {
+                    thisObject.sendGetRequest("http://127.0.0.1:9978/action?do=refresh&type=danmaku&path=" + "file://" + danmuPath);
+                }
+            } catch (Exception e) {
+                Logger.log("pushDanmuBg" + e);
+            }
+        });
+        thread.start();
     }
 
     public static void test() {
