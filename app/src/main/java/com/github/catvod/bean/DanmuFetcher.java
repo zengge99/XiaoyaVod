@@ -23,7 +23,7 @@ import java.security.MessageDigest;
 public class DanmuFetcher {
     private static DanmuFetcher thisObject = new DanmuFetcher();
     private static volatile String recent;
-    private static String danmuRoot = Path.root() + "/TV/danmu";
+    private static String danmuRoot = Path.cache() + "/TV/danmu";
 
     public static void pushDanmu(String title, int episode, int year) {
         String danmuPath = danmuRoot + String.format("/%s.txt", generateMd5(title + String.valueOf(episode) + String.valueOf(year)));
