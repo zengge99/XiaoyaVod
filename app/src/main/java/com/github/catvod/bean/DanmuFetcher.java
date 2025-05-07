@@ -351,6 +351,9 @@ public class DanmuFetcher {
                     Thread.sleep(60000);
                     return;
                 }
+                if (danmu.isEmpty() ) {
+                    return;
+                }
                 File danmuFile = new File(danmuPath);
                 Path.write(danmuFile, danmu.getBytes());
                 if (recent.equals(danmuPath)) {
