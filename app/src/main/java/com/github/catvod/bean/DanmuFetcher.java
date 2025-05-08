@@ -174,29 +174,29 @@ public class DanmuFetcher {
     }
 
     protected List<List<Object>> fetchDanmaku(String episodeUrl) {
-    // 定义多个备用API端点
-    List<String> apiEndpoints = Arrays.asList(
-        "https://dmku.itcxo.cn/?ac=dm&url=",
-        "https://dmku.thefilehosting.com?ac=dm&url=",
-        "https://dmku.hls.one?ac=dm&url="
-    );
-    
-    // 尝试每个API端点，直到成功获取数据
-    for (String endpoint : apiEndpoints) {
-        try {
-            String apiUrl = endpoint + episodeUrl;
-            List<List<Object>> danmakuData = fetchDanmakuFromUrl(apiUrl);
-            
-            if (danmakuData != null && !danmakuData.isEmpty()) {
-                return danmakuData;
+        // 定义多个备用API端点
+        List<String> apiEndpoints = Arrays.asList(
+            "https://dmku.itcxo.cn/?ac=dm&url=",
+            "https://dmku.thefilehosting.com?ac=dm&url=",
+            "https://dmku.hls.one?ac=dm&url="
+        );
+        
+        // 尝试每个API端点，直到成功获取数据
+        for (String endpoint : apiEndpoints) {
+            try {
+                String apiUrl = endpoint + episodeUrl;
+                List<List<Object>> danmakuData = fetchDanmakuFromUrl(apiUrl);
+                
+                if (danmakuData != null && !danmakuData.isEmpty()) {
+                    return danmakuData;
+                }
+            } catch (Exception e) {
+                return null;
             }
-        } catch (Exception e) {
-            return null;
         }
-    }
 
-    return null;
-}
+        return null;
+    }
 
     private List<List<Object>> fetchDanmakuFromUrl(String danmakuUrl) {
         try {
