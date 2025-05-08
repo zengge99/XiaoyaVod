@@ -176,9 +176,9 @@ public class DanmuFetcher {
     protected List<List<Object>> fetchDanmaku(String episodeUrl) {
     // 定义多个备用API端点
     List<String> apiEndpoints = Arrays.asList(
-        //"https://dmku.thefilehosting.com?ac=dm&url=",
-        "https://dmku.itcxo.cn/?ac=dm&url="
-        //"https://dmku.hls.one?ac=dm&url="
+        "https://dmku.itcxo.cn/?ac=dm&url=",
+        "https://dmku.thefilehosting.com?ac=dm&url=",
+        "https://dmku.hls.one?ac=dm&url="
     );
     
     // 尝试每个API端点，直到成功获取数据
@@ -210,8 +210,7 @@ public class DanmuFetcher {
                 num = response.get("danum").getAsInt();
             }
 
-            // 如果 danmu 的值为 0，直接返回 null
-            if (num == 0) {
+            if (num <= 5) {
                 return null;
             }
 
