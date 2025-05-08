@@ -317,8 +317,8 @@ public class DanmuFetcher {
     protected String sendGetRequest(String url) throws IOException {
         HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
         connection.setRequestMethod("GET");
-        connection.setConnectTimeout(10000);
-        connection.setReadTimeout(10000); 
+        connection.setConnectTimeout(20000);
+        connection.setReadTimeout(20000); 
         StringBuilder response = new StringBuilder();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
             String line;
