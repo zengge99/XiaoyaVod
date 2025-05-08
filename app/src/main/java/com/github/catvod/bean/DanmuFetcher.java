@@ -255,7 +255,7 @@ public class DanmuFetcher {
             // 解析字段，确保类型正确
             double time = ((Number) danmaku.get(0)).doubleValue(); // 时间
             String youkuMode = danmaku.get(1).toString(); // 优酷的 mode
-            String color = danmaku.get(2).toString(); // 颜色（如 "#FFFFFF"）
+            String color = "#FFFFFF";//danmaku.get(2).toString(); // 颜色（如 "#FFFFFF"）
             String text = escapeXml(danmaku.get(4).toString()); // 弹幕文本
             String fontSize = danmaku.get(7).toString().replace("px", ""); // 字体大小（如 "24px"）
 
