@@ -907,6 +907,7 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
                 Vod vod = item.getVod(drive.getName(), drive.getVodPic());
                 vod.setVodRemarks(item.doubanInfo.getRating() + calcFlag(line));
                 vod.setVodName(item.doubanInfo.getName());
+                vod.setVodYear(item.doubanInfo.getYear());
                 vod.doubanInfo = item.doubanInfo;
                 vod.setVodId(vod.getVodId() + "/~xiaoya");
                 if (TextUtils.isEmpty(item.getThumb())) {
