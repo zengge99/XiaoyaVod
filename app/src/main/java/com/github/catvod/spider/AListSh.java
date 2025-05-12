@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Iterator;
+import java.net.URLEncoder;
 import org.json.JSONObject;
 
 public class AListSh extends AList {
@@ -320,7 +321,7 @@ public class AListSh extends AList {
             if (s.endsWith("/")) {
                 s = s.substring(0, s.lastIndexOf("/"));
             }
-            if (s.equals(path)) {
+            if (URLEncoder.encode(s, "UTF-8").equals(URLEncoder.encode(path, "UTF-8"))) {
                 match.add(line);
                 break;
             }
