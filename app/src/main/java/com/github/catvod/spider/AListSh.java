@@ -313,7 +313,7 @@ public class AListSh extends AList {
         if (fallback) {
             return super.findVodByPath(drive, path);
         }
-        String cmd = String.format("{ cat index.video.txt;echo ''; } | grep -F './%s' | sed 's|^[.]/||'", path);
+        String cmd = String.format("{ cat index.video.txt | grep -F './%s';cat index.video.txt | grep -F './%s'; } | sed 's|^[.]/||'", path, URLEncoder.encode(path, "UTF-8"));
         List<String> lines = Arrays.asList(defaultDrive.exec(cmd).split("\n"));
         List<String> match = new ArrayList<>();
         for (String line : lines) {
