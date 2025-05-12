@@ -326,7 +326,7 @@ public class AListSh extends AList {
                     match.add(line);
                     break;
                 }
-            } catch (Exceptin ee) {
+            } catch (Exception ee) {
             }
         }
         if (match.size() == 0) {
