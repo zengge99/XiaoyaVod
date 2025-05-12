@@ -4,7 +4,7 @@ import android.content.Context;
 import android.net.Uri;
 import android.text.TextUtils;
 import java.net.URLEncoder;
-//import java.net.URLDecoder;
+import java.net.URLDecoder;
 
 import com.github.catvod.bean.Class;
 import com.github.catvod.bean.Filter;
@@ -374,6 +374,14 @@ public class AList extends Spider {
         return Result.string(vod);
     }
 
+    private fixPath(String path) {
+        try {
+            return URLDecoder.decode(path, "UTF-8");
+        } catch (Exception e) {
+            return path;
+        }
+    }
+
     protected String listDetailContent(List<String> ids) throws Exception {
         fetchRule();
         String id = ids.get(0);
@@ -384,7 +392,7 @@ public class AList extends Spider {
         StringBuilder from = new StringBuilder();
         StringBuilder url = new StringBuilder();
         if (id.endsWith("~xiaoya")) {
-            walkFolder(drive, path, from, url, true);
+            walkFolder(drive, fixPath(path), from, url, true);
         } else {
             walkFolder(drive, path, from, url, false);
         }
@@ -447,6 +455,7 @@ public class AList extends Spider {
         //对路径中#的特殊处理
         name = name.replace("#", "%23");
         path = path.replace("#", "%23");
+        path = fixPath(path);
 
         vod.setVodPlayFrom(drive.getName());
         
