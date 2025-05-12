@@ -309,7 +309,7 @@ public class AListSh extends AList {
     }
 
     @Override
-    protected Vod findVodByPath(Drive drive, String path) throws Exception{
+    protected Vod findVodByPath(Drive drive, String path) {
         if (fallback) {
             return super.findVodByPath(drive, path);
         }
@@ -321,9 +321,12 @@ public class AListSh extends AList {
             if (s.endsWith("/")) {
                 s = s.substring(0, s.lastIndexOf("/"));
             }
-            if (URLEncoder.encode(s, "UTF-8").equals(URLEncoder.encode(path, "UTF-8"))) {
-                match.add(line);
-                break;
+            try {
+                if (URLEncoder.encode(s, "UTF-8").equals(URLEncoder.encode(path, "UTF-8"))) {
+                    match.add(line);
+                    break;
+                }
+            } catch (Exceptin ee) {
             }
         }
         if (match.size() == 0) {
