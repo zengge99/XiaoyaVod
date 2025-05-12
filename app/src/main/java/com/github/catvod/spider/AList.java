@@ -765,9 +765,6 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
 
     protected Item getDetail(String id) {
         String key = id.contains("/") ? id.substring(0, id.indexOf("/")) : id;
-        String path = id.contains("/") ? id.substring(id.indexOf("/")) : "";
-        //对路径中#的特殊处理
-        path = path.replace("%23", "#");
         Drive drive = getDrive(key);
         Item item;
         if (drive.pathByApi()) {
