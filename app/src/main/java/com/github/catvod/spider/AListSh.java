@@ -322,6 +322,8 @@ public class AListSh extends AList {
                 s = s.substring(0, s.lastIndexOf("/"));
             }
             try {
+                Logger.log(URLEncoder.encode(s, "UTF-8"));
+                Logger.log(URLEncoder.encode(path, "UTF-8"));
                 if (URLEncoder.encode(s, "UTF-8").equals(URLEncoder.encode(path, "UTF-8"))) {
                     match.add(line);
                     break;
