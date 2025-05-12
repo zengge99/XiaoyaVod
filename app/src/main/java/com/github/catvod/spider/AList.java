@@ -374,7 +374,7 @@ public class AList extends Spider {
         return Result.string(vod);
     }
 
-    private fixPath(String path) {
+    private String fixPath(String path) {
         try {
             return URLDecoder.decode(path, "UTF-8");
         } catch (Exception e) {
