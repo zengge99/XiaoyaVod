@@ -24,7 +24,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Iterator;
-import java.net.URLEncoder;
 import org.json.JSONObject;
 
 public class AListSh extends AList {
@@ -313,7 +312,7 @@ public class AListSh extends AList {
         if (fallback) {
             return super.findVodByPath(drive, path);
         }
-        String cmd = String.format("{ cat index.video.txt | grep -F './%s';cat index.video.txt | grep -F './%s'; } | sed 's|^[.]/||'", path, URLEncoder.encode(path, "UTF-8"));
+        String cmd = String.format("{ cat index.video.txt;echo ''; } | grep -F './%s' | sed 's|^[.]/||'", path);
         List<String> lines = Arrays.asList(defaultDrive.exec(cmd).split("\n"));
         List<String> match = new ArrayList<>();
         for (String line : lines) {
@@ -321,14 +320,9 @@ public class AListSh extends AList {
             if (s.endsWith("/")) {
                 s = s.substring(0, s.lastIndexOf("/"));
             }
-            try {
-                Logger.log(URLEncoder.encode(s, "UTF-8"));
-                Logger.log(URLEncoder.encode(path, "UTF-8"));
-                if (URLEncoder.encode(s, "UTF-8").equals(URLEncoder.encode(path, "UTF-8"))) {
-                    match.add(line);
-                    break;
-                }
-            } catch (Exception ee) {
+            if (s.equals(path)) {
+                match.add(line);
+                break;
             }
         }
         if (match.size() == 0) {
