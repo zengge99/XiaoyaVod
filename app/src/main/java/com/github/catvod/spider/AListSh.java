@@ -309,7 +309,7 @@ public class AListSh extends AList {
     }
 
     @Override
-    protected Vod findVodByPath(Drive drive, String path) {
+    protected Vod findVodByPath(Drive drive, String path) throws Exception{
         if (fallback) {
             return super.findVodByPath(drive, path);
         }
