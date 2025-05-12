@@ -4,7 +4,7 @@ import android.content.Context;
 import android.net.Uri;
 import android.text.TextUtils;
 import java.net.URLEncoder;
-import java.net.URLDecoder;
+//import java.net.URLDecoder;
 
 import com.github.catvod.bean.Class;
 import com.github.catvod.bean.Filter;
@@ -885,7 +885,7 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
             List<Vod> noPicList = new ArrayList<>();
             for (String line : lines) {
                 String[] splits = line.split("#");
-                splits[0] = URLDecoder.decode(splits[0], "UTF-8");
+                //splits[0] = URLDecoder.decode(splits[0], "UTF-8");
                 int index = splits[0].lastIndexOf("/");
                 if (splits[0].endsWith("/")) {
                     splits[0] = splits[0].substring(0, index);
