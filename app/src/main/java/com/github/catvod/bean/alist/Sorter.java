@@ -37,6 +37,7 @@ public class Sorter implements Comparator<Item> {
         }
     }
 
+    //从alist.min.js移植的自然排序
     class NaturalSort {
         private final Map<String, Object> options;
 
@@ -49,7 +50,6 @@ public class Sorter implements Comparator<Item> {
             final int GREATER = "desc".equals(options.get("order")) ? -1 : 1;
             final int SMALLER = -GREATER;
 
-            // 直接使用Item的getName()方法获取名称
             String aValue = a.getName();
             String bValue = b.getName();
 
