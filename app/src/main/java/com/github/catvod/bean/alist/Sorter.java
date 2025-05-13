@@ -54,11 +54,6 @@ public class Sorter implements Comparator<Item> {
             Pattern hre = Pattern.compile("^0x[0-9a-f]+$", Pattern.CASE_INSENSITIVE);
             Pattern ore = Pattern.compile("^0");
 
-            String normalize(String value) {
-                String string = String.valueOf(value);
-                return Boolean.TRUE.equals(options.get("caseSensitive")) ? string : string.toLowerCase();
-            }
-
             String x = normalize(aValue).replaceAll(sre.pattern(), "");
             String y = normalize(bValue).replaceAll(sre.pattern(), "");
 
@@ -148,6 +143,11 @@ public class Sorter implements Comparator<Item> {
             }
 
             return EQUAL;
+        }
+
+        private String normalize(String value) {
+            String string = String.valueOf(value);
+            return Boolean.TRUE.equals(options.get("caseSensitive")) ? string : string.toLowerCase();
         }
     }
 }
