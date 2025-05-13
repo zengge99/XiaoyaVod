@@ -22,7 +22,12 @@ public class Sorter implements Comparator<Item> {
         boolean asc = order.equals("asc");
         switch (type) {
             case "name":
-                return asc ? o1.getName().compareTo(o2.getName()) : o2.getName().compareTo(o1.getName());
+                //return asc ? o1.getName().compareTo(o2.getName()) : o2.getName().compareTo(o1.getName());
+                Map<String, Object> options = new HashMap<>();
+                options.put("order", order.equals("asc") ? order : "desc"); 
+                options.put("caseSensitive", false);
+                NaturalSort naturalSort = new NaturalSort(options);
+                return naturalSort.compare(o1, o2);
             case "size":
                 return asc ? Long.compare(o1.getSize(), o2.getSize()) : Long.compare(o2.getSize(), o1.getSize());
             case "date":
