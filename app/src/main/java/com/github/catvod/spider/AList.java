@@ -744,12 +744,12 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
         }
     }
 
-    protected String getSign() {
+    protected String getSign(Drive drive) {
         try {
             String loginPath = Path.files() + "/" + drive.getServer().replace("://", "_").replace(":", "_") + ".login";
             File loginFile = new File(loginPath);
             String login = Path.read(loginFile) + "\n" + "\n";
-            input = login.split("\n")[1];
+            String input = login.split("\n")[1];
 
             if (input.isEmpty()) {
                 return "";
@@ -817,7 +817,7 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
             //对路径中#的特殊处理
             path = path.replace("%23", "#");
             Item item = new Item();
-            String url = drive.getServer() + "/d" + URLEncoder.encode(path, "UTF-8").replace("+", "%20").replace("%2F", "/") + "?sign=" + getSign();
+            String url = drive.getServer() + "/d" + URLEncoder.encode(path, "UTF-8").replace("+", "%20").replace("%2F", "/") + "?sign=" + getSign(drive);
             Logger.log(url);
             item.setUrl(url);
             return item;
