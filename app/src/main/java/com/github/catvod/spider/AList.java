@@ -5,6 +5,7 @@ import android.net.Uri;
 import android.text.TextUtils;
 import java.net.URLEncoder;
 import java.net.URLDecoder;
+import java.security.MessageDigest;
 
 import com.github.catvod.bean.Class;
 import com.github.catvod.bean.Filter;
