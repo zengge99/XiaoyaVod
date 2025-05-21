@@ -752,7 +752,7 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
             input = login.split("\n")[1];
 
             if (input.isEmpty()) {
-                return ""
+                return "";
             }
             MessageDigest md = MessageDigest.getInstance("MD5");
             md.update(input.getBytes());
