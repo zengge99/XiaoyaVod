@@ -743,6 +743,28 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
         }
     }
 
+    protected String getSign() {
+        try {
+            String loginPath = Path.files() + "/" + drive.getServer().replace("://", "_").replace(":", "_") + ".login";
+            File loginFile = new File(loginPath);
+            String login = Path.read(loginFile) + "\n" + "\n";
+            input = login.split("\n")[1];
+
+            if (input.isEmpty()) {
+                return ""
+            }
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            md.update(input.getBytes());
+            byte[] digest = md.digest();
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : digest) {
+                hexString.append(String.format("%02x", b));
+            }
+            return hexString.toString();
+        } catch (Exception e) {
+            return "";
+        }
+    }
 
     protected String getSize(long sz) {
         if (sz <= 0) {
@@ -794,7 +816,7 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
             //对路径中#的特殊处理
             path = path.replace("%23", "#");
             Item item = new Item();
-            String url = drive.getServer() + "/d" + URLEncoder.encode(path, "UTF-8").replace("+", "%20").replace("%2F", "/") + "?sign=" + drive.getSign();
+            String url = drive.getServer() + "/d" + URLEncoder.encode(path, "UTF-8").replace("+", "%20").replace("%2F", "/") + "?sign=" + getSign();
             Logger.log(url);
             item.setUrl(url);
             return item;

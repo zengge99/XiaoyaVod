@@ -57,8 +57,6 @@ public class Drive {
     private Boolean noPoster;
     @SerializedName("pathByApi")
     private Boolean pathByApi;
-    @SerializedName("sign")
-    private String sign;
     public HashMap<String, String> fl;
 
     public static Drive objectFrom(String str) {
@@ -203,10 +201,6 @@ public class Drive {
 
     public Boolean search() {
         return search != null && search;
-    }
-
-    public String getSign() {
-        return TextUtils.isEmpty(sign) ? "" : sign;
     }
 
     public Boolean hidden() {
