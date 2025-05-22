@@ -145,7 +145,7 @@ public class AList extends Spider {
             if (cUserName.isEmpty() || cPassword.isEmpty()) {
                 continue;
             }
-            String loginPath = Path.files() + "/" + drive.getServer().replace("://", "_").replace(":", "_") + ".login";
+            String loginPath = Path.files() + "/" + d.getServer().replace("://", "_").replace(":", "_") + ".login";
             File loginFile = new File(loginPath);
             String login = Path.read(loginFile) + "\n" + "\n";
             String fUserName = login.split("\n")[0];
