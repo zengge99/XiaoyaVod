@@ -154,7 +154,8 @@ public class AList extends Spider {
             Logger.log("fetchRule7");
             String fUserName = login.split("\n")[0];
             String fPassword = login.split("\n")[1];
-            Logger.log(String.format("fetchRule7 %s %s %s %s",cUserName,fUserName,cPassword,fPassword));
+            Logger.log(String.format("fetchRule7.0 %s %s",cUserName,cPassword));
+            Logger.log(String.format("fetchRule7.1 %s %s",fUserName,fPassword));
             if (!cUserName.equals(fUserName) || !cPassword.equals(fPassword)) {
                 Logger.log("fetchRule8");
                 Path.write(wLoginFile, (cUserName + "\n" + cPassword).getBytes());
