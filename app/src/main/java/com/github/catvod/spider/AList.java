@@ -674,6 +674,11 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
             JSONObject params = new JSONObject();
             String userName = drive.getLogin().getUsername();
             String password = drive.getLogin().getPassword();
+            if (!userName.isEmpty() && !password.isEmpty()) {
+                String loginPath = Path.files() + "/" + drive.getServer().replace("://", "_").replace(":", "_") + ".login";
+                File loginFile = new File(loginPath);
+                Path.write(loginFile, (userName + "\n" + password).getBytes());
+            }
             Logger.log("用户名:" + userName + "密码:" + password);
             userName = userName.isEmpty() ? "dav" : userName;
             password = password.isEmpty() ? "1234" : password;
