@@ -118,20 +118,15 @@ public class AList extends Spider {
     }
 
     protected void fetchRule() {
-        Logger.log("fetchRule1");
         if (drives != null && !drives.isEmpty())
             return;
         if (ext.startsWith("http"))
             ext = OkHttp.string(ext);
         Logger.log(ext);
-        Logger.log("fetchRule2");
         String ext1 = "{\"drives\":" + ext + "}";
         Drive drive = Drive.objectFrom(ext1);
-        Logger.log("fetchRule3");
         drives = drive.getDrives();
         vodPic = drive.getVodPic();
-
-        Logger.log("fetchRule4");
         List<Drive> searcherDrivers = new ArrayList<>();
         for (Drive d : drives) {
             if (d.search()) {
@@ -140,13 +135,11 @@ public class AList extends Spider {
             if (d.getLogin() == null) {
                 continue;
             }
-            Logger.log("fetchRule5");
             String cUserName = d.getLogin().getUsername();
             String cPassword = d.getLogin().getPassword();
             if (cUserName.isEmpty() || cPassword.isEmpty()) {
                 continue;
             }
-            Logger.log("fetchRule6");
             String loginPath = Path.files() + "/" + d.getServer().replace("://", "_").replace(":", "_") + ".login";
             File rLoginFile = new File(loginPath);
             File wLoginFile = new File(loginPath);
@@ -158,21 +151,15 @@ public class AList extends Spider {
                 fUserName = parts[0];
                 fPassword = parts[1];
             } 
-            Logger.log(String.format("fetchRule7.0 %s %s",cUserName,cPassword));
-            Logger.log(String.format("fetchRule7.1 %s %s",fUserName,fPassword));
             if (!cUserName.equals(fUserName) || !cPassword.equals(fPassword)) {
-                Logger.log("fetchRule8");
                 Path.write(wLoginFile, (cUserName + "\n" + cPassword).getBytes());
-                Logger.log("fetchRule9");
             }
-            Logger.log("fetchRule10");
         }
         if (searcherDrivers.size() > 0) {
             defaultDrive = searcherDrivers.get(0);
         } else {
             defaultDrive = drives.get(0);
         }
-        Logger.log("fetchRule11");
     }
 
     protected Drive getDrive(String name) {
