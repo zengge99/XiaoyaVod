@@ -146,12 +146,13 @@ public class AList extends Spider {
                 continue;
             }
             String loginPath = Path.files() + "/" + d.getServer().replace("://", "_").replace(":", "_") + ".login";
-            File loginFile = new File(loginPath);
-            String login = Path.read(loginFile) + "\n" + "\n";
+            File rLoginFile = new File(loginPath);
+            File wLoginFile = new File(loginPath);
+            String login = Path.read(rLoginFile) + "\n" + "\n";
             String fUserName = login.split("\n")[0];
             String fPassword = login.split("\n")[1];
             if (!cUserName.equals(fUserName) || !cPassword.equals(fPassword)) {
-                Path.write(loginFile, (cUserName + "\n" + cPassword).getBytes());
+                Path.write(wLoginFile, (cUserName + "\n" + cPassword).getBytes());
             }
         }
         if (searcherDrivers.size() > 0) {
