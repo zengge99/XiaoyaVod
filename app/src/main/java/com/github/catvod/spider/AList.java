@@ -137,6 +137,22 @@ public class AList extends Spider {
             if (d.search()) {
                 searcherDrivers.add(d);
             }
+            if (d.getLogin() == null) {
+                continue;
+            }
+            String cUserName = d.getLogin().getUsername();
+            String cPassword = d.getLogin().getPassword();
+            if (cUserName.isEmpty() || cPassword.isEmpty()) {
+                continue;
+            }
+            String loginPath = Path.files() + "/" + drive.getServer().replace("://", "_").replace(":", "_") + ".login";
+            File loginFile = new File(loginPath);
+            String login = Path.read(loginFile) + "\n" + "\n";
+            String fUserName = login.split("\n")[0];
+            String fPassword = login.split("\n")[1];
+            if (!cUserName.equals(fUserName) || !cPassword.equals(fPassword)) {
+                Path.write(loginFile, (userName + "\n" + password).getBytes());
+            }
         }
         if (searcherDrivers.size() > 0) {
             defaultDrive = searcherDrivers.get(0);
@@ -674,11 +690,6 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
             JSONObject params = new JSONObject();
             String userName = drive.getLogin().getUsername();
             String password = drive.getLogin().getPassword();
-            if (!userName.isEmpty() && !password.isEmpty()) {
-                String loginPath = Path.files() + "/" + drive.getServer().replace("://", "_").replace(":", "_") + ".login";
-                File loginFile = new File(loginPath);
-                Path.write(loginFile, (userName + "\n" + password).getBytes());
-            }
             Logger.log("用户名:" + userName + "密码:" + password);
             userName = userName.isEmpty() ? "dav" : userName;
             password = password.isEmpty() ? "1234" : password;
