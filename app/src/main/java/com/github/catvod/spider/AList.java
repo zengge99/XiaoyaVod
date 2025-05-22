@@ -140,27 +140,33 @@ public class AList extends Spider {
             if (d.getLogin() == null) {
                 continue;
             }
+            Logger.log("fetchRule5");
             String cUserName = d.getLogin().getUsername();
             String cPassword = d.getLogin().getPassword();
             if (cUserName.isEmpty() || cPassword.isEmpty()) {
                 continue;
             }
+            Logger.log("fetchRule6");
             String loginPath = Path.files() + "/" + d.getServer().replace("://", "_").replace(":", "_") + ".login";
             File rLoginFile = new File(loginPath);
             File wLoginFile = new File(loginPath);
             String login = Path.read(rLoginFile) + "\n" + "\n";
+            Logger.log("fetchRule7");
             String fUserName = login.split("\n")[0];
             String fPassword = login.split("\n")[1];
             if (!cUserName.equals(fUserName) || !cPassword.equals(fPassword)) {
+                Logger.log("fetchRule8");
                 Path.write(wLoginFile, (cUserName + "\n" + cPassword).getBytes());
+                Logger.log("fetchRule9");
             }
+            Logger.log("fetchRule10");
         }
         if (searcherDrivers.size() > 0) {
             defaultDrive = searcherDrivers.get(0);
         } else {
             defaultDrive = drives.get(0);
         }
-        Logger.log("fetchRule5");
+        Logger.log("fetchRule11");
     }
 
     protected Drive getDrive(String name) {
