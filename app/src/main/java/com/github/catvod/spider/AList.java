@@ -151,7 +151,7 @@ public class AList extends Spider {
             String fUserName = login.split("\n")[0];
             String fPassword = login.split("\n")[1];
             if (!cUserName.equals(fUserName) || !cPassword.equals(fPassword)) {
-                Path.write(loginFile, (userName + "\n" + password).getBytes());
+                Path.write(loginFile, (cUserName + "\n" + cPassword).getBytes());
             }
         }
         if (searcherDrivers.size() > 0) {
