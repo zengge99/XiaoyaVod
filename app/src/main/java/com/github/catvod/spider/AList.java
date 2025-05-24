@@ -293,7 +293,7 @@ public class AList extends Spider {
         if (id.endsWith("~xiaoya")) {
             String path = id.substring(0, id.lastIndexOf("/"));
             Logger.log("path is: " + path);
-            isFile = getList(path, false).size() == 0 ? true : false;
+            isFile = getList(fixPath(path), false).size() == 0 ? true : false;
             isFile = isFile && Util.isMedia(path);
             Logger.log(isFile);
         }
@@ -393,6 +393,7 @@ public class AList extends Spider {
 
     private String fixPath(String path) {
         try {
+            path = path.replace("+", "%2B");
             return URLDecoder.decode(path, "UTF-8");
         } catch (Exception e) {
             return path;
