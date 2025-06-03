@@ -75,6 +75,13 @@ public class AListSh extends AList {
             }
         }
 
+        for (Drive d : drives) {
+            if (d.search()) {
+                defaultDrive = d;
+                break;
+            }
+        }
+
         List<Vod> list = new ArrayList<>();
         if (defaultDrive != null) {
             List<String> lines = Arrays.asList(defaultDrive.exec("{ cat index.daily.txt;echo ''; } | tac | sed 's|^[.]/||' | grep -v -e '^$' -e '^[^/]*$' | head -n 500").split("\n"));
