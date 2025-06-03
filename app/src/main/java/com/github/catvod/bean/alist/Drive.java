@@ -181,22 +181,22 @@ public class Drive {
 
     public String getToken() {
         token = TextUtils.isEmpty(token) ? "" : token;
-        if (token.isEmpty()) {
-            String tokenPath = Path.files() + "/" + getServer().replace("://", "_").replace(":", "_") + ".token";
-            File tokenFile = new File(tokenPath);
-            token = Path.read(tokenFile);
-        }
+        // if (token.isEmpty()) {
+        //     String tokenPath = Path.files() + "/" + getServer().replace("://", "_").replace(":", "_") + ".token";
+        //     File tokenFile = new File(tokenPath);
+        //     token = Path.read(tokenFile);
+        // }
         return token;
     }
 
     public void setToken(String token) {
         this.token = token;
-        if (token.isEmpty())
-            return;
+        // if (token.isEmpty())
+        //     return;
         
-        String tokenPath = Path.files() + "/" + getServer().replace("://", "_").replace(":", "_") + ".token";
-        File tokenFile = new File(tokenPath);
-        Path.write(tokenFile, token.getBytes());
+        // String tokenPath = Path.files() + "/" + getServer().replace("://", "_").replace(":", "_") + ".token";
+        // File tokenFile = new File(tokenPath);
+        // Path.write(tokenFile, token.getBytes());
     }
 
     public Boolean search() {
