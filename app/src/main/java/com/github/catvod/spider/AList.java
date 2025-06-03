@@ -687,7 +687,7 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
         //服务器相同则用户名密码相同，快速复制登陆结果到其它驱动（TBD：可能引入问题）
         if (!drive.getToken().isEmpty()) {
             for (Drive d : drives) {
-                if(drive.getServer() == d.getServer()) {
+                if(drive.getServer().equals(d.getServer())) {
                     d.setToken(drive.getToken());
                 }
             }
