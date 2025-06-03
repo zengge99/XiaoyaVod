@@ -163,6 +163,15 @@ public class AList extends Spider {
 
         //默认驱动要执行exec，需要提前登陆，简单规避
         getList(defaultDrive.getName() + defaultDrive.getPath(), false);
+
+        //服务器相同则用户名密码相同，快速复制登陆结果（TBD：可能引入问题）
+        if (!defaultDrive.getToken().isEmpty()) {
+            for (Drive d : drives) {
+                if(defaultDrive.getServer() == d.getServer()) {
+                    d.setToken(defaultDrive.getToken());
+                }
+            }
+        }
     }
 
     protected Drive getDrive(String name) {
