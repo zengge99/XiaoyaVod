@@ -160,6 +160,9 @@ public class AList extends Spider {
         } else {
             defaultDrive = drives.get(0);
         }
+
+        //默认驱动要执行exec，需要提前登陆，简单规避
+        getList(defaultDrive.getName() + defaultDrive.getPath());
     }
 
     protected Drive getDrive(String name) {
