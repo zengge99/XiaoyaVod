@@ -1,31 +1,40 @@
 package com.github.catvod.bean.alist;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.lang.reflect.Type;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
 import android.net.Uri;
 import android.text.TextUtils;
+
+import com.github.catvod.utils.Path;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
+import com.google.gson.annotations.SerializedName;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import com.github.catvod.bean.Class;
 import com.github.catvod.net.OkHttp;
 import com.github.catvod.utils.Image;
 import com.github.catvod.utils.Util;
-import com.google.gson.*;
-import java.lang.reflect.Type;
-import com.google.gson.annotations.SerializedName;
-
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Iterator;
-import com.github.catvod.utils.Path;
-
-import org.json.JSONObject;
-import org.json.JSONArray;
-import org.json.JSONException;
-
 import com.github.catvod.spider.Logger;
-import java.io.File;
-
 
 public class Drive {
 
@@ -58,6 +67,34 @@ public class Drive {
     @SerializedName("pathByApi")
     private Boolean pathByApi;
     public HashMap<String, String> fl;
+
+    private static class SignCache {
+        String sign;
+        Instant expirationTime;
+    }
+    
+    private SignCache cache = null;
+    private static final long CACHE_DURATION_SECONDS = 5;
+    
+    public String getSign() {
+        if (cache != null && Instant.now().isBefore(cache.expirationTime)) {
+            return cache.sign;
+        }
+        
+        String newSign = this.exec("cat md5");
+
+        if (newSign == null) {
+            return "";
+        }
+        
+        SignCache newCache = new SignCache();
+        newCache.sign = newSign;
+        newCache.expirationTime = Instant.now().plusSeconds(CACHE_DURATION_SECONDS);
+        this.cache = newCache;
+        
+        return newSign;
+    }
+    
 
     public static Drive objectFrom(String str) {
         try {
