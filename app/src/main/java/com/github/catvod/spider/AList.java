@@ -846,7 +846,11 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
             //对路径中#的特殊处理
             path = path.replace("%23", "#");
             Item item = new Item();
-            String url = drive.getServer() + "/d" + URLEncoder.encode(path, "UTF-8").replace("+", "%20").replace("%2F", "/") + "?sign=" + drive.getSign();
+            String sign = drive.getSign();
+            if (sign.isEmpty()) {
+                sign = getSign(drive);
+            }
+            String url = drive.getServer() + "/d" + URLEncoder.encode(path, "UTF-8").replace("+", "%20").replace("%2F", "/") + "?sign=" + sign;
             Logger.log(url);
             item.setUrl(url);
             return item;

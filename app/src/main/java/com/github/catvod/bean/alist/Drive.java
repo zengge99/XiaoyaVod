@@ -85,7 +85,7 @@ public class Drive {
         String newSign = this.exec("cat md5");
 
         if (newSign == null) {
-            return "";
+            newSign = "";
         }
         
         SignCache newCache = new SignCache();
