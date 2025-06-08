@@ -182,7 +182,18 @@ public class AList extends Spider {
             Logger.log("post" + e);
         }
         if (retry && (code == 401 || code == 403) && login(drive)) {
-            return post(drive, url, param, false);
+            response = post(drive, url, param, false);
+            try {
+                code = new JSONObject(response).getInt("code");
+            } catch (Exception e) {
+                Logger.log("post" + e);
+            }
+            //如果登陆后还是401/403，则登陆用户名密码不对，清空密码文件
+            if (code == 401 || code == 403) {
+                String loginPath = Path.files() + "/" + drive.getServer().replace("://", "_").replace(":", "_") + ".login";
+                File loginFile = new File(loginPath);
+                Path.write(loginFile, "\n\n");
+            }
         }
         return response;
     }
@@ -752,12 +763,18 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
             JSONObject params = new JSONObject();
             String loginPath = Path.files() + "/" + drive.getServer().replace("://", "_").replace(":", "_") + ".login";
             File loginFile = new File(loginPath);
-            String login = Path.read(loginFile) + "\n" + "\n";
-            String userName = login.split("\n")[0];
-            String password = login.split("\n")[1];
+            String login = Path.read(loginFile);
+            String userName = "";
+            String password = "";
+            String[] parts = login.split("\n");
+            if (parts.length >= 2) {
+                userName = parts[0];
+                password = parts[1];
+            } 
             Logger.log("用户名:" + userName + "密码:" + password);
-            userName = userName.isEmpty() ? "dav" : userName;
-            password = password.isEmpty() ? "1234" : password;
+            if (userName.isEmpty() || password.isEmpty()) {
+                return false;
+            }
             params.put("username", userName);
             params.put("password", password);
             if (password.startsWith("alist-")) {
@@ -779,7 +796,6 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
             File loginFile = new File(loginPath);
             String login = Path.read(loginFile) + "\n" + "\n";
             String input = login.split("\n")[1];
-
             if (input.isEmpty()) {
                 return "";
             }
