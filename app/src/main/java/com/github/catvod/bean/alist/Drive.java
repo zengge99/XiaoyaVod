@@ -7,6 +7,7 @@ import com.github.catvod.bean.Class;
 import com.github.catvod.net.OkHttp;
 import com.github.catvod.utils.Image;
 import com.github.catvod.utils.Util;
+import com.github.catvod.utils.Path;
 import com.google.gson.*;
 import java.lang.reflect.Type;
 import com.google.gson.annotations.SerializedName;
@@ -17,7 +18,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Iterator;
-import com.github.catvod.utils.Path;
 
 import org.json.JSONObject;
 import org.json.JSONArray;
@@ -66,26 +66,25 @@ public class Drive {
 
     private static class SignCache {
         String sign;
-        Instant expirationTime;
+        long expirationTime;
     }
     
     private SignCache cache = null;
     private static final long CACHE_DURATION_SECONDS = 5;
     
     public String getSign() {
-        if (cache != null && Instant.now().isBefore(cache.expirationTime)) {
+        if (cache != null && System.currentTimeMillis() < cache.expirationTime) {
             return cache.sign;
         }
         
         String newSign = this.exec("cat md5");
-
         if (newSign == null) {
             newSign = "";
         }
         
         SignCache newCache = new SignCache();
         newCache.sign = newSign;
-        newCache.expirationTime = Instant.now().plusSeconds(CACHE_DURATION_SECONDS);
+        newCache.expirationTime = System.currentTimeMillis() + (CACHE_DURATION_SECONDS * 1000L); // 秒转毫秒
         this.cache = newCache;
         
         return newSign;
