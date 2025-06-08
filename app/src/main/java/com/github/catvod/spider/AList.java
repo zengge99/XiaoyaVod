@@ -182,18 +182,7 @@ public class AList extends Spider {
             Logger.log("post" + e);
         }
         if (retry && (code == 401 || code == 403) && login(drive)) {
-            response = post(drive, url, param, false);
-            try {
-                code = new JSONObject(response).getInt("code");
-            } catch (Exception e) {
-                Logger.log("post" + e);
-            }
-            //如果登陆后还是401/403，则登陆用户名密码不对，清空密码文件
-            if (code == 401 || code == 403) {
-                String loginPath = Path.files() + "/" + drive.getServer().replace("://", "_").replace(":", "_") + ".login";
-                File loginFile = new File(loginPath);
-                Path.write(loginFile, "\n\n");
-            }
+            return post(drive, url, param, false);
         }
         return response;
     }
@@ -695,6 +684,23 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
 
     protected synchronized boolean login(Drive drive) {
         boolean result = loginByConfig(drive) || loginByFile(drive) || loginByUser(drive);
+        String path = "/";
+        JSONObject params = drive.getParamByPath(path);
+        params.put("path", path);
+        String response = post(drive, drive.listApi(), params.toString(), false);
+        int code = 200;
+        try {
+            code = new JSONObject(response).getInt("code");
+        } catch (Exception e) {
+        }
+        //如果登陆后还是401/403，则登陆用户名密码不对，清空密码文件
+        if (code == 401 || code == 403) {
+            String loginPath = Path.files() + "/" + drive.getServer().replace("://", "_").replace(":", "_") + ".login";
+            File loginFile = new File(loginPath);
+            Path.write(loginFile, "\n\n");
+            return false;
+        }
+        
         //服务器相同则用户名密码相同，快速复制登陆结果到其它驱动（TBD：可能引入问题）
         if (!drive.getToken().isEmpty()) {
             for (Drive d : drives) {
