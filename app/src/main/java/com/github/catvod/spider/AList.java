@@ -684,12 +684,12 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
 
     protected synchronized boolean login(Drive drive) {
         boolean result = loginByConfig(drive) || loginByFile(drive) || loginByUser(drive);
-        String path = "/";
-        JSONObject params = drive.getParamByPath(path);
-        params.put("path", path);
-        String response = post(drive, drive.listApi(), params.toString(), false);
         int code = 200;
         try {
+            String path = "/";
+            JSONObject params = drive.getParamByPath(path);
+            params.put("path", path);
+            String response = post(drive, drive.listApi(), params.toString(), false);
             code = new JSONObject(response).getInt("code");
         } catch (Exception e) {
         }
