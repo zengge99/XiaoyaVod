@@ -684,6 +684,10 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
 
     protected synchronized boolean login(Drive drive) {
         boolean result = loginByConfig(drive) || loginByFile(drive) || loginByUser(drive);
+        if (!result) {
+            return false;
+        }
+        //即便登陆成功也要再次验证，比如guest登陆成功，但是结果还是401
         int code = 200;
         try {
             String path = "/";
@@ -693,7 +697,6 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
             code = new JSONObject(response).getInt("code");
         } catch (Exception e) {
         }
-        //如果登陆后还是401/403，则登陆用户名密码不对，清空密码文件
         if (code == 401 || code == 403) {
             String loginPath = Path.files() + "/" + drive.getServer().replace("://", "_").replace(":", "_") + ".login";
             File loginFile = new File(loginPath);
@@ -709,7 +712,7 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
                 }
             }
         }
-        return result;
+        return true;
     }
 
     protected boolean loginByConfig(Drive drive) {
