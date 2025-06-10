@@ -302,10 +302,18 @@ public class Drive {
     }
 
     public Drive check() {
+        if (path == null)
+            setPath(Uri.parse(TextUtils.isEmpty(server) ? "" : server).getPath()); 
+
         if (version != 0) {
             return this;
         }
-        setVersion(3);
+
+        for (Drive d : getDrives()) {
+            if (d.getServer().equals(this.getServer())) {
+                setVersion(3);
+            }
+        } 
 
         //setVersion(OkHttp.string(settingsApi()).contains("v2.") ? 2 : 3);
         String api = settingsApi();
@@ -314,14 +322,12 @@ public class Drive {
             if (OkHttp.string(api).contains("successs")) {
                 for (Drive d : getDrives()) {
                     if (d.getServer().equals(this.getServer())) {
-                        server = switchProtocol(getServer());
+                        d.server = switchProtocol(getServer());
                     }
                 }  
             }
         }
 
-        if (path == null)
-            setPath(Uri.parse(getServer()).getPath()); 
         return this;
     }
 
