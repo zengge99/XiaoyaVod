@@ -311,7 +311,7 @@ public class Drive {
 
         for (Drive d : getDrives()) {
             if (d.getServer().equals(this.getServer())) {
-                setVersion(3);
+                d.setVersion(3);
             }
         } 
 
