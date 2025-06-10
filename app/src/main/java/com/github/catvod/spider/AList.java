@@ -128,7 +128,6 @@ public class AList extends Spider {
         drives = drive.getDrives();
         vodPic = drive.getVodPic();
 
-/*
         List<Thread> threads = new ArrayList<>();
         for (Drive d : drives) {
             Thread thread = new Thread(() -> d.probeServer());
@@ -141,7 +140,6 @@ public class AList extends Spider {
             } catch (Exception e) {
             }
         }
-        */
 
         List<Drive> searcherDrivers = new ArrayList<>();
         for (Drive d : drives) {

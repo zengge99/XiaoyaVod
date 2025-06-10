@@ -308,7 +308,6 @@ public class Drive {
             api = switchProtocol(api);
             if (OkHttp.string(api).contains("successs")) {
                     server = switchProtocol(server);
-                }  
             }
         }
     }
