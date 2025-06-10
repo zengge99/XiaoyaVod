@@ -141,6 +141,8 @@ public class AList extends Spider {
             }
         }
 
+        Logger.log("驱动探测完毕");
+
         List<Drive> searcherDrivers = new ArrayList<>();
         for (Drive d : drives) {
             if (d.search()) {
