@@ -306,13 +306,17 @@ public class Drive {
             return this;
         }
         setVersion(3);
-        
+
         //setVersion(OkHttp.string(settingsApi()).contains("v2.") ? 2 : 3);
         String api = settingsApi();
         if (!OkHttp.string(api).contains("successs")) {
             api = switchProtocol(api);
             if (OkHttp.string(api).contains("successs")) {
-                server = switchProtocol(getServer());
+                for (Drive d : getDrives()) {
+                    if (d.getServer().equals(this.getServer())) {
+                        server = switchProtocol(getServer());
+                    }
+                }  
             }
         }
 
