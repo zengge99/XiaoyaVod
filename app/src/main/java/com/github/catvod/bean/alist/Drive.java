@@ -318,7 +318,6 @@ public class Drive {
 
         if (version == 0) {
             setVersion(3);
-            
         }
         return this;
     }
