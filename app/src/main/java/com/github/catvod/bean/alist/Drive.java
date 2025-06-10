@@ -304,9 +304,9 @@ public class Drive {
     public void probeServer() {
         String api = settingsApi();
 
-        if (!OkHttp.string(api).contains("successs")) {
+        if (!OkHttp.string(api).contains("success")) {
             api = switchProtocol(api);
-            if (OkHttp.string(api).contains("successs")) {
+            if (OkHttp.string(api).contains("success")) {
                     server = switchProtocol(server);
             }
         }
