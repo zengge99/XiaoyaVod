@@ -309,19 +309,23 @@ public class Drive {
             return this;
         }
 
+        String r = TextUtils.isEmpty(server) ? "" : server;
+        if (r.endsWith("/")) {
+            r = r.substring(0, r.lastIndexOf("/"));
+        }
+        String api = r.replace(getPath(), "") + "/api/public/settings";
+
         for (Drive d : getDrives()) {
-            if (d.getServer().equals(this.getServer())) {
+            if (d.server.equals(this.server)) {
                 d.setVersion(3);
             }
-        } 
+        }
 
-        //setVersion(OkHttp.string(settingsApi()).contains("v2.") ? 2 : 3);
-        String api = settingsApi();
         if (!OkHttp.string(api).contains("successs")) {
             api = switchProtocol(api);
             if (OkHttp.string(api).contains("successs")) {
                 for (Drive d : getDrives()) {
-                    if (d.getServer().equals(this.getServer())) {
+                    if (d.server.equals(this.server)) {
                         d.server = switchProtocol(getServer());
                     }
                 }  
