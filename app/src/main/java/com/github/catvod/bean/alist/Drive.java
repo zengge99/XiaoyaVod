@@ -303,13 +303,14 @@ public class Drive {
 
     public void probeServer() {
         String api = settingsApi();
-
+        Logger.log("修正前的驱动地址：" + settingsApi());
         if (!OkHttp.string(api).contains("success")) {
             api = switchProtocol(api);
             if (OkHttp.string(api).contains("success")) {
                     server = switchProtocol(server);
             }
         }
+        Logger.log("修正后的驱动地址：" + settingsApi());
     }
 
     public Drive check() {
