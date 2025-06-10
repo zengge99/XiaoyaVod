@@ -141,11 +141,6 @@ public class AList extends Spider {
             }
         }
 
-        for (Drive d : drives) {
-            Logger.log("驱动地址：" + d.getServer());
-        }
-        Logger.log("驱动探测完毕");
-
         List<Drive> searcherDrivers = new ArrayList<>();
         for (Drive d : drives) {
             if (d.search()) {

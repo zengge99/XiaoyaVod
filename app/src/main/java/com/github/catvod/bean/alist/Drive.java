@@ -260,6 +260,7 @@ public class Drive {
     }
 
     public String getHost() {
+        //这里其实有点问题，如果是根目录，会把/替换掉，好在okhttp可以处理这种情况
         return getServer().replace(getPath(), "");
     }
 
@@ -303,14 +304,12 @@ public class Drive {
 
     public void probeServer() {
         String api = settingsApi();
-        Logger.log("修正前的驱动地址：" + settingsApi());
         if (!OkHttp.string(api).contains("success")) {
             api = switchProtocol(api);
             if (OkHttp.string(api).contains("success")) {
                     server = switchProtocol(server);
             }
         }
-        Logger.log("修正后的驱动地址：" + settingsApi());
     }
 
     public Drive check() {
