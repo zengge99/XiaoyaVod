@@ -293,10 +293,10 @@ public class Drive {
 
     private String switchProtocol(String url) {
         url = TextUtils.isEmpty(url) ? "" : url;
-        if (url.startsWith("http://")) {
-            return "https://" + url.substring("http://".length());
-        } else if (url.startsWith("https://")) {
-            return "http://" + url.substring("https://".length());
+        if (url.startsWith("http:")) {
+            return "https:" + url.substring("http:".length());
+        } else if (url.startsWith("https:")) {
+            return "http:" + url.substring("https:".length());
         }
         return url;
     }
