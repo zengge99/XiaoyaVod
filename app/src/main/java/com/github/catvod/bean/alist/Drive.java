@@ -310,7 +310,7 @@ public class Drive {
         }
 
         setVersion(3);
-/*
+
         String r = TextUtils.isEmpty(server) ? "" : server;
         if (r.endsWith("/")) {
             r = r.substring(0, r.lastIndexOf("/"));
@@ -324,7 +324,6 @@ public class Drive {
                 }  
             }
         }
-        */
 
         return this;
     }
