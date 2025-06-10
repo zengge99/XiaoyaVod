@@ -130,7 +130,7 @@ public class AList extends Spider {
 
         List<Thread> threads = new ArrayList<>();
         for (Drive d : drives) {
-            Thread thread = new Thread(() -> d.check());
+            Thread thread = new Thread(() -> d.probeServer());
             thread.start();
             threads.add(thread);
         }

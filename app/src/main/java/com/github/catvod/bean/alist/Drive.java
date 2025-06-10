@@ -301,16 +301,7 @@ public class Drive {
         return url;
     }
 
-    public Drive check() {
-        if (path == null)
-            setPath(Uri.parse(getServer()).getPath()); 
-
-        if (version != 0) {
-            return this;
-        }
-
-        setVersion(3);
-
+    public void probeServer() {
         String api = settingsApi();
 
         if (!OkHttp.string(api).contains("successs")) {
@@ -320,7 +311,16 @@ public class Drive {
                 }  
             }
         }
+    }
 
+    public Drive check() {
+        if (path == null)
+            setPath(Uri.parse(getServer()).getPath()); 
+
+        if (version == 0) {
+            setVersion(3);
+            
+        }
         return this;
     }
 
