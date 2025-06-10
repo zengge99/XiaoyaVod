@@ -188,6 +188,7 @@ public class Drive {
     }
 
     public String getServer() {
+        check();
         String r = TextUtils.isEmpty(server) ? "" : server;
         if (r.endsWith("/")) {
             r = r.substring(0, r.lastIndexOf("/"));
@@ -291,12 +292,32 @@ public class Drive {
         return getHost() + "/sou?type=daily&filter=last&num=" + num;
     }
 
+    private String switchProtocol(String url) {
+        if (url.startsWith("http://")) {
+            return "https://" + url.substring("http://".length());
+        } else if (url.startsWith("https://")) {
+            return "http://" + url.substring("https://".length());
+        }
+        return url;
+    }
+
     public Drive check() {
+        if (version != 0) {
+            return this;
+        }
+        setVersion(3);
+        
+        //setVersion(OkHttp.string(settingsApi()).contains("v2.") ? 2 : 3);
+        String api = settingsApi();
+        if (!OkHttp.string(api).contains("successs")) {
+            api = switchProtocol(api);
+            if (OkHttp.string(api).contains("successs")) {
+                server = switchProtocol(getServer());
+            }
+        }
+
         if (path == null)
-            setPath(Uri.parse(getServer()).getPath());
-        if (version == 0)
-            //setVersion(OkHttp.string(settingsApi()).contains("v2.") ? 2 : 3);
-            setVersion(3);
+            setPath(Uri.parse(getServer()).getPath()); 
         return this;
     }
 
