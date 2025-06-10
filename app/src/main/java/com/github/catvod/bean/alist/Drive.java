@@ -188,7 +188,6 @@ public class Drive {
     }
 
     public String getServer() {
-        check();
         String r = TextUtils.isEmpty(server) ? "" : server;
         if (r.endsWith("/")) {
             r = r.substring(0, r.lastIndexOf("/"));
@@ -293,6 +292,7 @@ public class Drive {
     }
 
     private String switchProtocol(String url) {
+        url = TextUtils.isEmpty(url) ? "" : url;
         if (url.startsWith("http://")) {
             return "https://" + url.substring("http://".length());
         } else if (url.startsWith("https://")) {
@@ -303,7 +303,7 @@ public class Drive {
 
     public Drive check() {
         if (path == null)
-            setPath(Uri.parse(TextUtils.isEmpty(server) ? "" : server).getPath()); 
+            setPath(Uri.parse(getServer()).getPath()); 
 
         if (version != 0) {
             return this;
@@ -311,16 +311,12 @@ public class Drive {
 
         setVersion(3);
 
-        String r = TextUtils.isEmpty(server) ? "" : server;
-        if (r.endsWith("/")) {
-            r = r.substring(0, r.lastIndexOf("/"));
-        }
-        String api = r.replace(getPath(), "") + "/api/public/settings";
+        String api = settingsApi();
 
         if (!OkHttp.string(api).contains("successs")) {
             api = switchProtocol(api);
             if (OkHttp.string(api).contains("successs")) {
-                    server = switchProtocol(getServer());
+                    server = switchProtocol(server);
                 }  
             }
         }
