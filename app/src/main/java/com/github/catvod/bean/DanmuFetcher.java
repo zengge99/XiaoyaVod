@@ -38,6 +38,7 @@ public class DanmuFetcher {
                 if (!Path.read(danmuFile).isEmpty()) {
                     //thisObject.sendGetRequest("http://127.0.0.1:9978/action?do=refresh&type=danmaku&path=" + "file://" + danmuPath);
                     String danmuProxyPath = "http://127.0.0.1:9978/proxy?do=fs&file=" + danmuPath;
+                    Logger.log(danmuProxyPath);
                     thisObject.sendGetRequest("http://127.0.0.1:9978/action?do=refresh&type=danmaku&path=" + URLEncoder.encode(danmuProxyPath, "UTF-8"));
                 }
             } catch (Exception e) {
@@ -375,6 +376,7 @@ public class DanmuFetcher {
                 if (recent.equals(title + String.valueOf(episode) + String.valueOf(year))) {
                     //thisObject.sendGetRequest("http://127.0.0.1:9978/action?do=refresh&type=danmaku&path=" + "file://" + danmuPath);
                     String danmuProxyPath = "http://127.0.0.1:9978/proxy?do=fs&file=" + danmuPath;
+                    Logger.log(danmuProxyPath);
                     thisObject.sendGetRequest("http://127.0.0.1:9978/action?do=refresh&type=danmaku&path=" + URLEncoder.encode(danmuProxyPath, "UTF-8"));
                 }
             } catch (Exception e) {
