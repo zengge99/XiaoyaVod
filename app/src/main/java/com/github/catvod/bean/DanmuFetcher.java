@@ -406,3 +406,4 @@ public class DanmuFetcher {
         Logger.log(xml);
     }
 }
+
