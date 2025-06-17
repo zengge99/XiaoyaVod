@@ -1025,6 +1025,8 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
                     vod.setVodPic(Image.XIAOYA);
                     noPicList.add(vod);
                 } else {
+                    String picHeader = "@Referer=https://api.douban.com/@User-Agent=Mozilla/5.0%20(Windows%20NT%2010.0;%20Win64;%20x64)%20AppleWebKit/537.36%20(KHTML,%20like%20Gecko)%20Chrome/113.0.0.0%20Safari/537.36";
+                    vod.setVodPic(vod.getVodPic() + picHeader);
                     list.add(vod);
                 }
             }
