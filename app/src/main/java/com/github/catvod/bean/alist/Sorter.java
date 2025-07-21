@@ -39,7 +39,7 @@ public class Sorter implements Comparator<Item> {
         }
     }
 
-    //互联网上找来的自然排序，更加易读懂
+    //互联网上找来的自然排序，更加简单易懂
     static class NaturalSorter implements Comparator<String> {
 
         @Override
