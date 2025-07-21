@@ -49,7 +49,7 @@ public class Sorter implements Comparator<Item> {
             int index1 = 0;
             int index2 = 0;
             while (true) {
-                String data1 = nextSlice(o1, index1)的
+                String data1 = nextSlice(o1, index1);
                 String data2 = nextSlice(o2, index2);
 
                 if (data1 == null && data2 == null) {
