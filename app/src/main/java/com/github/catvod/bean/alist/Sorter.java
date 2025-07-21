@@ -29,8 +29,7 @@ public class Sorter implements Comparator<Item> {
                 // options.put("caseSensitive", false);
                 // NaturalSort naturalSort = new NaturalSort(options);
                 // return naturalSort.compare(o1, o2);
-                int result = nameSorter.compare(o1.getName(), o2.getName());
-                return order.equals("asc") ? result : -result;
+                return asc? nameSorter.compare(o1.getName(), o2.getName()) : nameSorter.compare(o2.getName(), o1.getName());
             case "size":
                 return asc ? Long.compare(o1.getSize(), o2.getSize()) : Long.compare(o2.getSize(), o1.getSize());
             case "date":
