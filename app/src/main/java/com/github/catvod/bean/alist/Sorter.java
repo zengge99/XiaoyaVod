@@ -44,6 +44,8 @@ public class Sorter implements Comparator<Item> {
 
         @Override
         public int compare(String o1, String o2) {
+            o1 = o1.replaceAll("\\s+", " ").replaceAll("\\.+", ".");
+            o2 = o2.replaceAll("\\s+", " ").replaceAll("\\.+", ".");
             int index1 = 0;
             int index2 = 0;
             while (true) {
