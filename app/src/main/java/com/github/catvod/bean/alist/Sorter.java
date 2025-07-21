@@ -24,13 +24,13 @@ public class Sorter implements Comparator<Item> {
         switch (type) {
             case "name":
                 //return asc ? o1.getName().compareTo(o2.getName()) : o2.getName().compareTo(o1.getName());
-                Map<String, Object> options = new HashMap<>();
-                options.put("order", order.equals("asc") ? order : "desc"); 
-                options.put("caseSensitive", false);
-                NaturalSort naturalSort = new NaturalSort(options);
-                return naturalSort.compare(o1, o2);
-                // int result = nameSorter.compare(o1, o2);
-                // return order.equals("asc") ? result : -result;
+                // Map<String, Object> options = new HashMap<>();
+                // options.put("order", order.equals("asc") ? order : "desc"); 
+                // options.put("caseSensitive", false);
+                // NaturalSort naturalSort = new NaturalSort(options);
+                // return naturalSort.compare(o1, o2);
+                int result = nameSorter.compare(o1.toString(), o2.toString());
+                return order.equals("asc") ? result : -result;
             case "size":
                 return asc ? Long.compare(o1.getSize(), o2.getSize()) : Long.compare(o2.getSize(), o1.getSize());
             case "date":
@@ -41,7 +41,7 @@ public class Sorter implements Comparator<Item> {
     }
 
     //互联网上找来的自然排序，更加易读懂
-    class NaturalSorter implements Comparator<String> {
+    static class NaturalSorter implements Comparator<String> {
 
         @Override
         public int compare(String o1, String o2) {
