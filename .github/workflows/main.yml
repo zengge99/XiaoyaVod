@@ -26,9 +26,12 @@ jobs:
           Write-Host "Replaced %JARVER% with v.$timestamp(JAR) (Beijing Time)"
 
       - name: Build with Gradle
-        run: ./build.bat ec
+        id: build
+        run: |
+          ./build.bat ec || exit 1
 
       - name: Update spider jar
+        if: steps.build.outcome == 'success'
         uses: EndBug/add-and-commit@v7
         with:
           default_author: github_actions
