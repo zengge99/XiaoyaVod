@@ -181,9 +181,9 @@ public class DanmuFetcher {
         List<String> apiEndpoints = Arrays.asList(
             "https://dmku.hls.one?ac=dm&url=",
             "https://dm.vidz.asia/?ac=dm&url=",
-            "https://imliao.xyz/?ac=dm&url=",
-            "https://dmku.itcxo.cn/?ac=dm&url=",
-            "https://dmku.thefilehosting.com?ac=dm&url="
+            "https://imliao.xyz/?ac=dm&url="
+            //"https://dmku.itcxo.cn/?ac=dm&url=",
+            //"https://dmku.thefilehosting.com?ac=dm&url="
         );
         
         // 尝试每个API端点，直到成功获取数据
