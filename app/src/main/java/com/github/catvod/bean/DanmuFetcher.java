@@ -180,6 +180,7 @@ public class DanmuFetcher {
         // 定义多个备用API端点
         List<String> apiEndpoints = Arrays.asList(
             "https://imliao.xyz/?ac=dm&url=",
+            "https://danmuku.sbs/?ac=dm&url=",
             "https://dmku.hls.one?ac=dm&url="
             //"https://dm.vidz.asia/?ac=dm&url="
             //"https://dmku.itcxo.cn/?ac=dm&url=",
