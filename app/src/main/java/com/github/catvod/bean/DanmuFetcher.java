@@ -218,6 +218,9 @@ public class DanmuFetcher {
             if (response.has("danum")) {
                 num = response.get("danum").getAsInt();
             }
+            if (response.has("danmu")) {
+                num = response.get("danmu").getAsInt();
+            }
 
             if (num <= 5) {
                 return null;
@@ -414,4 +417,5 @@ public class DanmuFetcher {
         Logger.log(xml);
     }
 }
+
 
