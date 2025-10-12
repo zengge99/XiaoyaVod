@@ -142,20 +142,20 @@ public class AList extends Spider {
 
         //反代场景nginx无法正确替换https，通过探测对https/http进行纠正
         //只有小雅的需要纠正（即与default drive相同的服务器地址），用户自定义的由用户自己保证
-        List<Thread> threads = new ArrayList<>();
-        for (Drive d : drives) {
-            if (d.getServer().equals(defaultDrive.getServer())) {
-                Thread thread = new Thread(() -> d.probeServer());
-                thread.start();
-                threads.add(thread); 
-            }
-        }
-        for (Thread thread : threads) {
-            try {
-                thread.join();
-            } catch (Exception e) {
-            }
-        }
+        // List<Thread> threads = new ArrayList<>();
+        // for (Drive d : drives) {
+        //     if (d.getServer().equals(defaultDrive.getServer())) {
+        //         Thread thread = new Thread(() -> d.probeServer());
+        //         thread.start();
+        //         threads.add(thread); 
+        //     }
+        // }
+        // for (Thread thread : threads) {
+        //     try {
+        //         thread.join();
+        //     } catch (Exception e) {
+        //     }
+        // }
 
         //默认驱动要执行exec，需要提前登陆，简单规避
         getList(defaultDrive.getName() + defaultDrive.getPath(), false);
