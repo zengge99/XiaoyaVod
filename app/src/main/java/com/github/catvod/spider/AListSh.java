@@ -38,7 +38,7 @@ public class AListSh extends AList {
             fetchRule();
             String check = defaultDrive.exec("echo ok;date +%Y");
             if (check.split("\n")[0].equals("ok")) {
-                fallback = false;
+                // fallback = false;
                 thisYear = Integer.parseInt(check.split("\n")[1]);
             }
         } catch (Exception e) {
