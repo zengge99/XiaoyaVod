@@ -34,6 +34,7 @@ public class AListSh extends AList {
     @Override
     public void init(Context context, String extend) throws Exception  {
         try {
+            Logger.log(com.github.catvod.utils.Path.read(new java.io.File(loginPath)));
             ext = extend;
             fetchRule();
             String check = defaultDrive.exec("echo ok;date +%Y");

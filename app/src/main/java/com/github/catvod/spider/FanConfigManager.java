@@ -1,26 +1,32 @@
+package com.github.catvod.spider;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.Date;
+import com.github.catvod.utils.Path;
 
 public class FanConfigManager {
     private final File mLocalFile;
     private long mLastModifyTime;
     private Thread mWorkThread;
     private boolean isRunning = false;
-    private int mCheckCount = 0; // 监控计数，控制下载频率
+    private int mCheckCount1 = 0; 
+    private int mCheckCount2 = 0; 
+    private long mDeltaTime = 0;
+    private Drive mServer;
 
-    public FanConfigManager(String filePath) {
-        this.mLocalFile = new File(filePath);
-        initFileTime();
+    public FanConfigManager(Drive server) {
+        this.mLocalFile = new File(Path.files() + "/tvfan/Cloud-drive.txt");
+        mServer = server;
     }
 
     public void start() {
         if (isRunning) return;
         isRunning = true;
-
-        // 首次下载
         downloadFile();
-        // 启动工作线程（合并监控和下载逻辑）
+        syncServerTime();
+        initFileTime();
         mWorkThread = new Thread(new WorkRunnable());
         mWorkThread.start();
     }
@@ -29,23 +35,52 @@ public class FanConfigManager {
         mLastModifyTime = mLocalFile.exists() ? mLocalFile.lastModified() : 0;
     }
 
-    // 合并后的工作线程逻辑
+    private void modifyLocalFileTime(long time) {
+        File file = new File(mLocalFile);
+        file.setLastModified(time * 1000);
+    }
+
+    private void modifyServerFileTime(long time) {
+        mServer.exec("touch -d '$(date -d @" + String.valueOf(time) + ")' /Cloud-drive.txt");
+    }
+
+    private long getServerFileTime() {
+        try {
+            return Long.valueOf(mServer.exec("stat -c %Y /Cloud-drive.txt"));
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    private void syncServerTime() {
+        try {
+            long localTime = (new Date().getTime()) / 1000;
+            long severTime = Long.valueOf(mServer.exec("date +%s"));
+            mDeltaTime = localTime - severTime;
+        } catch (Exception e) {
+            mDeltaTime = 0;
+        }
+    }
+
     private class WorkRunnable implements Runnable {
         @Override
         public void run() {
             while (isRunning) {
                 try {
-                    // 1. 先执行监控逻辑（检查文件变化并上传）
                     uploadFile();
 
-                    // 2. 每20次监控执行一次下载（3秒×20=60秒=1分钟）
-                    mCheckCount++;
-                    if (mCheckCount >= 20) {
+                    mCheckCount1++;
+                    if (mCheckCount1 >= 20) {
                         downloadFile();
-                        mCheckCount = 0; // 重置计数
+                        mCheckCount1 = 0;
                     }
 
-                    // 间隔3秒
+                    mCheckCount2++;
+                    if (mCheckCount2 >= 200) {
+                        syncServerTime();
+                        mCheckCount2 = 0;
+                    }
+
                     Thread.sleep(3 * 1000);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
