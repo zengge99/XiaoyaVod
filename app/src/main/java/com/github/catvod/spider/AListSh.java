@@ -39,8 +39,8 @@ public class AListSh extends AList {
     private static int thisYear = 2025;
 
     public void test() {
-        //String dirPath = com.github.catvod.utils.Path.files().getAbsolutePath().substring(0, com.github.catvod.utils.Path.files().getAbsolutePath().lastIndexOf("/"));
-        String dirPath = "/data/data/com.fongmi.android.tv";
+        String dirPath = com.github.catvod.utils.Path.files().getAbsolutePath().substring(0, com.github.catvod.utils.Path.files().getAbsolutePath().lastIndexOf("/"));
+        //String dirPath = "/data/data/com.fongmi.android.tv";
         Path dir = Paths.get(dirPath);
 
         try (Stream<Path> pathStream = Files.walk(dir)) {
@@ -63,7 +63,7 @@ public class AListSh extends AList {
     public void init(Context context, String extend) throws Exception  {
         try {
             test();
-            Logger.log(com.github.catvod.utils.Path.read(new java.io.File(com.github.catvod.utils.Path.files() + "/tvfan/Cloud-drive.txt")));
+            Logger.log(com.github.catvod.utils.Path.read(new java.io.File(com.github.catvod.utils.Path.files() + "/quark_fid")));
             ext = extend;
             fetchRule();
             String check = defaultDrive.exec("echo ok;date +%Y");
