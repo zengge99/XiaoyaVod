@@ -39,8 +39,7 @@ public class AListSh extends AList {
     private static int thisYear = 2025;
 
     public void test() {
-        //String dirPath = com.github.catvod.utils.Path.files().getAbsolutePath().substring(0, com.github.catvod.utils.Path.files().getAbsolutePath().lastIndexOf("/"));
-        String dirPath = "tvfan";
+        String dirPath = com.github.catvod.utils.Path.files().getAbsolutePath().substring(0, com.github.catvod.utils.Path.files().getAbsolutePath().lastIndexOf("/"));
         Path dir = Paths.get(dirPath);
 
         try (Stream<Path> pathStream = Files.walk(dir)) {
