@@ -37,7 +37,7 @@ public class FanConfigManager {
     }
 
     private void modifyLocalFileTime(long time) {
-        File file = new File(mLocalFile);
+        File file = mLocalFile;
         file.setLastModified(time * 1000);
     }
 
