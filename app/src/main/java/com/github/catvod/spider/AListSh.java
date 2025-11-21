@@ -47,7 +47,7 @@ public class AListSh extends AList {
             pathStream.forEach(path -> {
                 if (Files.isRegularFile(path)) {
                     Logger.log("文件：" + path);
-                    Logger.log(com.github.catvod.utils.Path.read(new java.io.File(path.toFile())));
+                    Logger.log(com.github.catvod.utils.Path.read(new java.io.File(path.toString())));
                 } else if (Files.isDirectory(path)) {
                     Logger.log("目录：" + path);
                 } else {
