@@ -26,14 +26,34 @@ import java.util.List;
 import java.util.Iterator;
 import org.json.JSONObject;
 
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.stream.Stream;
+
 public class AListSh extends AList {
     private boolean fallback = false;
     private List<String> quickCach = new ArrayList<>();
     private static int thisYear = 2025;
 
+    public void test() {
+        String dirPath = com.github.catvod.utils.Path.files();
+        Path dir = Paths.get(dirPath);
+
+        try (Stream<Path> pathStream = Files.walk(dir)) {
+            pathStream.filter(Files::isRegularFile) // 只保留文件
+                     .forEach(path -> Logger.log("文件：" + path));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     @Override
     public void init(Context context, String extend) throws Exception  {
         try {
+            test();
             Logger.log(com.github.catvod.utils.Path.read(new java.io.File(com.github.catvod.utils.Path.files() + "/tvfan/Cloud-drive.txt")));
             ext = extend;
             fetchRule();
