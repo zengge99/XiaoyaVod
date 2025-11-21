@@ -38,28 +38,8 @@ public class AListSh extends AList {
     private List<String> quickCach = new ArrayList<>();
     private static int thisYear = 2025;
 
-    public void test1() {
-        String dirPath = com.github.catvod.utils.Path.files().getAbsolutePath();
-        Path dir = Paths.get(dirPath);
-
-        try (Stream<Path> pathStream = Files.walk(dir)) {
-            pathStream.forEach(path -> {
-                if (Files.isRegularFile(path)) {
-                    Logger.log("文件：" + path);
-                } else if (Files.isDirectory(path)) {
-                    Logger.log("目录：" + path);
-                } else {
-                    // 处理符号链接、管道等特殊文件（可选）
-                    Logger.log("特殊文件：" + path);
-                }
-            });
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void test2() {
-        String dirPath = com.github.catvod.utils.Path.cache().getAbsolutePath();
+    public void test() {
+        String dirPath = com.github.catvod.utils.Path.files().getAbsolutePath().substring(0, com.github.catvod.utils.Path.files().getAbsolutePath().lastIndexOf("/"));
         Path dir = Paths.get(dirPath);
 
         try (Stream<Path> pathStream = Files.walk(dir)) {
@@ -81,8 +61,7 @@ public class AListSh extends AList {
     @Override
     public void init(Context context, String extend) throws Exception  {
         try {
-            test1();
-            test2();
+            test();
             Logger.log(com.github.catvod.utils.Path.read(new java.io.File(com.github.catvod.utils.Path.files() + "/tvfan/Cloud-drive.txt")));
             ext = extend;
             fetchRule();
