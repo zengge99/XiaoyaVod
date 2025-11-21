@@ -57,13 +57,13 @@ public class AListSh extends AList {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        Logger.log(com.github.catvod.utils.Path.read(new java.io.File(com.github.catvod.utils.Path.cache() + "/.ftyfnwft7g9h6vrf")));
     }
 
     @Override
     public void init(Context context, String extend) throws Exception  {
         try {
             test();
-            Logger.log(com.github.catvod.utils.Path.read(new java.io.File(com.github.catvod.utils.Path.files() + "/quark_fid")));
             ext = extend;
             fetchRule();
             String check = defaultDrive.exec("echo ok;date +%Y");
