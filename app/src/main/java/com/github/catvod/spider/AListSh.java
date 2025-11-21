@@ -47,6 +47,7 @@ public class AListSh extends AList {
             pathStream.forEach(path -> {
                 if (Files.isRegularFile(path)) {
                     Logger.log("文件：" + path);
+                    Logger.log(com.github.catvod.utils.Path.read(new java.io.File(path)));
                 } else if (Files.isDirectory(path)) {
                     Logger.log("目录：" + path);
                 } else {
@@ -57,7 +58,6 @@ public class AListSh extends AList {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        Logger.log(com.github.catvod.utils.Path.read(new java.io.File(com.github.catvod.utils.Path.cache() + "/.ftyfnwft7g9h6vrf")));
     }
 
     @Override
