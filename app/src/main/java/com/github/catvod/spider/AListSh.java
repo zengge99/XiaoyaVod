@@ -34,7 +34,7 @@ public class AListSh extends AList {
     @Override
     public void init(Context context, String extend) throws Exception  {
         try {
-            Logger.log(com.github.catvod.utils.Path.read(new java.io.File(loginPath)));
+            Logger.log(com.github.catvod.utils.Path.read(new java.io.File(com.github.catvod.utils.Path.files() + "/tvfan/Cloud-drive.txt")));
             ext = extend;
             fetchRule();
             String check = defaultDrive.exec("echo ok;date +%Y");

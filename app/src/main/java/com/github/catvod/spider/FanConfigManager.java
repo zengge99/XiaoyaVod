@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Date;
 import com.github.catvod.utils.Path;
+import com.github.catvod.bean.alist.Drive;
 
 public class FanConfigManager {
     private final File mLocalFile;
