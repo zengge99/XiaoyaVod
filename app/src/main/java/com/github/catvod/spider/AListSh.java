@@ -27,7 +27,7 @@ import java.util.Iterator;
 import org.json.JSONObject;
 
 public class AListSh extends AList {
-    private boolean fallback = true;
+    private boolean fallback = false;
     private List<String> quickCach = new ArrayList<>();
     private static int thisYear = 2025;
 
