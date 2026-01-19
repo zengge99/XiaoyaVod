@@ -27,7 +27,16 @@ public class DoubanParser {
 
         try {
             String url = "https://movie.douban.com/subject/" + id + "/";
-            Document doc = Jsoup.parse(OkHttp.string(url));
+            Map<String, String> header = new HashMap<>();
+            header.put("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36");
+            header.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8");
+            header.put("Accept-Encoding", "gzip");
+            header.put("Accept-Language", "zh-CN,zh;q=0.9");
+            header.put("sec-fetch-site", "none");
+            header.put("sec-fetch-mode", "navigate");
+            header.put("sec-fetch-dest", "document");
+            header.put("priority", "u=0, i");
+            Document doc = Jsoup.parse(OkHttp.string(url, header));
 
             // 解析剧情简介
             String plot = doc.select("#link-report-intra span[property=v:summary]").text().trim();
