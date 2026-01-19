@@ -22,6 +22,10 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.util.zip.GZIPInputStream;
+
 public class OkHttp {
 
     public static final String POST = "POST";
@@ -59,6 +63,40 @@ public class OkHttp {
 
     public static String string(String url, Map<String, String> params, Map<String, String> header) {
         return url.startsWith("http") ? new OkRequest(GET, url, params, header).execute(client()).getBody() : "";
+    }
+
+    public static String gzipstring(String url, Map<String, String> header) {
+        OkHttpClient client = client();
+        Request.Builder builder = new Request.Builder().url(url);
+        if (header != null) {
+            for (Map.Entry<String, String> entry : header.entrySet()) {
+                builder.addHeader(entry.getKey(), entry.getValue());
+            }
+        }
+        try (Response response = client.newCall(builder.build()).execute()) {
+            if (!response.isSuccessful() || response.body() == null) {
+                return "";
+            }
+            InputStream is = response.body().byteStream();
+            String contentEncoding = response.header("Content-Encoding");
+            if (contentEncoding != null && contentEncoding.equalsIgnoreCase("gzip")) {
+                is = new GZIPInputStream(is);
+            }
+
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            byte[] buffer = new byte[1024 * 4];
+            int len;
+            while ((len = is.read(buffer)) != -1) {
+                bos.write(buffer, 0, len);
+            }
+            is.close();
+            
+            return bos.toString("UTF-8");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "";
+        }
     }
 
     public static String post(String url, Map<String, String> params) {

@@ -36,7 +36,7 @@ public class DoubanParser {
             header.put("sec-fetch-mode", "navigate");
             header.put("sec-fetch-dest", "document");
             header.put("priority", "u=0, i");
-            Document doc = Jsoup.parse(OkHttp.string(url, header));
+            Document doc = Jsoup.parse(OkHttp.gzipstring(url, header));
 
             // 解析剧情简介
             String plot = doc.select("#link-report-intra span[property=v:summary]").text().trim();
