@@ -44,6 +44,23 @@ public class DoubanHtmlFetcher {
         }
     }
 
+    private static class Loader {
+        static volatile DoubanHtmlFetcher INSTANCE = new DoubanHtmlFetcher();
+    }
+
+    private static DoubanHtmlFetcher get() {
+        return Loader.INSTANCE;
+    }
+
+    private static OkHttpClient build() {
+        if (get().client != null) return get().client;
+        return get().client = getBuilder().build();
+    }
+
+    private static OkHttpClient.Builder getBuilder() {
+        return new OkHttpClient.Builder().dns(safeDns()).connectTimeout(30, TimeUnit.SECONDS).readTimeout(30, TimeUnit.SECONDS).writeTimeout(30, TimeUnit.SECONDS).hostnameVerifier((hostname, session) -> true).sslSocketFactory(getSSLContext().getSocketFactory(), trustAllCertificates());
+    }
+
     private static OkHttpClient client() {
         try {
             return Objects.requireNonNull(Spider.client());
