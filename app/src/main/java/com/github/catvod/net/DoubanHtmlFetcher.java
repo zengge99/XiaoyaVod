@@ -9,7 +9,7 @@ import java.security.MessageDigest;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit; // 修复 1: 缺少 TimeUnit
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
@@ -26,8 +26,6 @@ public class DoubanHtmlFetcher {
     private static final String ACCEPT = "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8";
     private static final String ACCEPT_LANG = "zh-CN,zh;q=0.9,en;q=0.8";
 
-    private OkHttpClient client; // 修复 2: 缺少 client 成员变量声明
-
     private static void applyStrictHeaders(Request.Builder builder, String referer, String cookie) {
         builder.addHeader("User-Agent", UA);
         builder.addHeader("Accept", ACCEPT);
@@ -38,15 +36,6 @@ public class DoubanHtmlFetcher {
         if (cookie != null && !cookie.isEmpty()) builder.addHeader("Cookie", cookie);
     }
 
-    private static class Loader {
-        static volatile DoubanHtmlFetcher INSTANCE = new DoubanHtmlFetcher();
-    }
-
-    private static DoubanHtmlFetcher get() {
-        return Loader.INSTANCE;
-    }
-
-    // 修复 3: 这里逻辑做了调整，确保 followRedirects(false)
     private static OkHttpClient client() {
         OkHttpClient baseClient;
         try {
@@ -58,7 +47,6 @@ public class DoubanHtmlFetcher {
                     .build();
         }
         
-        // 关键修复：PoW 流程必须禁止自动重定向，否则无法捕获 302 状态码和 Set-Cookie
         return baseClient.newBuilder()
                 .followRedirects(false)
                 .followSslRedirects(false)
