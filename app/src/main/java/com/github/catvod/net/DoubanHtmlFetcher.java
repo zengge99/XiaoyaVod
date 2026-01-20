@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
+import java.util.Objects;
 
 import okhttp3.FormBody;
 import okhttp3.OkHttpClient;
@@ -55,7 +56,7 @@ public class DoubanHtmlFetcher {
      * 主函数：获取豆瓣网页 HTML (安卓 5.0 兼容版)
      */
     public static String getDoubanHtml(String targetUrl) {
-        
+
         OkHttpClient client = client();
 
         try {
