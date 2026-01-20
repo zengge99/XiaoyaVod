@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import com.github.catvod.net.OkHttp;
+import com.github.catvod.net.DoubanHtmlFetcher;
 import java.util.HashMap;
 
 public class DoubanParser {
@@ -36,7 +37,8 @@ public class DoubanParser {
             header.put("sec-fetch-mode", "navigate");
             header.put("sec-fetch-dest", "document");
             header.put("priority", "u=0, i");
-            Document doc = Jsoup.parse(OkHttp.gzipstring(url, header));
+            //Document doc = Jsoup.parse(OkHttp.gzipstring(url, header));
+            Document doc = Jsoup.parse(DoubanHtmlFetcher.getDoubanHtml(url));
 
             // 解析剧情简介
             String plot = doc.select("#link-report-intra span[property=v:summary]").text().trim();
