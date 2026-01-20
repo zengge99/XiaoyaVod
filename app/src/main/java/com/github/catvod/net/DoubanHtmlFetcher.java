@@ -164,7 +164,6 @@ public class DoubanHtmlFetcher {
         int nonce = 0;
         String target = "0000"; // 难度 4，即前导 4 个 0
         MessageDigest md = MessageDigest.getInstance("SHA-512");
-        long start = System.currentTimeMillis();
         
         while (nonce < 2000000) {
             nonce++;
