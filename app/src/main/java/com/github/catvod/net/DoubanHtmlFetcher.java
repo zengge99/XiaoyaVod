@@ -1,6 +1,5 @@
 package com.github.catvod.net;
 
-import android.util.Log;
 import com.github.catvod.crawler.Spider;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -90,16 +89,10 @@ public class DoubanHtmlFetcher {
 
                 // 如果返回 302，说明触发了豆瓣的安全验证 (PoW)
                 if (res1.code() == 302) {
-                    Log.d(TAG, "检测到重定向，开始 PoW 验证流程...");
                     return handleVerification(client, targetUrl, res1);
                 }
-                
-                // 其他状态码返回空
-                Log.e(TAG, "非预期状态码: " + res1.code());
             }
-        } catch (Exception e) {
-            Log.e(TAG, "请求失败: " + e.getMessage());
-        }
+        } catch (Exception e) {}
         return "";
     }
 
@@ -127,7 +120,6 @@ public class DoubanHtmlFetcher {
         String cha = findByRegex(verifyHtml, "name=\"cha\"\\s+value=\"([^\"]+)\"");
 
         if (tok == null || cha == null) {
-            Log.e(TAG, "无法解析验证参数 (tok/cha)");
             return "";
         }
 
@@ -189,7 +181,6 @@ public class DoubanHtmlFetcher {
             }
 
             if (sb.toString().startsWith(target)) {
-                Log.d(TAG, "PoW 计算完成，耗时: " + (System.currentTimeMillis() - start) + "ms, Nonce: " + nonce);
                 return nonce;
             }
         }
