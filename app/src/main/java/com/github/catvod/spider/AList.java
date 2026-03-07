@@ -975,7 +975,7 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
         return sb.toString();
     }
 
-    protected List<Sub> getSubs(String[] ids) {
+    protected List<Sub> _getSubs(String[] ids) {
         List<Sub> sub = new ArrayList<>();
         for (String text : ids) {
             if (!text.contains("@@@"))
@@ -987,6 +987,100 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
             sub.add(Sub.create().name(name).ext(ext).url(url));
         }
         return sub;
+    }
+
+    protected List<Sub> getSubs(String[] ids) {
+        // 1. 定义一个临时的包装类
+        class SubWithScore {
+            Sub sub;
+            double sim;
+            SubWithScore(Sub sub, double sim) {
+                this.sub = sub;
+                this.sim = sim;
+            }
+        }
+
+        List<SubWithScore> tempWrapperList = new ArrayList<>();
+        String movieId = ids[0];
+
+        for (String text : ids) {
+            if (!text.contains("@@@")) continue;
+
+            String[] split = text.split("@@@");
+            String name = split[0];
+            String ext = split[1];
+            String url = getDetail(split[2]).getUrl();
+            
+            double sim = similarity(movieId, url);
+            
+            // 创建 Sub 对象
+            Sub s = Sub.create().name(name).ext(ext).url(url);
+            
+            // 将对象和分数一起存入临时列表
+            tempWrapperList.add(new SubWithScore(s, sim));
+        }
+
+        // 2. 按照 sim 倒序排序
+        tempWrapperList.sort((a, b) -> Double.compare(b.sim, a.sim));
+
+        // 3. 提取出排好序的 Sub 对象
+        List<Sub> result = new ArrayList<>();
+        for (SubWithScore wrapper : tempWrapperList) {
+            result.add(wrapper.sub);
+        }
+
+        return result;
+    }
+
+    protected double similarity(String sourceStr, String targetStr) {
+        // 空指针检查
+        if (sourceStr == null || targetStr == null) {
+            return 0.0;
+        }
+
+        int sourceLen = sourceStr.length();
+        int targetLen = targetStr.length();
+
+        // 如果其中一个字符串长度为 0，按照原 JS 逻辑返回 0
+        if (sourceLen == 0 || targetLen == 0) {
+            return 0.0;
+        }
+
+        // 定义 DP 数组
+        int[][] arr = new int[sourceLen + 1][targetLen + 1];
+
+        // 初始化第一列
+        for (int i = 0; i <= sourceLen; i++) {
+            arr[i][0] = i;
+        }
+
+        // 初始化第一行
+        for (int j = 0; j <= targetLen; j++) {
+            arr[0][j] = j;
+        }
+
+        char sourceChar;
+        char targetChar;
+
+        // 填充矩阵
+        for (int i = 1; i <= sourceLen; i++) {
+            sourceChar = sourceStr.charAt(i - 1);
+            for (int j = 1; j <= targetLen; j++) {
+                targetChar = targetStr.charAt(j - 1);
+                
+                if (sourceChar == targetChar) {
+                    arr[i][j] = arr[i - 1][j - 1];
+                } else {
+                    // Java 的 Math.min 只能比较两个数，所以需要嵌套
+                    int min = Math.min(arr[i - 1][j], arr[i][j - 1]);
+                    arr[i][j] = Math.min(min, arr[i - 1][j - 1]) + 1;
+                }
+            }
+        }
+
+        // 计算最终相似度
+        // 注意：Java 中两个整数相除会丢失精度，所以需要强转为 double
+        return 1.0 - (double) arr[sourceLen][targetLen] / Math.max(sourceLen, targetLen);
     }
 
     protected List<Vod> toVods(Drive drive, List<String> lines) {
