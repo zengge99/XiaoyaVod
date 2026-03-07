@@ -990,45 +990,65 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
     }
 
     protected List<Sub> getSubs(String[] ids) {
-        // 1. 定义一个临时的包装类
-        class SubWithScore {
+        // 1. 定义一个临时内部包装类，用于暂存排序需要的属性
+        class SubWrapper {
             Sub sub;
             double sim;
-            SubWithScore(Sub sub, double sim) {
+            String name;
+
+            SubWrapper(Sub sub, double sim, String name) {
                 this.sub = sub;
                 this.sim = sim;
+                this.name = name;
             }
         }
 
-        List<SubWithScore> tempWrapperList = new ArrayList<>();
+        List<SubWrapper> wrappers = new ArrayList<>();
         String movieId = ids[0];
 
         for (String text : ids) {
-            if (!text.contains("@@@")) continue;
+            if (text == null || !text.contains("@@@")) continue;
 
             String[] split = text.split("@@@");
+            if (split.length < 3) continue;
+
             String name = split[0];
             String ext = split[1];
             String url = getDetail(split[2]).getUrl();
-            
             double sim = similarity(movieId, url);
-            
-            // 创建 Sub 对象
+
+            // 创建 Sub 对象并存入包装类
             Sub s = Sub.create().name(name).ext(ext).url(url);
-            
-            // 将对象和分数一起存入临时列表
-            tempWrapperList.add(new SubWithScore(s, sim));
+            wrappers.add(new SubWrapper(s, sim, name));
         }
 
-        // 2. 按照 sim 倒序排序
-        tempWrapperList.sort((a, b) -> Double.compare(b.sim, a.sim));
+        // 2. 排序逻辑
+        wrappers.sort((a, b) -> {
+            // 条件一：按相似度 (sim) 倒序排列
+            int simCompare = Double.compare(b.sim, a.sim);
+            if (simCompare != 0) {
+                return simCompare;
+            }
 
-        // 3. 提取出排好序的 Sub 对象
+            // 条件二：相似度相同时，包含 "chs" (不区分大小写) 的排前面
+            boolean aHasChs = a.name.toLowerCase().contains("chs");
+            boolean bHasChs = b.name.toLowerCase().contains("chs");
+
+            if (aHasChs && !bHasChs) {
+                return -1; // a 排在 b 前面
+            } else if (!aHasChs && bHasChs) {
+                return 1;  // b 排在 a 前面
+            }
+
+            return 0; // 如果都包含或都不包含，维持原样
+        });
+
+        // 3. 将排序后的包装类还原为 List<Sub>
         List<Sub> result = new ArrayList<>();
-        for (SubWithScore wrapper : tempWrapperList) {
-            result.add(wrapper.sub);
+        for (SubWrapper w : wrappers) {
+            result.add(w.sub);
         }
-
+        
         return result;
     }
 
