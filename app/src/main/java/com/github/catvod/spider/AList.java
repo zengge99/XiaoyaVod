@@ -990,21 +990,13 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
     }
 
     protected List<Sub> getSubs(String[] ids) {
-        // 1. 定义一个临时内部包装类，用于暂存排序需要的属性
-        class SubWrapper {
-            Sub sub;
-            double sim;
-            String name;
+        List<Sub> allSubs = new ArrayList<>();
+        if (ids == null || ids.length == 0) return allSubs;
 
-            SubWrapper(Sub sub, double sim, String name) {
-                this.sub = sub;
-                this.sim = sim;
-                this.name = name;
-            }
-        }
-
-        List<SubWrapper> wrappers = new ArrayList<>();
         String movieId = ids[0];
+        Sub bestSub = null;      // 记录当前找到的最优 Sub
+        double maxSim = -1.0;    // 记录最高相似度
+        boolean bestHasChs = false; // 记录最优项是否包含 CHS
 
         for (String text : ids) {
             if (text == null || !text.contains("@@@")) continue;
@@ -1015,40 +1007,52 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
             String name = split[0];
             String ext = split[1];
             String url = getDetail(split[2]).getUrl();
-            double sim = similarity(movieId, url);
+            
+            // 1. 计算当前项的相似度和 CHS 状态
+            double currentSim = similarity(movieId, url);
+            boolean currentHasChs = name.toLowerCase().contains("chs");
 
-            // 创建 Sub 对象并存入包装类
-            Sub s = Sub.create().name(name).ext(ext).url(url);
-            wrappers.add(new SubWrapper(s, sim, name));
+            // 2. 创建 Sub 对象并加入临时总表
+            Sub currentSub = Sub.create().name(name).ext(ext).url(url);
+            allSubs.add(currentSub);
+
+            // 3. 比较并更新“最优项”
+            boolean isBetter = false;
+            if (bestSub == null) {
+                isBetter = true;
+            } else {
+                if (currentSim > maxSim) {
+                    // 相似度更高，直接胜出
+                    isBetter = true;
+                } else if (currentSim == maxSim) {
+                    // 相似度相同，看是否包含 chs
+                    if (currentHasChs && !bestHasChs) {
+                        isBetter = true;
+                    }
+                }
+            }
+
+            if (isBetter) {
+                maxSim = currentSim;
+                bestHasChs = currentHasChs;
+                bestSub = currentSub;
+            }
         }
 
-        // 2. 排序逻辑
-        wrappers.sort((a, b) -> {
-            // 条件一：按相似度 (sim) 倒序排列
-            int simCompare = Double.compare(b.sim, a.sim);
-            if (simCompare != 0) {
-                return simCompare;
-            }
-
-            // 条件二：相似度相同时，包含 "chs" (不区分大小写) 的排前面
-            boolean aHasChs = a.name.toLowerCase().contains("chs");
-            boolean bHasChs = b.name.toLowerCase().contains("chs");
-
-            if (aHasChs && !bHasChs) {
-                return -1; // a 排在 b 前面
-            } else if (!aHasChs && bHasChs) {
-                return 1;  // b 排在 a 前面
-            }
-
-            return 0; // 如果都包含或都不包含，维持原样
-        });
-
-        // 3. 将排序后的包装类还原为 List<Sub>
+        // 4. 重新组装结果列表
         List<Sub> result = new ArrayList<>();
-        for (SubWrapper w : wrappers) {
-            result.add(w.sub);
+        if (bestSub != null) {
+            // 先放最优的那个
+            result.add(bestSub);
+            
+            // 再放其他的，且保持在 ids 中的原始顺序
+            for (Sub s : allSubs) {
+                if (s != bestSub) { // 通过引用判断，剔除掉那个已经放进首位的最优项
+                    result.add(s);
+                }
+            }
         }
-        
+
         return result;
     }
 
