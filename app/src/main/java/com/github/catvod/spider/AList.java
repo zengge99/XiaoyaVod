@@ -1159,16 +1159,32 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
     }
 
     protected String calcFlag(String line) {
+        if (line == null || line.isEmpty()) {
+            return "";
+        }
+        
         String out = "";
-        line = line.toLowerCase();
-        if (line.contains("115")) {
-            out = " (115)";
-        } else if (line.contains("套娃")) {
-            out = " (套娃)";
-        } else if (line.contains("pikpak")) {
-            out = " (pikpak)";
-        } else if (line.contains("夸克")) {
-            out = " (夸克)";
+        String lowerLine = line.toLowerCase();
+
+        if (lowerLine.contains("115")) {
+            out += "/115";
+        }
+        if (lowerLine.contains("套娃")) {
+            out += "/套娃";
+        }
+        if (lowerLine.contains("pikpak")) {
+            out += "/pikpak";
+        }
+        if (lowerLine.contains("夸克")) {
+            out += "/夸克";
+        }
+        if (lowerLine.endsWith("iso")) {
+            out += "/ISO";
+        }
+        
+        if (!out.isEmpty()) {
+            out = out.substring(1); 
+            out = "(" + out + ")";
         }
         return out;
     }
