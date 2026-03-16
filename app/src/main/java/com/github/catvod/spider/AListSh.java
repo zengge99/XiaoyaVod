@@ -237,6 +237,11 @@ public class AListSh extends AList {
             cmd +=  String.format(" | grep '^[.]%s'", drive.getPath());
         }
 
+        String defaultFilter = drive.defaultFilter();
+        if (!defaultFilter.isEmpty()) {
+            cmd +=  String.format(" | grep '%s'", defaultFilter);
+        }
+
         String custom = fl.get("custom");
         if (custom != null) {
             cmd +=  String.format(" | grep '%s'", custom);

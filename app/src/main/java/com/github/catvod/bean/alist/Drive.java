@@ -62,6 +62,8 @@ public class Drive {
     private Boolean noPoster;
     @SerializedName("pathByApi")
     private Boolean pathByApi;
+    @SerializedName("defaultFilter")
+    private String defaultFilter;
     public HashMap<String, String> fl;
 
     private static class SignCache {
@@ -137,6 +139,10 @@ public class Drive {
 
     public JSONObject getFilters() {
         return filters == null ? new JSONObject() : filters;
+    }
+
+    public String defaultFilter() {
+        return TextUtils.isEmpty(defaultFilter) ? "" : defaultFilter;
     }
 
     public JSONObject getParamByPath(String path) {
