@@ -1181,10 +1181,10 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
         if (lowerLine.endsWith("iso")) {
             out += "/ISO";
         }
-        
+
         if (!out.isEmpty()) {
             out = out.substring(1); 
-            out = "(" + out + ")";
+            out = " (" + out + ")";
         }
         return out;
     }
