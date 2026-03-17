@@ -180,11 +180,12 @@ public class AListSh extends AList {
         List<Filter.Value> values = new ArrayList<>();
         values.add(new Filter.Value("全部目录", "~all"));
         for (Item item : getList(tid, true)) {
-            if (item.isFolder())
+            if (item.isFolder()) {
                 String path = drive.getPath();
                 String name = item.getName();
                 String fullPath = path.endsWith("/") ? path + name : path + "/" + name;
                 values.add(new Filter.Value(name, fullPath));
+            }
         }
         if (values.size() > 0 && customFilterValues.size() == 0) {
             items.add(new Filter("subpath", "目录", values));
