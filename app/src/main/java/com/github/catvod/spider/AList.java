@@ -1165,6 +1165,10 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
         
         String out = "";
         String lowerLine = line.toLowerCase();
+        int index = lowerLine.indexOf('#');
+        if (index != -1) {
+            lowerLine = lowerLine.substring(0, index);
+        }
 
         if (lowerLine.contains("115")) {
             out += "/115";
@@ -1178,7 +1182,7 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
         if (lowerLine.contains("夸克")) {
             out += "/夸克";
         }
-        if (lowerLine.endsWith("iso")) {
+        if (lowerLine.endsWith(".iso")) {
             out += "/ISO";
         }
 
