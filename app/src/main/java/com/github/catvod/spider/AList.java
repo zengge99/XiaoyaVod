@@ -514,13 +514,37 @@ public class AList extends Spider {
         }
 
         if (id.endsWith("~xiaoya")) {
-            vod.setVodPlayUrl(name + "$" + path + String.format("~~~danmu:%s,1,%s", vod.doubanInfo.getName(), vod.doubanInfo.getYear()));
+            if (path.contains("~~~")) {
+                String filesPart = path.substring(path.indexOf("/") + 1);
+                String[] splits = filesPart.split("~~~");
+                
+                List<String> playUrls = new ArrayList<>();
+                for (String s : splits) {
+                    s = s.replaceAll("^\\./", "");
+                    
+                    String fileName = s.substring(s.lastIndexOf("/") + 1);
+                    
+                    String fullPathForPlayer = key + "/" + s;
+
+                    String doubanName = vod.doubanInfo.getName();
+                    String doubanYear = vod.doubanInfo.getYear();
+                    
+                    String formattedUrl = String.format("%s$%s~~~danmu:%s,1,%s", 
+                                            fileName, fullPathForPlayer, doubanName, doubanYear);
+                    playUrls.add(formattedUrl);
+                }
+                String fullUrl = TextUtils.join("#", playUrls);
+                Logger.log("fileDetailContent Multi-Part Url: " + fullUrl);
+                vod.setVodPlayUrl(fullUrl);
+            } else {
+                vod.setVodPlayUrl(name + "$" + path + String.format("~~~danmu:%s,1,%s", vod.doubanInfo.getName(), vod.doubanInfo.getYear()));
+            }
         } else {
             vod.setVodPlayUrl(name + "$" + path);
         }
 
         String result = Result.get().vod(vod).vodDrive(drive.getName()).string();
-        Logger.log(result);
+        Logger.log("fileDetailContent: " + result);
         return result;
     }
 

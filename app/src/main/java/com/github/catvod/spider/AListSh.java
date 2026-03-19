@@ -81,6 +81,14 @@ public class AListSh extends AList {
             list = toVods(defaultDrive, lines);
         }
 
+        Thread thread = new Thread(() -> {
+            String initTest = defaultDrive.exec("tail -n1000 index.video.txt | grep -i 'iso~~~'");
+            if (initTest.isEmpty()) {
+                defaultDrive.exec("awk -F'#' '{if (tolower($0) ~ /iso#/) {a[$3] = (a[$3] ? $1\"~~~\"a[$3] : $0)} else {print $0}} END {for (i in a) print a[i] \"#\" i}' index.video.txt > index.tmp.txt\nmv -f index.tmp.txt index.video.txt");
+            }
+        });
+        thread.start();
+
         String result = Result.string(classes, list, filters);
         return result;
     }
@@ -243,7 +251,11 @@ public class AListSh extends AList {
 
         String defaultFilter = drive.defaultFilter();
         if (!defaultFilter.isEmpty()) {
-            cmd +=  String.format(" | grep '%s'", defaultFilter);
+            if (defaultFilter.startsWith("|")) {
+                cmd += defaultFilter;
+            } else {
+                cmd += String.format(" | grep '%s'", defaultFilter);
+            }
         }
 
         String custom = fl.get("custom");
