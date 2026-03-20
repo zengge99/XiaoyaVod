@@ -82,7 +82,7 @@ public class AListSh extends AList {
         }
 
         Thread thread = new Thread(() -> {
-            String initTest = defaultDrive.exec("tail -n1000 index.video.txt | grep -i 'iso~~~'");
+            String initTest = defaultDrive.exec("grep -m10 'iso~~~' index.video.txt|wc -l");
             if (initTest.isEmpty()) {
                 defaultDrive.exec("awk -F'#' '{if (tolower($0) ~ /iso#/) {a[$3] = (a[$3] ? $1\"~~~\"a[$3] : $0)} else {print $0}} END {for (i in a) print a[i] \"#\" i}' index.video.txt > index.tmp.txt\nmv -f index.tmp.txt index.video.txt");
             }
