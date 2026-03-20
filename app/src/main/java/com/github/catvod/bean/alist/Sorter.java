@@ -7,7 +7,7 @@ public class Sorter {
     private static final NaturalSorter nameSorter = new NaturalSorter();
 
     /**
-     * 针对 Item 对象的排序
+     * 针对 Item 对象的排序 
      */
     public static void sort(String type, String order, List<Item> items) {
         Collections.sort(items, new ItemComparator(type, order));
