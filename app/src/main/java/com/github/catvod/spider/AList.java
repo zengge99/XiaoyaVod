@@ -533,6 +533,7 @@ public class AList extends Spider {
                                             fileName, fullPathForPlayer, doubanName, doubanYear);
                     playUrls.add(formattedUrl);
                 }
+                Sorter.sort("name", "asc", playUrls);
                 String fullUrl = TextUtils.join("#", playUrls);
                 Logger.log("fileDetailContent Multi-Part Url: " + fullUrl);
                 vod.setVodPlayUrl(fullUrl);
