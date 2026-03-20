@@ -504,7 +504,7 @@ public class AList extends Spider {
         
         if (id.endsWith("~xiaoya") && !vod.doubanInfo.getId().isEmpty()) {
             vod.doubanInfo = DoubanParser.getDoubanInfo(vod.doubanInfo.getId(), vod.doubanInfo);
-            vod.setVodContent(vod.doubanInfo.getPlot() + "\r\n\r\n文件路径: " + path.substring(path.indexOf("/") + 1));
+            vod.setVodContent(vod.doubanInfo.getPlot() + "\r\n\r\n文件路径: \r\n" + path.substring(path.indexOf("/") + 1));
             vod.setVodActor(vod.doubanInfo.getActors());
             vod.setVodDirector(vod.doubanInfo.getDirector());
             vod.setVodArea(vod.doubanInfo.getRegion());
@@ -519,8 +519,10 @@ public class AList extends Spider {
                 String[] splits = filesPart.split("~~~");
                 
                 List<String> playUrls = new ArrayList<>();
+                List<String> displayPaths = new ArrayList<>();
                 for (String s : splits) {
                     s = s.replaceAll("^\\./", "");
+                    displayPaths.add(s);
                     
                     String fileName = s.substring(s.lastIndexOf("/") + 1);
                     
@@ -534,6 +536,9 @@ public class AList extends Spider {
                     playUrls.add(formattedUrl);
                 }
                 Sorter.sort("name", "asc", playUrls);
+                Sorter.sort("name", "asc", displayPaths);
+                String displayPlot = vod.doubanInfo.getId().isEmpty() ? "文件路径: \r\n" + TextUtils.join("#", displayPaths) : vod.doubanInfo.getPlot() + "\r\n\r\n文件路径: \r\n" + TextUtils.join("#", displayPaths);
+                vod.setVodContent(displayPlot);
                 String fullUrl = TextUtils.join("#", playUrls);
                 Logger.log("fileDetailContent Multi-Part Url: " + fullUrl);
                 vod.setVodPlayUrl(fullUrl);
