@@ -148,11 +148,13 @@ public class LocalIndexService {
                 
                 Logger.log("Parsing HTML with " + doc.select("ul > a").size() + " elements");
                 long parseStart = System.currentTimeMillis();
-                /* for (Element a : doc.select("ul > a")) {
+                /* 
+                for (Element a : doc.select("ul > a")) {
                     String line = a.text();
                     if (!line.contains("/")) continue;
                     inputList.add(a.text());
-                } //*/
+                } 
+                //*/
 
                for (Element a : doc.select("ul > a")) {
                     String href = a.attr("href");
@@ -161,7 +163,7 @@ public class LocalIndexService {
                         String decodedPath = URLDecoder.decode(href, "UTF-8");
                         String result;
                         if (decodedPath.contains("/")) {
-                            result = decodedPath.substring(decodedPath.lastIndexOf("/") + 1);
+                            result = decodedPath.substring(decodedPath.indexOf("/") + 1);
                         } else {
                             result = decodedPath;
                         }
