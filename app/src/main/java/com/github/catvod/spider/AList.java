@@ -568,6 +568,10 @@ public class AList extends Spider {
                                             fileName, fullPathForPlayer, doubanName, doubanYear);
                     playUrls.add(formattedUrl);
                 }
+
+                for (int i = 0; i < displayPaths.length; i++) {
+                    displayPaths[i] = String.format("%d: %s", i, displayPaths[i]);
+                }
                 
                 String displayPlot = vod.doubanInfo.getId().isEmpty() ? "文件路径: \r\n" + TextUtils.join("\r\n", displayPaths) : vod.doubanInfo.getPlot() + "\r\n\r\n文件路径: \r\n" + TextUtils.join("\r\n", displayPaths);
                 vod.setVodContent(displayPlot);
