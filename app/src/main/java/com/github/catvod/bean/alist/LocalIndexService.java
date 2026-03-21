@@ -162,16 +162,14 @@ public class LocalIndexService {
                     try {
                         String decodedPath = URLDecoder.decode(href, "UTF-8");
                         String result;
-                        if (decodedPath.contains("/")) {
+                        if (decodedPath.startsWith("/")) {
                             result = decodedPath.substring(decodedPath.indexOf("/") + 1);
                         } else {
                             result = decodedPath;
                         }
 
-                        Logger.log("href: " + result + "a: " + a.text());
-
-                        if (!result.contains("/")) continue;
-                        if (!result.isEmpty()) {
+                        //Logger.log("href: " + result + "a: " + a.text());
+                        if (!result.isEmpty() && result.contains("/")) {
                             inputList.add(result);
                         }
                     } catch (Exception e) {}
