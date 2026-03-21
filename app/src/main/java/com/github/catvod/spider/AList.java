@@ -556,6 +556,7 @@ public class AList extends Spider {
                 }
                 Sorter.sort("asc", displayPaths);
 
+                int n = 0;
                 for (String s : displayPaths) {
                     String fileName = s.substring(s.lastIndexOf("/") + 1);
                     
@@ -564,8 +565,8 @@ public class AList extends Spider {
                     String doubanName = vod.doubanInfo.getName();
                     String doubanYear = vod.doubanInfo.getYear();
                     
-                    String formattedUrl = String.format("%s$%s~~~danmu:%s,1,%s", 
-                                            fileName, fullPathForPlayer, doubanName, doubanYear);
+                    String formattedUrl = String.format("%d: %s$%s~~~danmu:%s,1,%s", 
+                                            ++n, fileName, fullPathForPlayer, doubanName, doubanYear);
                     playUrls.add(formattedUrl);
                 }
 
