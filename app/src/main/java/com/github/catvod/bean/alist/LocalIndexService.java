@@ -16,7 +16,6 @@ import com.github.catvod.bean.Vod;
 import java.nio.file.Paths;
 import java.nio.file.Files;
 import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 
 public class LocalIndexService {
     private static final int MAX_LINES_IN_MEMORY = 10000;
@@ -153,19 +152,22 @@ public class LocalIndexService {
                     String line = a.text();
                     if (!line.contains("/")) continue;
                     inputList.add(a.text());
-                } */
+                } //*/
 
                for (Element a : doc.select("ul > a")) {
                     String href = a.attr("href");
                     if (href.isEmpty()) continue;
                     try {
-                        String decodedPath = URLDecoder.decode(href, StandardCharsets.UTF_8.name());
+                        String decodedPath = URLDecoder.decode(href, "UTF-8");
                         String result;
                         if (decodedPath.contains("/")) {
                             result = decodedPath.substring(decodedPath.lastIndexOf("/") + 1);
                         } else {
                             result = decodedPath;
                         }
+
+                        Logger.log("href: " + result + "a: " + a.text());
+
                         if (!result.contains("/")) continue;
                         if (!result.isEmpty()) {
                             inputList.add(result);
