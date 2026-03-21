@@ -547,21 +547,22 @@ public class AList extends Spider {
 
                 String filesPart = path.substring(path.indexOf("/") + 1);
                 String[] splits = filesPart.split("~~~");
+                List<String> paths = new ArrayList<>();
                 List<String> playUrls = new ArrayList<>();
                 List<String> displayPaths = new ArrayList<>();
                 
                 for (String s : splits) {
                     s = s.replaceAll("^\\./", "");
-                    displayPaths.add(s);
+                    paths.add(s);
                 }
-                Sorter.sort("asc", displayPaths);
+                Sorter.sort("asc", paths);
 
-                for (int i = 0; i < displayPaths.size(); i++) {
-                    displayPaths.set(i, String.format("%d: %s", i + 1, displayPaths.get(i)));
+                for (int i = 0; i < paths.size(); i++) {
+                    displayPaths.add(String.format("%d: %s", i + 1, paths.get(i)));
                 }
 
-                for (String s : displayPaths) {
-                    splits = s.split(": ");
+                int n = 0;
+                for (String s : paths) {
                     s = splits[0];
                     String fileName = s.substring(s.lastIndexOf("/") + 1);
                     
@@ -570,8 +571,8 @@ public class AList extends Spider {
                     String doubanName = vod.doubanInfo.getName();
                     String doubanYear = vod.doubanInfo.getYear();
                     
-                    String formattedUrl = String.format("%s: %s$%s~~~danmu:%s,1,%s", 
-                                            splits[1], fileName, fullPathForPlayer, doubanName, doubanYear);
+                    String formattedUrl = String.format("%d: %s$%s~~~danmu:%s,1,%s", 
+                                            ++n, fileName, fullPathForPlayer, doubanName, doubanYear);
                     playUrls.add(formattedUrl);
                 }
                 
