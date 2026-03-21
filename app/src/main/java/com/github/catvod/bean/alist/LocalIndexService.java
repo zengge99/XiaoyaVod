@@ -166,7 +166,7 @@ public class LocalIndexService {
                         } else {
                             result = decodedPath;
                         }
-                        if (!result.isEmpty()) {
+                        if (!result.isEmpty() && result.contains("/")) {
                             inputList.add(result);
                         }
                     } catch (Exception e) {}
