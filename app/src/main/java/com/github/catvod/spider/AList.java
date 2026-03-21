@@ -515,6 +515,7 @@ public class AList extends Spider {
 
         if (id.endsWith("~xiaoya")) {
             if (path.contains("~~~")) {
+                /*
                 String filesPart = path.substring(path.indexOf("/") + 1);
                 String[] splits = filesPart.split("~~~");
                 
@@ -542,6 +543,38 @@ public class AList extends Spider {
                 String fullUrl = TextUtils.join("#", playUrls);
                 Logger.log("fileDetailContent Multi-Part Url: " + fullUrl);
                 vod.setVodPlayUrl(fullUrl);
+                //*/
+
+                String filesPart = path.substring(path.indexOf("/") + 1);
+                String[] splits = filesPart.split("~~~");
+                List<String> playUrls = new ArrayList<>();
+                List<String> displayPaths = new ArrayList<>();
+                
+                for (String s : splits) {
+                    s = s.replaceAll("^\\./", "");
+                    displayPaths.add(s);
+                }
+                Sorter.sort("asc", displayPaths);
+
+                for (String s : displayPaths) {
+                    String fileName = s.substring(s.lastIndexOf("/") + 1);
+                    
+                    String fullPathForPlayer = key + "/" + s;
+
+                    String doubanName = vod.doubanInfo.getName();
+                    String doubanYear = vod.doubanInfo.getYear();
+                    
+                    String formattedUrl = String.format("%s$%s~~~danmu:%s,1,%s", 
+                                            fileName, fullPathForPlayer, doubanName, doubanYear);
+                    playUrls.add(formattedUrl);
+                }
+                
+                String displayPlot = vod.doubanInfo.getId().isEmpty() ? "文件路径: \r\n" + TextUtils.join("\r\n", displayPaths) : vod.doubanInfo.getPlot() + "\r\n\r\n文件路径: \r\n" + TextUtils.join("\r\n", displayPaths);
+                vod.setVodContent(displayPlot);
+                String fullUrl = TextUtils.join("#", playUrls);
+                Logger.log("fileDetailContent Multi-Part Url: " + fullUrl);
+                vod.setVodPlayUrl(fullUrl);
+
             } else {
                 vod.setVodPlayUrl(name + "$" + path + String.format("~~~danmu:%s,1,%s", vod.doubanInfo.getName(), vod.doubanInfo.getYear()));
             }
