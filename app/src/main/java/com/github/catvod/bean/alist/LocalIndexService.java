@@ -15,6 +15,8 @@ import com.github.catvod.bean.alist.Item;
 import com.github.catvod.bean.Vod;
 import java.nio.file.Paths;
 import java.nio.file.Files;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 
 public class LocalIndexService {
     private static final int MAX_LINES_IN_MEMORY = 10000;
@@ -147,10 +149,27 @@ public class LocalIndexService {
                 
                 Logger.log("Parsing HTML with " + doc.select("ul > a").size() + " elements");
                 long parseStart = System.currentTimeMillis();
-                for (Element a : doc.select("ul > a")) {
+                /* for (Element a : doc.select("ul > a")) {
                     String line = a.text();
                     if (!line.contains("/")) continue;
                     inputList.add(a.text());
+                } */
+
+               for (Element a : doc.select("ul > a")) {
+                    String href = a.attr("href");
+                    if (href.isEmpty()) continue;
+                    try {
+                        String decodedPath = URLDecoder.decode(href, StandardCharsets.UTF_8.name());
+                        String result;
+                        if (decodedPath.contains("/")) {
+                            result = decodedPath.substring(decodedPath.lastIndexOf("/") + 1);
+                        } else {
+                            result = decodedPath;
+                        }
+                        if (!result.isEmpty()) {
+                            inputList.add(result);
+                        }
+                    } catch (Exception e) {}
                 }
                 Logger.log("HTML parsed in " + (System.currentTimeMillis() - parseStart) + "ms");
                 
