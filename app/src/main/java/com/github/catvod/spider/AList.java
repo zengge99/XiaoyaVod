@@ -569,7 +569,7 @@ public class AList extends Spider {
                     playUrls.add(formattedUrl);
                 }
 
-                for (int i = 0; i < displayPaths.length; i++) {
+                for (int i = 0; i < displayPaths.length(); i++) {
                     displayPaths[i] = String.format("%d: %s", i, displayPaths[i]);
                 }
                 
