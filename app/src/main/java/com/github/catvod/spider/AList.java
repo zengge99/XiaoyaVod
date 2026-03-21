@@ -563,7 +563,6 @@ public class AList extends Spider {
 
                 int n = 0;
                 for (String s : paths) {
-                    s = splits[0];
                     String fileName = s.substring(s.lastIndexOf("/") + 1);
                     
                     String fullPathForPlayer = key + "/" + s;
