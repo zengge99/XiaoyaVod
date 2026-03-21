@@ -260,7 +260,11 @@ public class AListSh extends AList {
 
         String custom = fl.get("custom");
         if (custom != null) {
-            cmd +=  String.format(" | grep '%s'", custom);
+            if (custom.startsWith("|")) {
+                cmd += custom;
+            } else {
+                cmd += String.format(" | grep '%s'", custom);
+            }
         }
 
         String type = fl.get("type");
