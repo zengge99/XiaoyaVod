@@ -161,7 +161,7 @@ public class LocalIndexService {
                     if (href.isEmpty()) continue;
                     try {
                         String safeHref = href.replace("+", "%2B");
-                        String decodedPath = URLDecoder.decode(safeHref, "UTF-8").replace("", "+");
+                        String decodedPath = URLDecoder.decode(safeHref, "UTF-8");
                         String result;
                         if (decodedPath.startsWith("/")) {
                             result = decodedPath.substring(decodedPath.indexOf("/") + 1);
