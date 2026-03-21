@@ -556,8 +556,13 @@ public class AList extends Spider {
                 }
                 Sorter.sort("asc", displayPaths);
 
-                int n = 0;
+                for (int i = 0; i < displayPaths.size(); i++) {
+                    displayPaths.set(i, String.format("%d: %s", i + 1, displayPaths.get(i)));
+                }
+
                 for (String s : displayPaths) {
+                    splits = s.split(": ");
+                    s = splits[0];
                     String fileName = s.substring(s.lastIndexOf("/") + 1);
                     
                     String fullPathForPlayer = key + "/" + s;
@@ -565,13 +570,9 @@ public class AList extends Spider {
                     String doubanName = vod.doubanInfo.getName();
                     String doubanYear = vod.doubanInfo.getYear();
                     
-                    String formattedUrl = String.format("%d: %s$%s~~~danmu:%s,1,%s", 
-                                            ++n, fileName, fullPathForPlayer, doubanName, doubanYear);
+                    String formattedUrl = String.format("%s: %s$%s~~~danmu:%s,1,%s", 
+                                            splits[1], fileName, fullPathForPlayer, doubanName, doubanYear);
                     playUrls.add(formattedUrl);
-                }
-
-                for (int i = 0; i < displayPaths.size(); i++) {
-                    displayPaths.set(i, String.format("%d: %s", i + 1, displayPaths.get(i)));
                 }
                 
                 String displayPlot = vod.doubanInfo.getId().isEmpty() ? "文件路径: \r\n" + TextUtils.join("\r\n", displayPaths) : vod.doubanInfo.getPlot() + "\r\n\r\n文件路径: \r\n" + TextUtils.join("\r\n", displayPaths);
