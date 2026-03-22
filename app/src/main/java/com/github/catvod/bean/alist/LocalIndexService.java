@@ -169,6 +169,10 @@ public class LocalIndexService {
                             result = decodedPath;
                         }
 
+                        if (result.contains("xiaoya_media")) {
+                            continue;
+                        }
+
                         //Logger.log("href: " + result + "a: " + a.text());
                         if (!result.isEmpty() && result.contains("/")) {
                             inputList.add(result);
