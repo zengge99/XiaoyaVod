@@ -383,7 +383,7 @@ public class AListSh extends AList {
             return super.findVodByPath(drive, path);
         }
         // String cmd = String.format("{ cat index.combined.txt;echo ''; } | grep -F './%s' | sed 's|^[.]/||'", path.replace("'", "\'"));
-        String cmd = String.format("{ cat index.combined.txt;echo ''; } | grep -F './%s' | sed 's|[.]/||'", path.replace("'", "'\\''"));
+        String cmd = String.format("{ cat index.combined.txt;echo ''; } | grep -F '%s' | sed 's|[.]/||'", path.replace("'", "'\\''"));
         List<String> lines = Arrays.asList(defaultDrive.exec(cmd).split("\n"));
         List<String> match = new ArrayList<>();
         for (String line : lines) {
