@@ -82,7 +82,7 @@ public class AListSh extends AList {
         }
 
         //处理合并列表，iso和非iso分别合并
-        String initTest = defaultDrive.exec("[ -f index.video.txt ] && grep '~~~~~~~~~~' index.combined.txt");
+        String initTest = defaultDrive.exec("grep '~~~~~~~~~~' index.video.txt");
         if (initTest.isEmpty()) {
             defaultDrive.exec("cp -f index.video.txt index.combined.txt");
             Thread thread = new Thread(() -> {
