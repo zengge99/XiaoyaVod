@@ -81,6 +81,7 @@ public class AListSh extends AList {
             list = toVods(defaultDrive, lines);
         }
 
+        //处理合并列表，iso和非iso分别合并
         Thread thread = new Thread(() -> {
             String initTest = defaultDrive.exec("grep -m10 'iso~~~' index.video1.txt|wc -l|grep '10'");
             if (initTest.isEmpty()) {
