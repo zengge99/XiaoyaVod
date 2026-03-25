@@ -99,26 +99,40 @@ public class AListSh extends AList {
         if (fallback) {
             return super.searchContent(keyword, quick);
         }
+        /*
         if (!quick) {
             return super.searchContent(keyword, quick);
         }
-        List<String> lines = new ArrayList<>();
-        synchronized (quickCach) {
-            for (String s : quickCach) {
-                if (s.contains(String.format("#%s#", keyword))) {
-                    lines.add(s);
+        //*/
+        if (quick) {
+            List<String> lines = new ArrayList<>();
+            synchronized (quickCach) {
+                for (String s : quickCach) {
+                    if (s.contains(String.format("#%s#", keyword))) {
+                        lines.add(s);
+                    }
                 }
             }
+            if (lines.size() == 0) {
+                String cmd = String.format("{ cat index.video1.txt;echo ''; } | grep '#%s#' | sed 's|^[.]/||' | grep -v -e '^$' -e '^[^/]*$'", keyword);
+                //还原合并列表
+                cmd += "|awk -F'#' '{n=split($1,p,\"~~~\"); if(n>1 && tolower($1) !~ /iso$/){r=$0; sub(/^[^#]*#/,\"\",r); for(i=1;i<=n;i++) print p[i]\"#\"r} else {print $0}}'";
+                lines = Arrays.asList(defaultDrive.exec(cmd).split("\n"));
+            }
+            List<Vod> list = toVods(defaultDrive, lines);
+            String result = Result.get().vod(list).page().string();
+            return result;
+        } else {
+            List<String> lines = new ArrayList<>();
+            if (lines.size() == 0) {
+                keyword = keyword.replace(" ", ".*");
+                String cmd = String.format("{ cat index.video1.txt;echo ''; } | grep -i '#%s#' | sed 's|^[.]/||' | grep -v -e '^$' -e '^[^/]*$'", keyword);
+                lines = Arrays.asList(defaultDrive.exec(cmd).split("\n"));
+            }
+            List<Vod> list = toVods(defaultDrive, lines);
+            String result = Result.get().vod(list).page().string();
+            return result;
         }
-        if (lines.size() == 0) {
-            String cmd = String.format("{ cat index.video1.txt;echo ''; } | grep '#%s#' | sed 's|^[.]/||' | grep -v -e '^$' -e '^[^/]*$'", keyword);
-            //还原合并列表
-            cmd += "|awk -F'#' '{n=split($1,p,\"~~~\"); if(n>1 && tolower($1) !~ /iso$/){r=$0; sub(/^[^#]*#/,\"\",r); for(i=1;i<=n;i++) print p[i]\"#\"r} else {print $0}}'";
-            lines = Arrays.asList(defaultDrive.exec(cmd).split("\n"));
-        }
-        List<Vod> list = toVods(defaultDrive, lines);
-        String result = Result.get().vod(list).page().string();
-        return result;
     }
 
     @Override
