@@ -82,12 +82,12 @@ public class AListSh extends AList {
         }
 
         //处理合并列表，iso和非iso分别合并
-        String initTest = defaultDrive.exec("[ -f index.combined.txt ] && grep '~~~~~~~~~~' index.combined.txt");
+        String initTest = defaultDrive.exec("[ -f index.video.txt ] && grep '~~~~~~~~~~' index.combined.txt");
         if (initTest.isEmpty()) {
             defaultDrive.exec("cp -f index.video.txt index.combined.txt");
             Thread thread = new Thread(() -> {
                 // defaultDrive.exec("awk -F'#' '{if (tolower($0) ~ /iso#/) {a[$3] = (a[$3] ? $1\"~~~\"a[$3] : $0)} else {print $0}} END {for (i in a) print a[i]}' index.combined.txt > index.tmp.txt;mv -f index.tmp.txt index.combined.txt");
-                defaultDrive.exec("awk -F'#' 'NF<2{print;next} tolower($0)~/iso#/{a[$3]=(a[$3]?$1\"~~~\"a[$3]:$0);next} {b[$3]=(b[$3]?$1\"~~~\"b[$3]:$0)} END{for(i in b)print b[i];for(i in a)print a[i]}' index.combined.txt > index.tmp.txt;mv -f index.tmp.txt index.combined.txt;echo '~~~~~~~~~~'>>index.combined.txt"); 
+                defaultDrive.exec("awk -F'#' 'NF<2{print;next} tolower($0)~/iso#/{a[$3]=(a[$3]?$1\"~~~\"a[$3]:$0);next} {b[$3]=(b[$3]?$1\"~~~\"b[$3]:$0)} END{for(i in b)print b[i];for(i in a)print a[i]}' index.combined.txt > index.tmp.txt;mv -f index.tmp.txt index.combined.txt;echo '~~~~~~~~~~'>>index.video.txt"); 
             });
             thread.start();
         }
