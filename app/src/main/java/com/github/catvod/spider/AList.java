@@ -297,7 +297,7 @@ public class AList extends Spider {
         String key = tid.contains("/") ? tid.substring(0, tid.indexOf("/")) : tid;
         Drive drive = getDrive(key);
         drive.fl = extend;
-        if (drive.noPoster()) {
+        if (drive.noPoster() && !isCombinedList(tid)) {
             return alistCategoryContent(tid, pg, filter, extend);
         } else {
             return xiaoyaCategoryContent(tid, pg, filter, extend);
