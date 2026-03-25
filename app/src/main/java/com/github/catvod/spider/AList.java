@@ -1191,7 +1191,12 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
                     index = splits[0].lastIndexOf("/");
                 }
                 Item item = new Item();
-                item.setType(0);
+                //合并列表
+                if (line.contains("~~~")){
+                    item.setType(1);
+                } else {
+                    item.setType(0);
+                }
                 item.doubanInfo.setId(splits.length >= 3 ? splits[2] : "");
                 item.doubanInfo.setRating(splits.length >= 4 ? splits[3] : "");
                 item.doubanInfo.setYear(splits.length >= 6 ? splits[5] : "");

@@ -236,6 +236,22 @@ public class AListSh extends AList {
         Drive drive = getDrive(key);
         HashMap<String, String> fl = extend;
         drive.fl = fl;
+
+
+        //合并列表
+        if(tid.contains("~~~")) {
+            String combinedPaths = tid.contains("/") ? tid.substring(tid.indexOf("/") + 1) : tid;
+            String[] splits = combinedPaths.split("#")[0].split("~~~");
+            List<String> l = new ArrayList<>();
+            for (String s : splits) {
+                s = key + "/" + s;
+                l.add(s);
+            }
+            List<Vod> v = toVods(drive, lines);
+            return Result.get().vod(list).string();
+        }
+
+
         String cmd;
         if (drive.getName().equals("每日更新")) {
             cmd = "{ cat index.daily.txt;echo ''; } | tac | grep -v -e '^$' -e '^[^/]*$'";
