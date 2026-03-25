@@ -248,6 +248,7 @@ public class AListSh extends AList {
                 l.add(s);
             }
             Vod vod = findVodByPath(drive, l.get(0));
+            Logger.log("合并vod：" + vod);
             List<Vod> v = toVods(drive, l);
             for (Vod vv : v) {
                 vv.doubanInfo = vod.doubanInfo;
