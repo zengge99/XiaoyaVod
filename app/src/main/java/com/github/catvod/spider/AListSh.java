@@ -244,11 +244,11 @@ public class AListSh extends AList {
             String[] splits = combinedPaths.split("#")[0].split("~~~");
             List<String> l = new ArrayList<>();
             for (String s : splits) {
-                s = s.replace("./", "");
+                s = s.replace("./", "").replace("/~xiaoya", "");
                 l.add(s);
             }
             List<Vod> v = toVods(drive, l);
-            return Result.get().vod(v).string();
+            return Result.get().vod(v).page().string();
         }
 
 
