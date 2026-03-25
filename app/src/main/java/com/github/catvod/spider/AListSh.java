@@ -131,6 +131,7 @@ public class AListSh extends AList {
             }
             List<Vod> list = toVods(defaultDrive, lines);
             String result = Result.get().vod(list).page().string();
+            Logger.log("searchContent: " + result);
             return result;
         }
     }
