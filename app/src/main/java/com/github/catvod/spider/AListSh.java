@@ -223,6 +223,10 @@ public class AListSh extends AList {
         return items;
     }
 
+    private bool isCombinedList(String path) {
+        return path.contains("~~~") && !path.toLowerCase().contains("iso#");
+    }
+
     @Override
     protected synchronized String xiaoyaCategoryContent(String tid, String pg, boolean filter, HashMap<String, String> extend)
             throws Exception {
@@ -238,14 +242,14 @@ public class AListSh extends AList {
         drive.fl = fl;
 
         //合并列表
-        if (tid.contains("~~~")) {
+        if (isCombinedList(tid)) {
             int slashIndex = tid.indexOf("/");
             String combinedPaths = (slashIndex != -1) ? tid.substring(slashIndex + 1) : tid;
-
             String[] splits = combinedPaths.split("~~~");
-            List<String> pathList = Arrays.stream(splits)
-                    .map(s -> s.replace("./", "").replace("/~xiaoya", ""))
-                    .collect(Collectors.toList());
+            List<String> pathList = new ArrayList<>();
+            for (String s : splits) {
+                pathList.add(s.replace("./", "").replace("/~xiaoya", ""));
+            }
             if (pathList.isEmpty()) return Result.get().string();
             Vod baseVod = findVodByPath(drive, pathList.get(0));
             List<Vod> vodList = toVods(drive, pathList);
