@@ -82,13 +82,15 @@ public class AListSh extends AList {
         }
 
         //处理合并列表，iso和非iso分别合并
-        Thread thread = new Thread(() -> {
-            String initTest = defaultDrive.exec("grep -m10 'iso~~~' index.video1.txt|wc -l|grep '10'");
-            if (initTest.isEmpty()) {
-                defaultDrive.exec("awk -F'#' '{if (tolower($0) ~ /iso#/) {a[$3] = (a[$3] ? $1\"~~~\"a[$3] : $0)} else {print $0}} END {for (i in a) print a[i]}' index.video1.txt > index.tmp.txt;mv -f index.tmp.txt index.video1.txt");
-            }
-        });
-        thread.start();
+        String initTest = defaultDrive.exec("grep '~~~~~~~~~~' index.index.txt");
+        if (initTest.isEmpty()) {
+            defaultDrive.exec("cp -f index.video.txt index.combined.txt");
+            Thread thread = new Thread(() -> {
+                // defaultDrive.exec("awk -F'#' '{if (tolower($0) ~ /iso#/) {a[$3] = (a[$3] ? $1\"~~~\"a[$3] : $0)} else {print $0}} END {for (i in a) print a[i]}' index.combined.txt > index.tmp.txt;mv -f index.tmp.txt index.combined.txt");
+                defaultDrive.exec("awk -F'#' 'NF<2{print;next} tolower($0)~/iso#/{a[$3]=(a[$3]?a[$3]"~~~"$1:$0);next} {b[$3]=(b[$3]?b[$3]"~~~"$1:$0)} END{for(i in b)print b[i];for(i in a)print a[i]}' index.video.txt > index.tmp.txt;mv -f index.tmp.txt index.combined.txt;echo '~~~~~~~~~~'>>index.video.txt"); 
+            });
+            thread.start();
+        }
 
         String result = Result.string(classes, list, filters);
         return result;
@@ -114,7 +116,7 @@ public class AListSh extends AList {
                 }
             }
             if (lines.size() == 0) {
-                String cmd = String.format("{ cat index.video1.txt;echo ''; } | grep '#%s#' | sed 's|^[.]/||' | grep -v -e '^$' -e '^[^/]*$'", keyword);
+                String cmd = String.format("{ cat index.combined.txt;echo ''; } | grep '#%s#' | sed 's|^[.]/||' | grep -v -e '^$' -e '^[^/]*$'", keyword);
                 //还原合并列表
                 cmd += "|awk -F'#' '{n=split($1,p,\"~~~\"); if(n>1 && tolower($1) !~ /iso$/){r=$0; sub(/^[^#]*#/,\"\",r); for(i=1;i<=n;i++) print p[i]\"#\"r} else {print $0}}'";
                 lines = Arrays.asList(defaultDrive.exec(cmd).split("\n"));
@@ -126,7 +128,7 @@ public class AListSh extends AList {
             List<String> lines = new ArrayList<>();
             if (lines.size() == 0) {
                 keyword = keyword.replace(" ", ".*");
-                String cmd = String.format("{ cat index.video1.txt;echo ''; } | grep -i '%s' | sed 's|^[.]/||' | grep -v -e '^$' -e '^[^/]*$'", keyword);
+                String cmd = String.format("{ cat index.combined.txt;echo ''; } | grep -i '%s' | sed 's|^[.]/||' | grep -v -e '^$' -e '^[^/]*$'", keyword);
                 lines = Arrays.asList(defaultDrive.exec(cmd).split("\n"));
             }
             List<Vod> list = toVods(defaultDrive, lines);
@@ -283,7 +285,7 @@ public class AListSh extends AList {
         if (drive.getName().equals("每日更新")) {
             cmd = "{ cat index.daily.txt;echo ''; } | tac | grep -v -e '^$' -e '^[^/]*$'";
         } else {
-            cmd = "{ cat index.video1.txt;echo ''; } | grep -v -e '^$' -e '^[^/]*$'";
+            cmd = "{ cat index.combined.txt;echo ''; } | grep -v -e '^$' -e '^[^/]*$'";
         }
         String subpath = fl.get("subpath");
         if (subpath != null && !subpath.equals("~all")) {
@@ -380,8 +382,8 @@ public class AListSh extends AList {
         if (fallback) {
             return super.findVodByPath(drive, path);
         }
-        // String cmd = String.format("{ cat index.video1.txt;echo ''; } | grep -F './%s' | sed 's|^[.]/||'", path.replace("'", "\'"));
-        String cmd = String.format("{ cat index.video1.txt;echo ''; } | grep -F './%s' | sed 's|^[.]/||'", path.replace("'", "'\\''"));
+        // String cmd = String.format("{ cat index.combined.txt;echo ''; } | grep -F './%s' | sed 's|^[.]/||'", path.replace("'", "\'"));
+        String cmd = String.format("{ cat index.combined.txt;echo ''; } | grep -F './%s' | sed 's|^[.]/||'", path.replace("'", "'\\''"));
         List<String> lines = Arrays.asList(defaultDrive.exec(cmd).split("\n"));
         List<String> match = new ArrayList<>();
         for (String line : lines) {
@@ -406,7 +408,7 @@ public class AListSh extends AList {
                     }
                 }
                 quickCach.clear();
-                String cmd1 = String.format("{ cat index.video1.txt;echo ''; } | grep -F '#%s#' | sed 's|^[.]/||' | grep -v -e '^$' -e '^[^/]*$'", vod.getVodName());
+                String cmd1 = String.format("{ cat index.combined.txt;echo ''; } | grep -F '#%s#' | sed 's|^[.]/||' | grep -v -e '^$' -e '^[^/]*$'", vod.getVodName());
                 //还原合并列表
                 cmd1 += "|awk -F'#' '{n=split($1,p,\"~~~\"); if(n>1 && tolower($1) !~ /iso$/){r=$0; sub(/^[^#]*#/,\"\",r); for(i=1;i<=n;i++) print p[i]\"#\"r} else {print $0}}'";
                 List<String> tmpLines = Arrays.asList(defaultDrive.exec(cmd1).split("\n"));
