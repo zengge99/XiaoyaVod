@@ -274,7 +274,7 @@ public class AListSh extends AList {
                     v.setStyle(Vod.Style.list());
                 }
             }
-            String result = Result.get().vod(vodList).page().string();
+            result = Result.get().vod(vodList).page().string();
             Logger.log("xiaoyaCategoryContent, Combined Result: " + result);
             return result;
         }
