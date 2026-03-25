@@ -223,7 +223,7 @@ public class AListSh extends AList {
         return items;
     }
 
-    private bool isCombinedList(String path) {
+    private boolean isCombinedList(String path) {
         return path.contains("~~~") && !path.toLowerCase().contains("iso#");
     }
 
