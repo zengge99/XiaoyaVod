@@ -318,7 +318,7 @@ public class AList extends Spider {
         if (id.endsWith("~xiaoya")) {
             String path = id.substring(0, id.lastIndexOf("/"));
             Logger.log("path is: " + path);
-            if (isCombinedList(path)) {
+            if (path.contains(".iso~~~")) {
                 isFile = true;
             } else {
                 isFile = getList(fixPath(path), false).size() == 0 ? true : false;
