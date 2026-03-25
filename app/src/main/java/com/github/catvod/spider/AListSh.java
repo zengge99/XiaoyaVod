@@ -252,7 +252,7 @@ public class AListSh extends AList {
             for (Vod vv : v) {
                 vv.doubanInfo = vod.doubanInfo;
                 vv.setVodPic(vod.getVodPic());
-                vv.setStyle(Style.list());
+                vv.setStyle(Vod.Style.list());
             }
             return Result.get().vod(v).page().string();
         }
