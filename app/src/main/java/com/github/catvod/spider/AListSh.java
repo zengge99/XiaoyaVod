@@ -126,7 +126,7 @@ public class AListSh extends AList {
             List<String> lines = new ArrayList<>();
             if (lines.size() == 0) {
                 keyword = keyword.replace(" ", ".*");
-                String cmd = String.format("{ cat index.video1.txt;echo ''; } | grep -i '#%s#' | sed 's|^[.]/||' | grep -v -e '^$' -e '^[^/]*$'", keyword);
+                String cmd = String.format("{ cat index.video1.txt;echo ''; } | grep -i '%s' | sed 's|^[.]/||' | grep -v -e '^$' -e '^[^/]*$'", keyword);
                 lines = Arrays.asList(defaultDrive.exec(cmd).split("\n"));
             }
             List<Vod> list = toVods(defaultDrive, lines);
