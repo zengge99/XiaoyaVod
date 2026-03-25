@@ -247,7 +247,13 @@ public class AListSh extends AList {
                 s = s.replace("./", "").replace("/~xiaoya", "");
                 l.add(s);
             }
+            Vod vod = findVodByPath(drive, l.get(0));
             List<Vod> v = toVods(drive, l);
+            for (Vod vv : v) {
+                vv.doubanInfo = vod.doubanInfo;
+                vv.setVodPic(v.getVodPic());
+                vv.style = "list";
+            }
             return Result.get().vod(v).page().string();
         }
 
