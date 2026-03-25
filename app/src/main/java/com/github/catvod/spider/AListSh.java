@@ -369,7 +369,7 @@ public class AListSh extends AList {
             if (s.endsWith("/")) {
                 s = s.substring(0, s.lastIndexOf("/"));
             }
-            if (s.equals(path)) {
+            if (s.contains(path)) {
                 match.add(line);
                 break;
             }
