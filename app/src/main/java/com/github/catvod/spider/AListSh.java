@@ -251,8 +251,8 @@ public class AListSh extends AList {
             List<Vod> v = toVods(drive, l);
             for (Vod vv : v) {
                 vv.doubanInfo = vod.doubanInfo;
-                vv.setVodPic(v.getVodPic());
-                vv.style = "list";
+                vv.setVodPic(vod.getVodPic());
+                vv.setStyle("list");
             }
             return Result.get().vod(v).page().string();
         }
