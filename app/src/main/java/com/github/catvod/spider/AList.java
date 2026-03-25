@@ -1176,6 +1176,10 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
         return 1.0 - (double) arr[sourceLen][targetLen] / Math.max(sourceLen, targetLen);
     }
 
+    protected boolean isCombinedList(String path) {
+        return path.contains("~~~") && !path.toLowerCase().contains("iso#");
+    }
+
     protected List<Vod> toVods(Drive drive, List<String> lines) {
         Logger.log("toVods() converting " + lines.size() + " lines");
         long startTime = System.currentTimeMillis();
@@ -1192,7 +1196,7 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
                 }
                 Item item = new Item();
                 //合并列表
-                if (line.contains("~~~")){
+                if (isCombinedList(line)){
                     item.setType(1);
                 } else {
                     item.setType(0);

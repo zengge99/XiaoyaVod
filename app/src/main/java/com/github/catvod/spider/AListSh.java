@@ -223,10 +223,6 @@ public class AListSh extends AList {
         return items;
     }
 
-    private boolean isCombinedList(String path) {
-        return path.contains("~~~") && !path.toLowerCase().contains("iso#");
-    }
-
     @Override
     protected synchronized String xiaoyaCategoryContent(String tid, String pg, boolean filter, HashMap<String, String> extend)
             throws Exception {
