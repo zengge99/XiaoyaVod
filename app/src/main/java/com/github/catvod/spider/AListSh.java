@@ -237,27 +237,27 @@ public class AListSh extends AList {
         HashMap<String, String> fl = extend;
         drive.fl = fl;
 
-
         //合并列表
-        if(tid.contains("~~~")) {
-            String combinedPaths = tid.contains("/") ? tid.substring(tid.indexOf("/") + 1) : tid;
-            String[] splits = combinedPaths.split("#")[0].split("~~~");
-            List<String> l = new ArrayList<>();
-            for (String s : splits) {
-                s = s.replace("./", "").replace("/~xiaoya", "");
-                l.add(s);
-            }
-            Vod vod = findVodByPath(drive, l.get(0));
-            Logger.log("合并vod：" + vod);
-            List<Vod> v = toVods(drive, l);
-            for (Vod vv : v) {
-                vv.doubanInfo = vod.doubanInfo;
-                vv.setVodPic(vod.getVodPic());
-                vv.setStyle(Vod.Style.list());
-            }
-            return Result.get().vod(v).page().string();
-        }
+        if (tid.contains("~~~")) {
+            int slashIndex = tid.indexOf("/");
+            String combinedPaths = (slashIndex != -1) ? tid.substring(slashIndex + 1) : tid;
 
+            String[] splits = combinedPaths.split("~~~");、
+            List<String> pathList = Arrays.stream(splits)
+                    .map(s -> s.replace("./", "").replace("/~xiaoya", ""))
+                    .collect(Collectors.toList());
+            if (pathList.isEmpty()) return Result.get().string();
+            Vod baseVod = findVodByPath(drive, pathList.get(0));
+            List<Vod> vodList = toVods(drive, pathList);
+            if (baseVod !=null) {
+                for (Vod v : vodList) {
+                    v.doubanInfo = baseVod.doubanInfo;
+                    v.setVodPic(baseVod.getVodPic());
+                    v.setStyle(Vod.Style.list());
+                }
+            }
+            return Result.get().vod(vodList).page().string();
+        }
 
         String cmd;
         if (drive.getName().equals("每日更新")) {
