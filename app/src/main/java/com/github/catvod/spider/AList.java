@@ -318,8 +318,12 @@ public class AList extends Spider {
         if (id.endsWith("~xiaoya")) {
             String path = id.substring(0, id.lastIndexOf("/"));
             Logger.log("path is: " + path);
-            isFile = getList(fixPath(path), false).size() == 0 ? true : false;
-            isFile = isFile && Util.isMedia(path);
+            if (isCombinedList(path)) {
+                isFile = true;
+            } else {
+                isFile = getList(fixPath(path), false).size() == 0 ? true : false;
+                isFile = isFile && Util.isMedia(path);
+            }
             Logger.log(isFile);
         }
 
@@ -1177,7 +1181,7 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
     }
 
     protected boolean isCombinedList(String path) {
-        return path.contains("~~~") && !path.toLowerCase().contains("iso#");
+        return path.contains("~~~") && !path.toLowerCase().contains(".iso");
     }
 
     protected List<Vod> toVods(Drive drive, List<String> lines) {
