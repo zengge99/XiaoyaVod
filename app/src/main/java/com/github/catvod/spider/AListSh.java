@@ -85,7 +85,7 @@ public class AListSh extends AList {
         Thread thread = new Thread(() -> {
             String initTest = defaultDrive.exec("grep -m10 'iso~~~' index.video1.txt|wc -l|grep '10'");
             if (initTest.isEmpty()) {
-                defaultDrive.exec("awk -F'#' '{if (tolower($0) ~ /iso#/) {a[$3] = (a[$3] ? $1\"~~~\"a[$3] : $0)} else {print $0}} END {for (i in a) print a[i]}' index.video1.txt > index.tmp.txt\nmv -f index.tmp.txt index.video1.txt");
+                defaultDrive.exec("awk -F'#' '{if (tolower($0) ~ /iso#/) {a[$3] = (a[$3] ? $1\"~~~\"a[$3] : $0)} else {print $0}} END {for (i in a) print a[i]}' index.video1.txt > index.tmp.txt;mv -f index.tmp.txt index.video1.txt");
             }
         });
         thread.start();
