@@ -247,7 +247,7 @@ public class AListSh extends AList {
         if (fallback) {
             return super.xiaoyaCategoryContent(tid, pg, filter, extend);
         }
-        Logger.log(tid);
+        Logger.log("xiaoyaCategoryContent: " + tid);
         String result = "";
         fetchRule();
         String key = tid.contains("/") ? tid.substring(0, tid.indexOf("/")) : tid;
@@ -274,7 +274,9 @@ public class AListSh extends AList {
                     v.setStyle(Vod.Style.list());
                 }
             }
-            return Result.get().vod(vodList).page().string();
+            String result = Result.get().vod(vodList).page().string();
+            Logger.log("xiaoyaCategoryContent, Combined Result: " + result);
+            return result;
         }
 
         String cmd;
