@@ -240,12 +240,11 @@ public class AListSh extends AList {
 
         //合并列表
         if(tid.contains("~~~")) {
-            Logger.log("合并列表tid： " + tid);
             String combinedPaths = tid.contains("/") ? tid.substring(tid.indexOf("/") + 1) : tid;
             String[] splits = combinedPaths.split("#")[0].split("~~~");
             List<String> l = new ArrayList<>();
             for (String s : splits) {
-                s = key + "/" + s;
+                s = s.replace("./", "");
                 l.add(s);
             }
             List<Vod> v = toVods(drive, l);
