@@ -247,8 +247,8 @@ public class AListSh extends AList {
                 s = key + "/" + s;
                 l.add(s);
             }
-            List<Vod> v = toVods(drive, lines);
-            return Result.get().vod(list).string();
+            List<Vod> v = toVods(drive, l);
+            return Result.get().vod(v).string();
         }
 
 
