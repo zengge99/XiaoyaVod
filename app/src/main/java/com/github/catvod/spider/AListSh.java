@@ -112,9 +112,7 @@ public class AListSh extends AList {
         if (lines.size() == 0) {
             String cmd = String.format("{ cat index.video1.txt;echo ''; } | grep '#%s#' | sed 's|^[.]/||' | grep -v -e '^$' -e '^[^/]*$'", keyword);
             //还原合并列表
-            if (isCombinedList()) {
-                cmd += "|awk -F'#' '{n=split($1,p,\"~~~\"); if(n>1){r=$0; sub(/^[^#]*#/,\"\",r); for(i=1;i<=n;i++) print p[i]\"#\"r} else {print $0}}'";
-            }
+            cmd += "|awk -F'#' '{n=split($1,p,\"~~~\"); if(n>1 && tolower($1) !~ /iso$/){r=$0; sub(/^[^#]*#/,\"\",r); for(i=1;i<=n;i++) print p[i]\"#\"r} else {print $0}}'";
             lines = Arrays.asList(defaultDrive.exec(cmd).split("\n"));
         }
         List<Vod> list = toVods(defaultDrive, lines);
@@ -392,9 +390,7 @@ public class AListSh extends AList {
                 quickCach.clear();
                 String cmd1 = String.format("{ cat index.video1.txt;echo ''; } | grep -F '#%s#' | sed 's|^[.]/||' | grep -v -e '^$' -e '^[^/]*$'", vod.getVodName());
                 //还原合并列表
-                if (isCombinedList()) {
-                    cmd1 += "|awk -F'#' '{n=split($1,p,\"~~~\"); if(n>1){r=$0; sub(/^[^#]*#/,\"\",r); for(i=1;i<=n;i++) print p[i]\"#\"r} else {print $0}}'";
-                }
+                cmd1 += "|awk -F'#' '{n=split($1,p,\"~~~\"); if(n>1 && tolower($1) !~ /iso$/){r=$0; sub(/^[^#]*#/,\"\",r); for(i=1;i<=n;i++) print p[i]\"#\"r} else {print $0}}'";
                 List<String> tmpLines = Arrays.asList(defaultDrive.exec(cmd1).split("\n"));
                 quickCach.addAll(tmpLines);
             }   
