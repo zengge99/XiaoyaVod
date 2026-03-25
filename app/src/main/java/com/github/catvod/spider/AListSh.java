@@ -242,7 +242,7 @@ public class AListSh extends AList {
             int slashIndex = tid.indexOf("/");
             String combinedPaths = (slashIndex != -1) ? tid.substring(slashIndex + 1) : tid;
 
-            String[] splits = combinedPaths.split("~~~");、
+            String[] splits = combinedPaths.split("~~~");
             List<String> pathList = Arrays.stream(splits)
                     .map(s -> s.replace("./", "").replace("/~xiaoya", ""))
                     .collect(Collectors.toList());
