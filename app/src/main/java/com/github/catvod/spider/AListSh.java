@@ -81,13 +81,16 @@ public class AListSh extends AList {
             list = toVods(defaultDrive, lines);
         }
 
-        Thread thread = new Thread(() -> {
-            String initTest = defaultDrive.exec("grep -m10 'iso~~~' index.video.txt|wc -l|grep '10'");
-            if (initTest.isEmpty()) {
-                defaultDrive.exec("awk -F'#' '{if (tolower($0) ~ /iso#/) {a[$3] = (a[$3] ? $1\"~~~\"a[$3] : $0)} else {print $0}} END {for (i in a) print a[i] \"#\" i}' index.video.txt > index.tmp.txt\nmv -f index.tmp.txt index.video.txt");
-            }
-        });
-        thread.start();
+        //处理合并列表，iso和非iso分别合并
+        String initTest = defaultDrive.exec("[ -f index.combined.txt ] && grep '~~~~~~~~~~' index.combined.txt");
+        if (initTest.isEmpty()) {
+            defaultDrive.exec("cp -f index.video.txt index.combined.txt");
+            Thread thread = new Thread(() -> {
+                // defaultDrive.exec("awk -F'#' '{if (tolower($0) ~ /iso#/) {a[$3] = (a[$3] ? $1\"~~~\"a[$3] : $0)} else {print $0}} END {for (i in a) print a[i]}' index.combined.txt > index.tmp.txt;mv -f index.tmp.txt index.combined.txt");
+                defaultDrive.exec("awk -F'#' 'NF<2{print;next} tolower($0)~/iso#/{a[$3]=(a[$3]?$1\"~~~\"a[$3]:$0);next} {b[$3]=(b[$3]?$1\"~~~\"b[$3]:$0)} END{for(i in b)print b[i];for(i in a)print a[i]}' index.combined.txt > index.tmp.txt;mv -f index.tmp.txt index.combined.txt;echo '~~~~~~~~~~'>>index.combined.txt"); 
+            });
+            thread.start();
+        }
 
         String result = Result.string(classes, list, filters);
         return result;
@@ -98,24 +101,41 @@ public class AListSh extends AList {
         if (fallback) {
             return super.searchContent(keyword, quick);
         }
+        /*
         if (!quick) {
             return super.searchContent(keyword, quick);
         }
-        List<String> lines = new ArrayList<>();
-        synchronized (quickCach) {
-            for (String s : quickCach) {
-                if (s.contains(String.format("#%s#", keyword))) {
-                    lines.add(s);
+        //*/
+        if (quick) {
+            List<String> lines = new ArrayList<>();
+            synchronized (quickCach) {
+                for (String s : quickCach) {
+                    if (s.contains(String.format("#%s#", keyword))) {
+                        lines.add(s);
+                    }
                 }
             }
+            if (lines.size() == 0) {
+                String cmd = String.format("{ cat index.combined.txt;echo ''; } | grep '#%s#' | sed 's|^[.]/||' | grep -v -e '^$' -e '^[^/]*$'", keyword);
+                //还原合并列表
+                cmd += "|awk -F'#' '{n=split($1,p,\"~~~\"); if(n>1 && tolower($1) !~ /iso$/){r=$0; sub(/^[^#]*#/,\"\",r); for(i=1;i<=n;i++) print p[i]\"#\"r} else {print $0}}'";
+                lines = Arrays.asList(defaultDrive.exec(cmd).split("\n"));
+            }
+            List<Vod> list = toVods(defaultDrive, lines);
+            String result = Result.get().vod(list).page().string();
+            return result;
+        } else {
+            List<String> lines = new ArrayList<>();
+            if (lines.size() == 0) {
+                keyword = keyword.replace(" ", ".*");
+                String cmd = String.format("{ cat index.combined.txt;echo ''; } | grep -i '%s' | sed 's|^[.]/||' | grep -v -e '^$' -e '^[^/]*$'", keyword);
+                lines = Arrays.asList(defaultDrive.exec(cmd).split("\n"));
+            }
+            List<Vod> list = toVods(defaultDrive, lines);
+            String result = Result.get().vod(list).page().string();
+            Logger.log("searchContent: " + result);
+            return result;
         }
-        if (lines.size() == 0) {
-            String cmd = String.format("{ cat index.video.txt;echo ''; } | grep '#%s#' | sed 's|^[.]/||' | grep -v -e '^$' -e '^[^/]*$'", keyword);
-            lines = Arrays.asList(defaultDrive.exec(cmd).split("\n"));
-        }
-        List<Vod> list = toVods(defaultDrive, lines);
-        String result = Result.get().vod(list).page().string();
-        return result;
     }
 
     @Override
@@ -229,18 +249,43 @@ public class AListSh extends AList {
         if (fallback) {
             return super.xiaoyaCategoryContent(tid, pg, filter, extend);
         }
-        Logger.log(tid);
+        Logger.log("xiaoyaCategoryContent: " + tid);
         String result = "";
         fetchRule();
         String key = tid.contains("/") ? tid.substring(0, tid.indexOf("/")) : tid;
         Drive drive = getDrive(key);
         HashMap<String, String> fl = extend;
         drive.fl = fl;
+
+        //合并列表
+        if (isCombinedList(tid)) {
+            int slashIndex = tid.indexOf("/");
+            String combinedPaths = (slashIndex != -1) ? tid.substring(slashIndex + 1) : tid;
+            String[] splits = combinedPaths.split("~~~");
+            List<String> pathList = new ArrayList<>();
+            for (String s : splits) {
+                pathList.add(s.replace("./", "").replace("/~xiaoya", ""));
+            }
+            if (pathList.isEmpty()) return Result.get().string();
+            Vod baseVod = findVodByPath(drive, pathList.get(0));
+            List<Vod> vodList = toVods(drive, pathList);
+            if (baseVod !=null) {
+                for (Vod v : vodList) {
+                    v.doubanInfo = baseVod.doubanInfo;
+                    v.setVodPic(baseVod.getVodPic());
+                    v.setStyle(Vod.Style.list());
+                }
+            }
+            result = Result.get().vod(vodList).page().string();
+            Logger.log("xiaoyaCategoryContent, Combined Result: " + result);
+            return result;
+        }
+
         String cmd;
         if (drive.getName().equals("每日更新")) {
             cmd = "{ cat index.daily.txt;echo ''; } | tac | grep -v -e '^$' -e '^[^/]*$'";
         } else {
-            cmd = "{ cat index.video.txt;echo ''; } | grep -v -e '^$' -e '^[^/]*$'";
+            cmd = "{ cat index.combined.txt;echo ''; } | grep -v -e '^$' -e '^[^/]*$'";
         }
         String subpath = fl.get("subpath");
         if (subpath != null && !subpath.equals("~all")) {
@@ -337,8 +382,8 @@ public class AListSh extends AList {
         if (fallback) {
             return super.findVodByPath(drive, path);
         }
-        // String cmd = String.format("{ cat index.video.txt;echo ''; } | grep -F './%s' | sed 's|^[.]/||'", path.replace("'", "\'"));
-        String cmd = String.format("{ cat index.video.txt;echo ''; } | grep -F './%s' | sed 's|^[.]/||'", path.replace("'", "'\\''"));
+        // String cmd = String.format("{ cat index.combined.txt;echo ''; } | grep -F './%s' | sed 's|^[.]/||'", path.replace("'", "\'"));
+        String cmd = String.format("{ cat index.combined.txt;echo ''; } | grep -F './%s' | sed 's|^[.]/||'", path.replace("'", "'\\''"));
         List<String> lines = Arrays.asList(defaultDrive.exec(cmd).split("\n"));
         List<String> match = new ArrayList<>();
         for (String line : lines) {
@@ -346,7 +391,7 @@ public class AListSh extends AList {
             if (s.endsWith("/")) {
                 s = s.substring(0, s.lastIndexOf("/"));
             }
-            if (s.equals(path)) {
+            if (s.contains(path)) {
                 match.add(line);
                 break;
             }
@@ -363,7 +408,9 @@ public class AListSh extends AList {
                     }
                 }
                 quickCach.clear();
-                String cmd1 = String.format("{ cat index.video.txt;echo ''; } | grep -F '#%s#' | sed 's|^[.]/||' | grep -v -e '^$' -e '^[^/]*$'", vod.getVodName());
+                String cmd1 = String.format("{ cat index.combined.txt;echo ''; } | grep -F '#%s#' | sed 's|^[.]/||' | grep -v -e '^$' -e '^[^/]*$'", vod.getVodName());
+                //还原合并列表
+                cmd1 += "|awk -F'#' '{n=split($1,p,\"~~~\"); if(n>1 && tolower($1) !~ /iso$/){r=$0; sub(/^[^#]*#/,\"\",r); for(i=1;i<=n;i++) print p[i]\"#\"r} else {print $0}}'";
                 List<String> tmpLines = Arrays.asList(defaultDrive.exec(cmd1).split("\n"));
                 quickCach.addAll(tmpLines);
             }   

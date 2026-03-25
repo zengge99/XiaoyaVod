@@ -297,7 +297,7 @@ public class AList extends Spider {
         String key = tid.contains("/") ? tid.substring(0, tid.indexOf("/")) : tid;
         Drive drive = getDrive(key);
         drive.fl = extend;
-        if (drive.noPoster()) {
+        if (drive.noPoster() && !isCombinedList(tid)) {
             return alistCategoryContent(tid, pg, filter, extend);
         } else {
             return xiaoyaCategoryContent(tid, pg, filter, extend);
@@ -1176,6 +1176,10 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
         return 1.0 - (double) arr[sourceLen][targetLen] / Math.max(sourceLen, targetLen);
     }
 
+    protected boolean isCombinedList(String path) {
+        return path.contains("~~~") && !path.toLowerCase().contains("iso#");
+    }
+
     protected List<Vod> toVods(Drive drive, List<String> lines) {
         Logger.log("toVods() converting " + lines.size() + " lines");
         long startTime = System.currentTimeMillis();
@@ -1191,7 +1195,12 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
                     index = splits[0].lastIndexOf("/");
                 }
                 Item item = new Item();
-                item.setType(0);
+                //合并列表
+                if (isCombinedList(line)){
+                    item.setType(1);
+                } else {
+                    item.setType(0);
+                }
                 item.doubanInfo.setId(splits.length >= 3 ? splits[2] : "");
                 item.doubanInfo.setRating(splits.length >= 4 ? splits[3] : "");
                 item.doubanInfo.setYear(splits.length >= 6 ? splits[5] : "");
