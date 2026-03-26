@@ -126,11 +126,17 @@ public class AListSh extends AList {
             return result;
         } else {
             List<String> lines = new ArrayList<>();
-            if (lines.size() == 0) {
-                keyword = keyword.replace(" ", ".*");
-                String cmd = String.format("{ cat index.combined.txt;echo ''; } | grep -i '%s' | sed 's|^[.]/||' | grep -v -e '^$' -e '^[^/]*$'", keyword);
-                lines = Arrays.asList(defaultDrive.exec(cmd).split("\n"));
+            keyword = keyword.replace(" ", ".*");
+            String cmd = String.format("{ cat index.combined.txt;echo ''; } | grep -i '%s' | sed 's|^[.]/||' | grep -v -e '^$' -e '^[^/]*$'", keyword);
+            String defaultFilter = defaultDrive.defaultFilter();
+            if (!defaultFilter.isEmpty()) {
+                if (defaultFilter.startsWith("|")) {
+                    cmd += defaultFilter;
+                } else {
+                    cmd += String.format(" | grep '%s'", defaultFilter);
+                }
             }
+            lines = Arrays.asList(defaultDrive.exec(cmd).split("\n"));
             List<Vod> list = toVods(defaultDrive, lines);
             String result = Result.get().vod(list).page().string();
             Logger.log("searchContent: " + result);
