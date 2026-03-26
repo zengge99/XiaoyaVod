@@ -580,6 +580,7 @@ public class AList extends Spider {
                 }
                 
                 String displayPlot = vod.doubanInfo.getPlot().isEmpty() ? "文件路径: \r\n" + TextUtils.join("\r\n", displayPaths) : vod.doubanInfo.getPlot() + "\r\n\r\n文件路径: \r\n" + TextUtils.join("\r\n", displayPaths);
+                Logger.log("fileDetailContent displayPlot: " + displayPlot);
                 vod.setVodContent(displayPlot);
                 String fullUrl = TextUtils.join("#", playUrls);
                 Logger.log("fileDetailContent Multi-Part Url: " + fullUrl);
