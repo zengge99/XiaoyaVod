@@ -64,6 +64,8 @@ public class Drive {
     private Boolean pathByApi;
     @SerializedName("defaultFilter")
     private String defaultFilter;
+    @SerializedName("combindedMode")
+    private Boolean combindedMode;
     public HashMap<String, String> fl;
 
     private static class SignCache {
@@ -73,6 +75,10 @@ public class Drive {
     
     private SignCache cache = null;
     private static final long CACHE_DURATION_SECONDS = 5;
+
+    public Boolean getCombinedMode() {
+        return combindedMode == null ? true : combindedMode;
+    }
     
     public String getSign() {
         if (cache != null && System.currentTimeMillis() < cache.expirationTime) {
