@@ -43,7 +43,7 @@ public class KanDanmuFetcher extends DanmuFetcher {
 
             return thisObject.getDanmakutXml(episodeUrl);
         } catch (Exception e) {
-            Logger.log("getBilibiliDanmakuXML" + e);
+            Logger.log("KanDanmuFetcher.getBilibiliDanmakuXML" + e);
             return "";
         }
     }

@@ -38,7 +38,7 @@ public class IqiyiDanmuFetcher extends DanmuFetcher {
 
             return thisObject.getDanmakutXml(episodeUrl);
         } catch (Exception e) {
-            Logger.log("getBilibiliDanmakuXML" + e);
+            Logger.log("IqiyiDanmuFetcher.getBilibiliDanmakuXML" + e);
             return "";
         }
     }
