@@ -79,7 +79,7 @@ public class DanmuFetcher {
     }
 
     protected String getDanmakutXml(String episodeUrl) {
-        String xml = null;//getDanmakutXmlFromLogvar(episodeUrl);
+        String xml = getDanmakutXmlFromLogvar(episodeUrl);
         if (xml == null || xml.isEmpty()) {
             xml = getDanmakutXmlFromChenxi(episodeUrl);
         }
@@ -87,13 +87,15 @@ public class DanmuFetcher {
     }
 
     private String getDanmakutXmlFromLogvar(String episodeUrl) {
-        String apiUrl = "https://www.2019102.xyz/api/v2/comment?&format=xml&&url=" + episodeUrl;
-        try {
-            String rawResponse = sendGetRequest(apiUrl);
-            if (rawResponse != null && rawResponse.startsWith("<?xml") && rawResponse.contains("<d p=")) {
-                return rawResponse;
-            }
-        } catch (Exception ignored) {}
+        if (danmuApi != null && !danmuApi.isEmpty()) {
+            String apiUrl = danmuApi + "/api/v2/comment?&format=xml&&url=" + episodeUrl;
+            try {
+                String rawResponse = sendGetRequest(apiUrl);
+                if (rawResponse != null && rawResponse.startsWith("<?xml") && rawResponse.contains("<d p=")) {
+                    return rawResponse;
+                }
+            } catch (Exception ignored) {}
+        }
         return "";
     }
 
