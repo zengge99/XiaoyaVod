@@ -508,7 +508,7 @@ public class AList extends Spider {
         
         if (id.endsWith("~xiaoya") && !vod.doubanInfo.getId().isEmpty()) {
             vod.doubanInfo = DoubanParser.getDoubanInfo(vod.doubanInfo.getId(), vod.doubanInfo);
-            vod.setVodContent(vod.doubanInfo.getPlot() + "\r\n\r\n文件路径: \r\n" + path.substring(path.indexOf("/") + 1));
+            vod.setVodContent(vod.doubanInfo.getPlot().isEmpty() ? "文件路径: \r\n" + path.substring(path.indexOf("/") + 1) : vod.doubanInfo.getPlot() + "\r\n\r\n文件路径: \r\n" + path.substring(path.indexOf("/") + 1));
             vod.setVodActor(vod.doubanInfo.getActors());
             vod.setVodDirector(vod.doubanInfo.getDirector());
             vod.setVodArea(vod.doubanInfo.getRegion());
@@ -519,36 +519,6 @@ public class AList extends Spider {
 
         if (id.endsWith("~xiaoya")) {
             if (path.contains("~~~")) {
-                /*
-                String filesPart = path.substring(path.indexOf("/") + 1);
-                String[] splits = filesPart.split("~~~");
-                
-                List<String> playUrls = new ArrayList<>();
-                List<String> displayPaths = new ArrayList<>();
-                for (String s : splits) {
-                    s = s.replaceAll("^\\./", "");
-                    displayPaths.add(s);
-                    
-                    String fileName = s.substring(s.lastIndexOf("/") + 1);
-                    
-                    String fullPathForPlayer = key + "/" + s;
-
-                    String doubanName = vod.doubanInfo.getName();
-                    String doubanYear = vod.doubanInfo.getYear();
-                    
-                    String formattedUrl = String.format("%s$%s~~~danmu:%s,1,%s", 
-                                            fileName, fullPathForPlayer, doubanName, doubanYear);
-                    playUrls.add(formattedUrl);
-                }
-                Sorter.sort("asc", playUrls);
-                Sorter.sort("asc", displayPaths);
-                String displayPlot = vod.doubanInfo.getId().isEmpty() ? "文件路径: \r\n" + TextUtils.join("\r\n", displayPaths) : vod.doubanInfo.getPlot() + "\r\n\r\n文件路径: \r\n" + TextUtils.join("\r\n", displayPaths);
-                vod.setVodContent(displayPlot);
-                String fullUrl = TextUtils.join("#", playUrls);
-                Logger.log("fileDetailContent Multi-Part Url: " + fullUrl);
-                vod.setVodPlayUrl(fullUrl);
-                //*/
-
                 String filesPart = path.substring(path.indexOf("/") + 1);
                 String[] splits = filesPart.split("~~~");
                 List<String> paths = new ArrayList<>();
