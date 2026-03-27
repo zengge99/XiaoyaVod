@@ -31,26 +31,17 @@ public class KanDanmuFetcher extends DanmuFetcher {
      */
     public static String getBilibiliDanmakuXML(String title, int episode, int year) {
         try {
-            // Step 1: Get showId
             String showId = thisObject.searchEnId(title, year);
             if (showId == null) {
                 throw new RuntimeException("No matching show found");
             }
 
-            // Step 2: Get episode URL
             String episodeUrl = thisObject.getEpisodeUrl(showId, episode);
             if (episodeUrl == null) {
                 throw new RuntimeException("No matching episode found");
             }
 
-            // Step 3: Fetch danmaku data
-            List<List<Object>> danmakuData = thisObject.fetchDanmaku(episodeUrl);
-            if (danmakuData == null) {
-                throw new RuntimeException("Failed to fetch danmaku");
-            }
-
-            // Step 4: Convert to Bilibili XML format
-            return thisObject.convertToBilibiliXML(danmakuData);
+            return thisObject.getDanmakutXml(episodeUrl);
         } catch (Exception e) {
             Logger.log("getBilibiliDanmakuXML" + e);
             return "";

@@ -36,7 +36,6 @@ public class DanmuFetcher {
                 Thread.sleep(100);
                 File danmuFile = new File(danmuPath);
                 if (!Path.read(danmuFile).isEmpty()) {
-                    //thisObject.sendGetRequest("http://127.0.0.1:9978/action?do=refresh&type=danmaku&path=" + "file://" + danmuPath);
                     String danmuProxyPath = "http://127.0.0.1:9978/proxy?do=fs&file=" + danmuPath;
                     Logger.log(danmuProxyPath);
                     thisObject.sendGetRequest("http://127.0.0.1:9978/action?do=refresh&type=danmaku&path=" + URLEncoder.encode(danmuProxyPath, "UTF-8"));
@@ -65,30 +64,62 @@ public class DanmuFetcher {
      */
     public static String getBilibiliDanmakuXML(String title, int episode, int year) {
         try {
-            // Step 1: Get showId
             String showId = thisObject.searchShowId(title, year);
             if (showId == null) {
                 throw new RuntimeException("No matching show found");
             }
 
-            // Step 2: Get episode URL
             String episodeUrl = thisObject.getEpisodeUrl(showId, episode);
             if (episodeUrl == null) {
                 throw new RuntimeException("No matching episode found");
             }
 
-            // Step 3: Fetch danmaku data
-            List<List<Object>> danmakuData = thisObject.fetchDanmaku(episodeUrl);
-            if (danmakuData == null) {
-                throw new RuntimeException("Failed to fetch danmaku");
-            }
-
-            // Step 4: Convert to Bilibili XML format
-            return thisObject.convertToBilibiliXML(danmakuData);
+            return thisObject.getDanmakutXml(episodeUrl);
         } catch (Exception e) {
             Logger.log("getBilibiliDanmakuXML" + e);
             return "";
         }
+    }
+
+    protected String getDanmakutXml(String episodeUrl) {
+        String xml = getDanmakutXmlFromLogvar();
+        if (xml == null || xml.isEmpty()) {
+            xml = getDanmakutXmlFromChenxi(danmakuData);
+        }
+        return xml;
+    }
+
+     private String getDanmakutXmlFromLogvar(String episodeUrl) {
+        List<String> apiEndpoints = Arrays.asList(
+            "https://www.2019102.xyz/api/v2/comment?&format=xml&&url="
+        );
+        // https://www.2019102.xyz/api/v2/comment?&format=xml&&url=https://www.iqiyi.com/v_1dmq726917c.html
+        
+        for (String endpoint : apiEndpoints) {
+            try {
+                String apiUrl = endpoint + episodeUrl;
+                String rawResponse = sendGetRequest(apiUrl);;
+                
+                if (rawResponse.split("\n")[0].equals("<i>")) {
+                    return rawResponse;
+                }
+
+                return "";
+            } catch (Exception e) {
+                return "";
+            }
+        }
+
+        return null;
+    }
+
+    private String getDanmakutXmlFromChenxi(String episodeUrl) {
+        List<List<Object>> danmakuData = thisObject.fetchDanmaku(episodeUrl);
+        if (danmakuData == null) {
+            Logger.log("Failed to fetch danmaku");
+            return "";
+        }
+        return thisObject.convertToBilibiliXML(danmakuData);
     }
 
     private String searchShowId(String title, int year) throws IOException {
@@ -203,9 +234,9 @@ public class DanmuFetcher {
 
     private List<List<Object>> fetchDanmakuFromUrl(String danmakuUrl) {
         try {
-            String jsonResponse = sendGetRequest(danmakuUrl);
+            String rawResponse = sendGetRequest(danmakuUrl);
             Gson gson = new Gson();
-            JsonObject response = gson.fromJson(jsonResponse, JsonObject.class);
+            JsonObject response = gson.fromJson(rawResponse, JsonObject.class);
 
             // 检查 danmu 字段的值
             int num = 1; // 默认值

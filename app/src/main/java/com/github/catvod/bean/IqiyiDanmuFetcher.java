@@ -31,27 +31,19 @@ public class IqiyiDanmuFetcher extends DanmuFetcher {
      */
     public static String getBilibiliDanmakuXML(String title, int episode, int year) {
         try {
-            // Step 1: Get episode URL
-            String episodeUrl = thisObject.getEpisodeUrl(title, episode);
+            String episodeUrl = thisObject.getEpisodeUrl(title, episode, year);
             if (episodeUrl == null) {
                 throw new RuntimeException("No matching episode found");
             }
 
-            // Step 2: Fetch danmaku data
-            List<List<Object>> danmakuData = thisObject.fetchDanmaku(episodeUrl);
-            if (danmakuData == null) {
-                throw new RuntimeException("Failed to fetch danmaku");
-            }
-
-            // Step 3: Convert to Bilibili XML format
-            return thisObject.convertToBilibiliXML(danmakuData);
+            return thisObject.getDanmakutXml(episodeUrl);
         } catch (Exception e) {
             Logger.log("getBilibiliDanmakuXML" + e);
             return "";
         }
     }
 
-    private String getEpisodeUrl(String title, int episode) throws IOException {
+    private String getEpisodeUrl(String title, int episode, int year) throws IOException {
         String encodedTitle = URLEncoder.encode(title, "UTF-8");
         String episodeUrl = "https://search.video.iqiyi.com/o?if=html5&pageNum=1&pos=1&pageSize=24&site=iqiyi&key=" + encodedTitle;
         String jsonResponse = sendGetRequest(episodeUrl);
@@ -64,6 +56,12 @@ public class IqiyiDanmuFetcher extends DanmuFetcher {
             JsonObject docData = item.getAsJsonObject();
             JsonObject albumDocInfo = docData.getAsJsonObject("albumDocInfo"); // 深入 albumDocInfo
             String albumTitle = albumDocInfo.get("albumTitle").getAsString();
+            String releaseDate = albumDocInfo.get("releaseDate").getAsString();
+            if (releaseDate != null && !releaseDate.isEmpty()) {
+                if (releaseDate.contains(String.valueOf(year))) {
+                    continue;
+                }
+            }
             if (albumTitle.equals(title)) {
                 JsonArray videoInfos = albumDocInfo.getAsJsonArray("videoinfos"); // 注意字段名是 videoinfos
                 for (JsonElement videoItem : videoInfos) {
