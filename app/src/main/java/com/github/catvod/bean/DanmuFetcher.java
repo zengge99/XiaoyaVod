@@ -89,7 +89,7 @@ public class DanmuFetcher {
         return xml;
     }
 
-     private String getDanmakutXmlFromLogvar(String episodeUrl) {
+    private String getDanmakutXmlFromLogvar(String episodeUrl) {
         List<String> apiEndpoints = Arrays.asList(
             "https://www.2019102.xyz/api/v2/comment?&format=xml&&url="
         );
