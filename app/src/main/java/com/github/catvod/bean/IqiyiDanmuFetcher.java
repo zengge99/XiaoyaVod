@@ -58,7 +58,7 @@ public class IqiyiDanmuFetcher extends DanmuFetcher {
             String albumTitle = albumDocInfo.get("albumTitle").getAsString();
             String releaseDate = albumDocInfo.get("releaseDate").getAsString();
             if (releaseDate != null && !releaseDate.isEmpty()) {
-                if (releaseDate.contains(String.valueOf(year))) {
+                if (!releaseDate.contains(String.valueOf(year))) {
                     continue;
                 }
             }
