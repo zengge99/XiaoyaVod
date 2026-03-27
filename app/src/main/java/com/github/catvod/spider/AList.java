@@ -143,6 +143,11 @@ public class AList extends Spider {
                 }
             }
         }
+        
+        if (globalConfig != null) {
+            jsonObject.add("globalConfig", globalConfig);
+        }
+
         String result = new Gson().toJson(jsonObject);
         Drive drive = Drive.objectFrom(result);
         DanmuFetcher.danmuApi = drive.globalConfig.getDanmuApi();
