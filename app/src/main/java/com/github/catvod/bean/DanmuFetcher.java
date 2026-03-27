@@ -89,7 +89,7 @@ public class DanmuFetcher {
         String apiUrl = "https://www.2019102.xyz/api/v2/comment?&format=xml&&url=" + episodeUrl;
         try {
             String rawResponse = sendGetRequest(apiUrl);
-            if (rawResponse != null && rawResponse.startsWith("<?xml")) {
+            if (rawResponse != null && rawResponse.startsWith("<?xml") && rawResponse.contains("<d p=")) {
                 return rawResponse;
             }
         } catch (Exception ignored) {}
@@ -114,6 +114,7 @@ public class DanmuFetcher {
         for (JsonElement item : pageComponentList) {
             JsonObject commonData = item.getAsJsonObject().getAsJsonObject("commonData");
             if (commonData != null && commonData.has("feature") && commonData.get("feature").getAsString().contains(yearStr)) {
+                Logger.log("Found showid at youku: " + commonData.get("showId").getAsString());
                 return commonData.get("showId").getAsString();
             }
         }
@@ -136,11 +137,15 @@ public class DanmuFetcher {
             if (extractNumber(showVideoStage) == episode || extractNumber(displayName) == episode) {
                 if (series.has("url")) {
                     String url = series.get("url").getAsString();
-                    if (url != null && !url.isEmpty()) return url.split("\\?")[0];
+                    if (url != null && !url.isEmpty()) {
+                        Logger.log("Found url at youku: " + url.split("\\?")[0]);
+                        return url.split("\\?")[0];
+                    }
                 }
                 if (series.has("videoId")) {
                     String videoId = series.get("videoId").getAsString();
                     if (videoId != null && !videoId.isEmpty()) {
+                        Logger.log("Found url at youku: " + "https://v.youku.com/v_show/id_" + videoId + ".html");
                         return "https://v.youku.com/v_show/id_" + videoId + ".html";
                     }
                 }
