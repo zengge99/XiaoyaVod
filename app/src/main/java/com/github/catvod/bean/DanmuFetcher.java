@@ -78,7 +78,7 @@ public class DanmuFetcher {
     }
 
     protected String getDanmakutXml(String episodeUrl) {
-        String xml = getDanmakutXmlFromLogvar(episodeUrl);
+        String xml = null;//getDanmakutXmlFromLogvar(episodeUrl);
         if (xml == null || xml.isEmpty()) {
             xml = getDanmakutXmlFromChenxi(episodeUrl);
         }
