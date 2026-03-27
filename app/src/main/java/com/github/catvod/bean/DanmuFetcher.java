@@ -31,6 +31,7 @@ public class DanmuFetcher {
     private static final ExecutorService EXECUTOR = Executors.newCachedThreadPool(); // 使用线程池代替 new Thread
     private static final Pattern NUMBER_PATTERN = Pattern.compile("\\d{1,4}");
     private static final int TIMEOUT = 20000;
+    public static String danmuApi;
 
     public static void pushDanmu(String title, int episode, int year) {
         String key = title + episode + year;
