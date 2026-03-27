@@ -138,12 +138,12 @@ public class AList extends Spider {
             if (element.isJsonObject()) {
                 JsonObject item = element.getAsJsonObject();
                 if (item.has("type") && "global".equals(item.get("type").getAsString())) {
-                    globalConfig = item; // 赋值给 globalConfig
-                    iterator.remove();   // 从 drives 数组中过滤掉
+                    globalConfig = item;
+                    iterator.remove();
                 }
             }
         }
-        
+
         if (globalConfig != null) {
             jsonObject.add("globalConfig", globalConfig);
         }
