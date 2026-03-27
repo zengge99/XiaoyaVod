@@ -179,15 +179,8 @@ public class DanmuFetcher {
     protected List<List<Object>> fetchDanmaku(String episodeUrl) {
         // 定义多个备用API端点
         List<String> apiEndpoints = Arrays.asList(
-            //"http://8.137.58.194:55/danmu/?ac=dm&url=",
-            "https://danmu.56uxi.com?ac=dm&url=",
-            "https://imliao.xyz/?ac=dm&url=",
-            "https://danmuku.sbs/?ac=dm&url=",
             "https://dmku.hls.one?ac=dm&url=",
             "https://api.danmu.icu/?ac=dm&url="
-            //"https://dm.vidz.asia/?ac=dm&url="
-            //"https://dmku.itcxo.cn/?ac=dm&url=",
-            //"https://dmku.thefilehosting.com?ac=dm&url="
         );
         //https://dmku.hls.one?ac=dm&url=https://www.iqiyi.com/v_1dmq726917c.html
         
