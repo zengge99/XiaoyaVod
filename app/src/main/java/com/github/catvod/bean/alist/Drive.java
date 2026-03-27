@@ -33,7 +33,8 @@ import com.github.catvod.utils.Util;
 import com.github.catvod.spider.Logger;
 
 public class Drive {
-
+    @SerializedName("globalConfig")
+    public Drive globalConfig;
     @SerializedName("drives")
     private List<Drive> drives;
     @SerializedName("params")
@@ -66,6 +67,8 @@ public class Drive {
     private String defaultFilter;
     @SerializedName("combinedMode")
     private Boolean combinedMode;
+    @SerializedName("danmuApi")
+    private String danmuApi;
     public HashMap<String, String> fl;
 
     private static class SignCache {
@@ -201,6 +204,14 @@ public class Drive {
 
     public String getServer() {
         String r = TextUtils.isEmpty(server) ? "" : server;
+        if (r.endsWith("/")) {
+            r = r.substring(0, r.lastIndexOf("/"));
+        }
+        return r;
+    }
+
+    public String getDanmuApi() {
+        String r = TextUtils.isEmpty(danmuApi) ? "" : danmuApi;
         if (r.endsWith("/")) {
             r = r.substring(0, r.lastIndexOf("/"));
         }
