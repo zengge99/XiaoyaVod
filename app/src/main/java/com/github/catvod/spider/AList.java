@@ -150,12 +150,15 @@ public class AList extends Spider {
 
         String result = new Gson().toJson(jsonObject);
         Drive drive = Drive.objectFrom(result);
-        DanmuFetcher.danmuApi = drive.globalConfig.getDanmuApi();
         drives = drive.getDrives();
         vodPic = drive.getVodPic();
 
         List<Drive> searcherDrivers = new ArrayList<>();
         for (Drive d : drives) {
+            if (globalConfig != null) {
+                d.globalConfig = drive.globalConfig;
+                DanmuFetcher.danmuApi = d.globalConfig.getDanmuApi();
+            }
             if (d.search()) {
                 searcherDrivers.add(d);
             }
