@@ -89,7 +89,7 @@ public class DanmuFetcher {
         String apiUrl = "https://www.2019102.xyz/api/v2/comment?&format=xml&&url=" + episodeUrl;
         try {
             String rawResponse = sendGetRequest(apiUrl);
-            if (rawResponse != null && rawResponse.startsWith("<i>")) {
+            if (rawResponse != null && rawResponse.startsWith("<?xml")) {
                 return rawResponse;
             }
         } catch (Exception ignored) {}
