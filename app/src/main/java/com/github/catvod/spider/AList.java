@@ -127,7 +127,6 @@ public class AList extends Spider {
             return;
         if (ext.startsWith("http"))
             ext = OkHttp.string(ext);
-        Logger.log(ext);
         String ext1 = "{\"drives\":" + ext + "}";
         JsonObject jsonObject = JsonParser.parseString(ext1).getAsJsonObject();
         JsonArray drives1 = jsonObject.getAsJsonArray("drives");
@@ -161,6 +160,7 @@ public class AList extends Spider {
         }
 
         String result = new Gson().toJson(jsonObject);
+        Logger.log(result);
         Drive drive = Drive.objectFrom(result);
         drives = drive.getDrives();
         vodPic = drive.getVodPic();
