@@ -145,6 +145,7 @@ public class AList extends Spider {
         }
 
         if (globalConfig != null) {
+            globalConfig.remove("type");
             for (Map.Entry<String, JsonElement> entry : globalConfig.entrySet()) {
                 iterator = drives1.iterator();
                 while (iterator.hasNext()) {
