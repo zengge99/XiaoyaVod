@@ -67,6 +67,7 @@ public class KanDanmuFetcher extends DanmuFetcher {
             JsonObject show = item.getAsJsonObject();
             String showYear = show.get("year").getAsString();
             if (showYear.equals(String.valueOf(year))) {
+                Logger.log("Found en_id at 360kan: " + show.get("en_id").getAsString());
                 return show.get("en_id").getAsString(); // 返回 en_id
             }
         }
@@ -89,6 +90,7 @@ public class KanDanmuFetcher extends DanmuFetcher {
                 JsonObject episodeData = item.getAsJsonObject();
                 int playlinkNum = episodeData.get("playlink_num").getAsInt();
                 if (playlinkNum == episode) {
+                    Logger.log("Found url at 360kan: " + episodeData.get("url").getAsString().split("\\?")[0]);
                     return episodeData.get("url").getAsString().split("\\?")[0]; // 返回剧集URL
                 }
             }
