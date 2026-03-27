@@ -38,7 +38,7 @@ public class IqiyiDanmuFetcher extends DanmuFetcher {
 
             return thisObject.getDanmakutXml(episodeUrl);
         } catch (Exception e) {
-            Logger.log("getBilibiliDanmakuXML" + e);
+            Logger.log("IqiyiDanmuFetcher.getBilibiliDanmakuXML" + e);
             return "";
         }
     }
@@ -58,7 +58,7 @@ public class IqiyiDanmuFetcher extends DanmuFetcher {
             String albumTitle = albumDocInfo.get("albumTitle").getAsString();
             String releaseDate = albumDocInfo.get("releaseDate").getAsString();
             if (releaseDate != null && !releaseDate.isEmpty()) {
-                if (releaseDate.contains(String.valueOf(year))) {
+                if (!releaseDate.contains(String.valueOf(year))) {
                     continue;
                 }
             }
@@ -68,6 +68,7 @@ public class IqiyiDanmuFetcher extends DanmuFetcher {
                     JsonObject episodeData = videoItem.getAsJsonObject();
                     int itemNumber = episodeData.get("itemNumber").getAsInt();
                     if (itemNumber == episode) {
+                        Logger.log("Found url at iqiyi: " + episodeData.get("itemLink").getAsString().split("\\?")[0]);
                         return episodeData.get("itemLink").getAsString().split("\\?")[0]; // 返回剧集URL
                     }
                 }
