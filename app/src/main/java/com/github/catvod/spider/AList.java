@@ -140,12 +140,24 @@ public class AList extends Spider {
                 if (item.has("type") && "global".equals(item.get("type").getAsString())) {
                     globalConfig = item;
                     iterator.remove();
+                    break;
                 }
             }
         }
 
         if (globalConfig != null) {
-            jsonObject.add("globalConfig", globalConfig);
+            for (Map.Entry<String, JsonElement> entry : globalConfig.entrySet()) {
+                iterator = drives1.iterator();
+                while (iterator.hasNext()) {
+                    JsonElement element = iterator.next();
+                    if (element.isJsonObject()) {
+                        JsonObject item = element.getAsJsonObject();
+                        if (!item.has(entry.getKey())) {
+                            item.add(entry.getKey(), entry.getValue());
+                        }
+                    }
+                }
+            }
         }
 
         String result = new Gson().toJson(jsonObject);
@@ -155,10 +167,6 @@ public class AList extends Spider {
 
         List<Drive> searcherDrivers = new ArrayList<>();
         for (Drive d : drives) {
-            if (globalConfig != null) {
-                d.globalConfig = drive.globalConfig;
-                DanmuFetcher.danmuApi = d.globalConfig.getDanmuApi();
-            }
             if (d.search()) {
                 searcherDrivers.add(d);
             }
@@ -168,8 +176,6 @@ public class AList extends Spider {
         } else {
             defaultDrive = drives.get(0);
         }
-
-        
 
         //默认驱动要执行exec，需要提前登陆，简单规避
         getList(defaultDrive.getName() + defaultDrive.getPath(), false);
