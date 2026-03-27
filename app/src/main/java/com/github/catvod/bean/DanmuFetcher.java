@@ -1,141 +1,119 @@
 package com.github.catvod.bean;
 
+import com.github.catvod.spider.Logger;
+import com.github.catvod.utils.Path;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
+import java.security.MessageDigest;
 import java.util.Arrays;
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonElement;
-import com.github.catvod.spider.Logger;
-import com.github.catvod.utils.Path;
-import java.io.File;
-import java.util.Date;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.security.MessageDigest;
 
 public class DanmuFetcher {
-    private static DanmuFetcher thisObject = new DanmuFetcher();
+    private static final DanmuFetcher INSTANCE = new DanmuFetcher();
     private static volatile String recent;
-    private static String danmuRoot = Path.cache() + "/TV/danmu";
+    private static final String DANMU_ROOT = Path.cache() + "/TV/danmu";
+    private static final Gson GSON = new Gson();
+    private static final ExecutorService EXECUTOR = Executors.newCachedThreadPool(); // 使用线程池代替 new Thread
+    private static final Pattern NUMBER_PATTERN = Pattern.compile("\\d{1,4}");
+    private static final int TIMEOUT = 20000;
 
     public static void pushDanmu(String title, int episode, int year) {
-        recent = title + String.valueOf(episode) + String.valueOf(year);
-        String danmuPath = danmuRoot + String.format("/%s.txt", generateMd5(title + String.valueOf(episode) + String.valueOf(year)));
+        String key = title + episode + year;
+        recent = key;
+        String fileName = generateMd5(key) + ".txt";
+        String danmuPath = DANMU_ROOT + "/" + fileName;
+
         clearOldDanmu();
-        //从缓存文件快速推弹幕
-        Thread thread = new Thread(() -> {
+
+        // 1. 快速从本地缓存推送
+        EXECUTOR.execute(() -> {
             try {
                 Thread.sleep(100);
                 File danmuFile = new File(danmuPath);
-                if (!Path.read(danmuFile).isEmpty()) {
+                if (danmuFile.exists() && danmuFile.length() > 0) {
                     String danmuProxyPath = "http://127.0.0.1:9978/proxy?do=fs&file=" + danmuPath;
-                    Logger.log(danmuProxyPath);
-                    thisObject.sendGetRequest("http://127.0.0.1:9978/action?do=refresh&type=danmaku&path=" + URLEncoder.encode(danmuProxyPath, "UTF-8"));
+                    String actionUrl = "http://127.0.0.1:9978/action?do=refresh&type=danmaku&path=" + URLEncoder.encode(danmuProxyPath, "UTF-8");
+                    INSTANCE.sendGetRequest(actionUrl);
                 }
             } catch (Exception e) {
-                Logger.log("pushDanmu" + e);
+                Logger.log("pushDanmu Cache: " + e.getMessage());
             }
         });
-        thread.start();
 
-        //后台线程从网络获取最新弹幕并重新推送
+        // 2. 后台获取最新并重新推送
         pushDanmuBg(title, episode, year);
 
-        //加速获取下一集弹幕
+        // 3. 预加载下一集
         pushDanmuBg(title, episode + 1, year);
     }
 
-    /**
-     * 获取 Bilibili 弹幕格式的 XML
-     *
-     * @param title   影片名
-     * @param episode 集数
-     * @param year    年份
-     * @return Bilibili 弹幕格式的 XML 字符串
-     * @throws IOException 如果请求失败
-     */
     public static String getBilibiliDanmakuXML(String title, int episode, int year) {
         try {
-            String showId = thisObject.searchShowId(title, year);
-            if (showId == null) {
-                throw new RuntimeException("No matching show found");
-            }
+            String showId = INSTANCE.searchShowId(title, year);
+            if (showId == null) return "";
 
-            String episodeUrl = thisObject.getEpisodeUrl(showId, episode);
-            if (episodeUrl == null) {
-                throw new RuntimeException("No matching episode found");
-            }
+            String episodeUrl = INSTANCE.getEpisodeUrl(showId, episode);
+            if (episodeUrl == null) return "";
 
-            return thisObject.getDanmakutXml(episodeUrl);
+            return INSTANCE.getDanmakutXml(episodeUrl);
         } catch (Exception e) {
-            Logger.log("getBilibiliDanmakuXML" + e);
+            Logger.log("getBilibiliDanmakuXML: " + e.getMessage());
             return "";
         }
     }
 
     protected String getDanmakutXml(String episodeUrl) {
-        String xml = getDanmakutXmlFromLogvar();
+        String xml = getDanmakutXmlFromLogvar(episodeUrl);
         if (xml == null || xml.isEmpty()) {
-            xml = getDanmakutXmlFromChenxi(danmakuData);
+            xml = getDanmakutXmlFromChenxi(episodeUrl);
         }
         return xml;
     }
 
     private String getDanmakutXmlFromLogvar(String episodeUrl) {
-        List<String> apiEndpoints = Arrays.asList(
-            "https://www.2019102.xyz/api/v2/comment?&format=xml&&url="
-        );
-        // https://www.2019102.xyz/api/v2/comment?&format=xml&&url=https://www.iqiyi.com/v_1dmq726917c.html
-        
-        for (String endpoint : apiEndpoints) {
-            try {
-                String apiUrl = endpoint + episodeUrl;
-                String rawResponse = sendGetRequest(apiUrl);;
-                
-                if (rawResponse.split("\n")[0].equals("<i>")) {
-                    return rawResponse;
-                }
-
-                return "";
-            } catch (Exception e) {
-                return "";
+        String apiUrl = "https://www.2019102.xyz/api/v2/comment?&format=xml&&url=" + episodeUrl;
+        try {
+            String rawResponse = sendGetRequest(apiUrl);
+            if (rawResponse != null && rawResponse.startsWith("<i>")) {
+                return rawResponse;
             }
-        }
-
-        return null;
+        } catch (Exception ignored) {}
+        return "";
     }
 
     private String getDanmakutXmlFromChenxi(String episodeUrl) {
-        List<List<Object>> danmakuData = thisObject.fetchDanmaku(episodeUrl);
-        if (danmakuData == null) {
-            Logger.log("Failed to fetch danmaku");
-            return "";
-        }
-        return thisObject.convertToBilibiliXML(danmakuData);
+        List<List<Object>> danmakuData = fetchDanmaku(episodeUrl);
+        return (danmakuData != null) ? convertToBilibiliXML(danmakuData) : "";
     }
 
     private String searchShowId(String title, int year) throws IOException {
-        // URL 编码影片名
         String encodedTitle = URLEncoder.encode(title, "UTF-8");
         String searchUrl = "https://search.youku.com/api/search?pg=1&keyword=" + encodedTitle;
         String jsonResponse = sendGetRequest(searchUrl);
 
-        Gson gson = new Gson();
-        JsonObject response = gson.fromJson(jsonResponse, JsonObject.class);
+        JsonObject response = GSON.fromJson(jsonResponse, JsonObject.class);
         JsonArray pageComponentList = response.getAsJsonArray("pageComponentList");
+        if (pageComponentList == null) return null;
 
+        String yearStr = String.valueOf(year);
         for (JsonElement item : pageComponentList) {
-            JsonObject commonData = item.getAsJsonObject().get("commonData").getAsJsonObject();
-            String feature = commonData.get("feature").getAsString();
-            if (feature.contains(String.valueOf(year))) {
+            JsonObject commonData = item.getAsJsonObject().getAsJsonObject("commonData");
+            if (commonData != null && commonData.has("feature") && commonData.get("feature").getAsString().contains(yearStr)) {
                 return commonData.get("showId").getAsString();
             }
         }
@@ -146,234 +124,122 @@ public class DanmuFetcher {
         String episodeUrl = "https://search.youku.com/api/search?appScene=show_episode&showIds=" + showId;
         String jsonResponse = sendGetRequest(episodeUrl);
 
-        Gson gson = new Gson();
-        JsonObject response = gson.fromJson(jsonResponse, JsonObject.class);
+        JsonObject response = GSON.fromJson(jsonResponse, JsonObject.class);
         JsonArray serisesList = response.getAsJsonArray("serisesList");
+        if (serisesList == null) return null;
 
         for (JsonElement item : serisesList) {
             JsonObject series = item.getAsJsonObject();
-            String showVideoStage = series.get("showVideoStage").getAsString();
-            String displayName = series.get("displayName").getAsString();
-            Logger.log("showVideoStage:" + showVideoStage + "displayName:" + displayName + "episode:"
-                    + String.valueOf(episode));
+            String showVideoStage = series.has("showVideoStage") ? series.get("showVideoStage").getAsString() : "";
+            String displayName = series.has("displayName") ? series.get("displayName").getAsString() : "";
+
             if (extractNumber(showVideoStage) == episode || extractNumber(displayName) == episode) {
                 if (series.has("url")) {
-                    try {
-                        String url = series.get("url").getAsString();
-                        // 确保 URL 不为空，并且是合法的链接
-                        if (url != null && !url.isEmpty()) {
-                            // 去除 URL 中的查询参数部分
-                            String baseUrl = url.split("\\?")[0];
-                            Logger.log("Extracted URL: " + baseUrl);
-                            return baseUrl;
-                        }
-                    } catch (Exception e) {
-                        Logger.log("Failed to parse URL: " + e.getMessage());
-                    }
+                    String url = series.get("url").getAsString();
+                    if (url != null && !url.isEmpty()) return url.split("\\?")[0];
                 }
-
                 if (series.has("videoId")) {
-                    try {
-                        String videoId = series.get("videoId").getAsString();
-                        // 确保 videoId 不为空
-                        if (videoId != null && !videoId.isEmpty()) {
-                            String generatedUrl = String.format("https://v.youku.com/v_show/id_%s.html", videoId);
-                            Logger.log("Generated URL from videoId: " + generatedUrl);
-                            return generatedUrl;
-                        }
-                    } catch (Exception e) {
-                        Logger.log("Failed to parse videoId: " + e.getMessage());
+                    String videoId = series.get("videoId").getAsString();
+                    if (videoId != null && !videoId.isEmpty()) {
+                        return "https://v.youku.com/v_show/id_" + videoId + ".html";
                     }
                 }
-                Logger.log("Neither 'url' nor 'videoId' is available.");
             }
         }
         return null;
     }
 
     protected int extractNumber(String input) {
-        // 定义正则表达式，匹配1到4位数字，包括以0开头的数字
-        String regex = "\\d{1,4}";
-        Pattern pattern = Pattern.compile(regex);
-        Matcher matcher = pattern.matcher(input);
-
-        // 如果找到匹配的数字，将其转换为整数
-        if (matcher.find()) {
-            String numberStr = matcher.group();
-            return Integer.parseInt(numberStr);
-        }
-
-        // 如果没有找到匹配的数字，返回-1或其他默认值
-        return -1;
+        if (input == null) return -1;
+        Matcher matcher = NUMBER_PATTERN.matcher(input);
+        return matcher.find() ? Integer.parseInt(matcher.group()) : -1;
     }
 
     protected List<List<Object>> fetchDanmaku(String episodeUrl) {
-        // 定义多个备用API端点
         List<String> apiEndpoints = Arrays.asList(
-            "https://dmku.hls.one?ac=dm&url=",
-            "https://api.danmu.icu/?ac=dm&url="
+                "https://dmku.hls.one?ac=dm&url=",
+                "https://api.danmu.icu/?ac=dm&url="
         );
-        //https://dmku.hls.one?ac=dm&url=https://www.iqiyi.com/v_1dmq726917c.html
-        
-        // 尝试每个API端点，直到成功获取数据
         for (String endpoint : apiEndpoints) {
             try {
-                String apiUrl = endpoint + episodeUrl;
-                List<List<Object>> danmakuData = fetchDanmakuFromUrl(apiUrl);
-                
-                if (danmakuData != null && !danmakuData.isEmpty()) {
-                    return danmakuData;
-                }
-            } catch (Exception e) {
-                return null;
-            }
+                List<List<Object>> data = fetchDanmakuFromUrl(endpoint + episodeUrl);
+                if (data != null && !data.isEmpty()) return data;
+            } catch (Exception ignored) {}
         }
-
         return null;
     }
 
     private List<List<Object>> fetchDanmakuFromUrl(String danmakuUrl) {
         try {
             String rawResponse = sendGetRequest(danmakuUrl);
-            Gson gson = new Gson();
-            JsonObject response = gson.fromJson(rawResponse, JsonObject.class);
+            JsonObject response = GSON.fromJson(rawResponse, JsonObject.class);
+            int num = 0;
+            if (response.has("danum")) num = response.get("danum").getAsInt();
+            else if (response.has("danmu")) num = response.get("danmu").getAsInt();
 
-            // 检查 danmu 字段的值
-            int num = 1; // 默认值
-            if (response.has("danum")) {
-                num = response.get("danum").getAsInt();
-            }
-            if (response.has("danmu")) {
-                num = response.get("danmu").getAsInt();
-            }
-
-            if (num <= 5) {
-                return null;
-            }
-
-            // 解析 danmuku 数组
+            if (num <= 5) return null;
             JsonArray danmuku = response.getAsJsonArray("danmuku");
-            return gson.fromJson(danmuku, List.class);
+            return GSON.fromJson(danmuku, List.class);
         } catch (Exception e) {
-            Logger.log("fetchDanmakuFromUrl" + e);
             return null;
         }
     }
 
-    /**
-     * 将优酷的 mode 转换为 Bilibili 的 mode
-     *
-     * @param youkuMode 优酷的 mode（如 "top", "right", "bottom"）
-     * @return Bilibili 的 mode（如 "5", "1", "4"）
-     */
     protected String convertMode(String youkuMode) {
-        switch (youkuMode) {
-            case "top":
-                return "5"; // 顶部弹幕
-            case "right":
-                return "1"; // 滚动弹幕
-            case "bottom":
-                return "4"; // 底部弹幕
-            default:
-                return "1"; // 默认滚动弹幕
-        }
+        if ("top".equals(youkuMode)) return "5";
+        if ("bottom".equals(youkuMode)) return "4";
+        return "1";
     }
 
     protected String convertToBilibiliXML(List<List<Object>> danmakuData) {
-        StringBuilder xmlBuilder = new StringBuilder();
-        xmlBuilder.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-        xmlBuilder.append("<i>\n");
-
-        // 处理dmku.thefilehosting.com的8字段格式
+        StringBuilder xmlBuilder = new StringBuilder("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<i>\n");
         for (List<Object> danmaku : danmakuData) {
-            if (danmaku.size() != 8) {
-                break;
-            }
-            // 解析字段，确保类型正确
-            double time = ((Number) danmaku.get(0)).doubleValue(); // 时间
-            String youkuMode = danmaku.get(1).toString(); // 优酷的 mode
-            String color = "#FFFFFF";//danmaku.get(2).toString(); // 颜色（如 "#FFFFFF"）
-            String text = escapeXml(danmaku.get(4).toString()); // 弹幕文本
-            String fontSize = danmaku.get(7).toString().replace("px", ""); // 字体大小（如 "24px"）
+            int size = danmaku.size();
+            if (size != 5 && size != 8) continue;
 
-            // 将颜色转换为十进制，去掉 # 号
-            int colorDecimal = Integer.parseInt(color.replace("#", ""), 16);
+            double time = ((Number) danmaku.get(0)).doubleValue();
+            String mode = convertMode(danmaku.get(1).toString());
+            String text = escapeXml(danmaku.get(4).toString());
+            String fontSize = (size == 8) ? danmaku.get(7).toString().replace("px", "") : "24";
+            
+            // 颜色统一处理为十进制白色(16777215)或从数据解析
+            int colorDecimal = 16777215; 
 
-            // 转换 mode
-            String bilibiliMode = convertMode(youkuMode);
-
-            // Bilibili 弹幕格式：时间,模式,字体大小,颜色,时间戳,弹幕池,用户Hash,弹幕ID
-            String attrs = String.format("%.5f,%s,%s,%d,0,0,0,0,0", time, bilibiliMode, fontSize, colorDecimal);
-            xmlBuilder.append(String.format("  <d p=\"%s\">%s</d>\n", attrs, text));
+            String attrs = String.format("%.5f,%s,%s,%d,0,0,0,0,0", time, mode, fontSize, colorDecimal);
+            xmlBuilder.append("  <d p=\"").append(attrs).append("\">").append(text).append("</d>\n");
         }
-
-        // 处理dmku.hls.one的5字段格式
-        for (List<Object> danmaku : danmakuData) {
-            if (danmaku.size() != 5) {
-                break;
-            }
-            // 解析字段，确保类型正确
-            double time = ((Number) danmaku.get(0)).doubleValue(); // 时间
-            String youkuMode = danmaku.get(1).toString(); // 优酷的 mode
-            String color = "#FFFFFF"; // 颜色（如 "#FFFFFF"）
-            String text = escapeXml(danmaku.get(4).toString()); // 弹幕文本
-            String fontSize = "24"; // 字体大小（如 "24px"）
-
-            // 将颜色转换为十进制，去掉 # 号
-            int colorDecimal = Integer.parseInt(color.replace("#", ""), 16);
-
-            // 转换 mode
-            String bilibiliMode = convertMode(youkuMode);
-
-            // Bilibili 弹幕格式：时间,模式,字体大小,颜色,时间戳,弹幕池,用户Hash,弹幕ID
-            String attrs = String.format("%.5f,%s,%s,%d,0,0,0,0,0", time, bilibiliMode, fontSize, colorDecimal);
-            xmlBuilder.append(String.format("  <d p=\"%s\">%s</d>\n", attrs, text));
-        }
-
-        xmlBuilder.append("</i>");
-        return xmlBuilder.toString();
+        return xmlBuilder.append("</i>").toString();
     }
 
-    /**
-     * 转义 XML 特殊字符
-     *
-     * @param text 输入的文本
-     * @return 转义后的文本
-     */
     protected String escapeXml(String text) {
-        if (text == null) {
-            return "";
-        }
-        return text.replace("&", "&amp;")
-                .replace("<", "&lt;")
-                .replace(">", "&gt;")
-                .replace("\"", "&quot;")
-                .replace("'", "&apos;");
+        if (text == null) return "";
+        return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                   .replace("\"", "&quot;").replace("'", "&apos;");
     }
 
     protected String sendGetRequest(String url) throws IOException {
-        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
-        connection.setRequestMethod("GET");
-        connection.setConnectTimeout(20000);
-        connection.setReadTimeout(20000); 
-        StringBuilder response = new StringBuilder();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
+        HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+        conn.setRequestMethod("GET");
+        conn.setConnectTimeout(TIMEOUT);
+        conn.setReadTimeout(TIMEOUT);
+        conn.setRequestProperty("User-Agent", "Mozilla/5.0");
+        
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
+            StringBuilder sb = new StringBuilder();
             String line;
-            while ((line = reader.readLine()) != null) {
-                response.append(line);
-            }
+            while ((line = reader.readLine()) != null) sb.append(line);
+            return sb.toString();
+        } finally {
+            conn.disconnect();
         }
-        return response.toString();
     }
 
     protected static String generateMd5(String input) {
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
-            byte[] hashBytes = md.digest(input.getBytes("UTF-8"));
+            byte[] hashBytes = md.digest(input.getBytes(StandardCharsets.UTF_8));
             StringBuilder sb = new StringBuilder();
-            for (byte b : hashBytes) {
-                sb.append(String.format("%02x", b));
-            }
+            for (byte b : hashBytes) sb.append(String.format("%02x", b));
             return sb.toString();
         } catch (Exception e) {
             return "fakemd5";
@@ -381,65 +247,60 @@ public class DanmuFetcher {
     }
 
     protected static String getAllDanmakuXML(String title, int episode, int year) {
-            String danmu = DanmuFetcher.getBilibiliDanmakuXML(title, episode, year);
-            if (danmu.isEmpty()) {
-                danmu = KanDanmuFetcher.getBilibiliDanmakuXML(title, episode, year);
-            }
-            if (danmu.isEmpty()) {
-                danmu = IqiyiDanmuFetcher.getBilibiliDanmakuXML(title, episode, year);
-            }
-            return danmu;
+        String danmu = getBilibiliDanmakuXML(title, episode, year);
+        if (danmu.isEmpty()) danmu = KanDanmuFetcher.getBilibiliDanmakuXML(title, episode, year);
+        if (danmu.isEmpty()) danmu = IqiyiDanmuFetcher.getBilibiliDanmakuXML(title, episode, year);
+        return danmu;
     }
 
     private static void pushDanmuBg(String title, int episode, int year) {
-        String danmuPath = danmuRoot + String.format("/%s.txt", generateMd5(title + String.valueOf(episode) + String.valueOf(year)));
-        Thread thread = new Thread(() -> {
+        String key = title + episode + year;
+        String danmuPath = DANMU_ROOT + "/" + generateMd5(key) + ".txt";
+        
+        EXECUTOR.execute(() -> {
             try {
                 Thread.sleep(100);
-                String danmu = DanmuFetcher.getAllDanmakuXML(title, episode, year);
-                if (danmu.isEmpty() && (recent.equals(title + String.valueOf(episode) + String.valueOf(year)) || recent.equals(title + String.valueOf(episode - 1) + String.valueOf(year)))) {
-                    Thread.sleep(60000);
-                    pushDanmuBg(title, episode, year);
+                String danmu = getAllDanmakuXML(title, episode, year);
+                
+                if (danmu.isEmpty()) {
+                    // 如果是当前播放集或上一集且没获取到，1分钟后重试
+                    String current = title + episode + year;
+                    String prev = title + (episode - 1) + year;
+                    if (recent.equals(current) || recent.equals(prev)) {
+                        Thread.sleep(60000);
+                        pushDanmuBg(title, episode, year);
+                    }
                     return;
                 }
-                if (danmu.isEmpty() ) {
-                    return;
-                }
-                File danmuFile = new File(danmuPath);
-                Path.write(danmuFile, danmu.getBytes());
-                if (recent.equals(title + String.valueOf(episode) + String.valueOf(year))) {
-                    //thisObject.sendGetRequest("http://127.0.0.1:9978/action?do=refresh&type=danmaku&path=" + "file://" + danmuPath);
-                    String danmuProxyPath = "http://127.0.0.1:9978/proxy?do=fs&file=" + danmuPath;
-                    Logger.log(danmuProxyPath);
-                    thisObject.sendGetRequest("http://127.0.0.1:9978/action?do=refresh&type=danmaku&path=" + URLEncoder.encode(danmuProxyPath, "UTF-8"));
+
+                File file = new File(danmuPath);
+                Path.write(file, danmu.getBytes(StandardCharsets.UTF_8));
+
+                if (recent.equals(key)) {
+                    String proxy = "http://127.0.0.1:9978/proxy?do=fs&file=" + danmuPath;
+                    String action = "http://127.0.0.1:9978/action?do=refresh&type=danmaku&path=" + URLEncoder.encode(proxy, "UTF-8");
+                    INSTANCE.sendGetRequest(action);
                 }
             } catch (Exception e) {
-                Logger.log("pushDanmuBg" + e);
+                Logger.log("pushDanmuBg Error: " + e.getMessage());
             }
         });
-        thread.start();
     }
 
     private static void clearOldDanmu() {
-        File directory = new File(danmuRoot);
-        long cutoff = System.currentTimeMillis() - (7 * 24 * 60 * 60 * 1000);
+        File directory = new File(DANMU_ROOT);
+        if (!directory.exists() || !directory.isDirectory()) return;
         
-        if (directory.exists() && directory.isDirectory()) {
-            File[] files = directory.listFiles((dir, name) -> name.endsWith(".txt"));
-            
-            if (files != null) {
-                for (File file : files) {
-                    if (file.lastModified() < cutoff) {
-                        file.delete();
-                    }
-                }
+        long cutoff = System.currentTimeMillis() - (7L * 24 * 60 * 60 * 1000);
+        File[] files = directory.listFiles((dir, name) -> name.endsWith(".txt"));
+        if (files != null) {
+            for (File file : files) {
+                if (file.lastModified() < cutoff) file.delete();
             }
         }
     }
 
     public static void test() {
-        String xml = DanmuFetcher.getBilibiliDanmakuXML("北上", 1, 2025);
-        Logger.log(xml);
+        Logger.log(getBilibiliDanmakuXML("北上", 1, 2025));
     }
 }
-
