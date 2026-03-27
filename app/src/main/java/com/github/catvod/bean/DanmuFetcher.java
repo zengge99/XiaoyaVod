@@ -149,13 +149,13 @@ public class DanmuFetcher {
         return null;
     }
 
-    protected int extractNumber(String input) {
+    private int extractNumber(String input) {
         if (input == null) return -1;
         Matcher matcher = NUMBER_PATTERN.matcher(input);
         return matcher.find() ? Integer.parseInt(matcher.group()) : -1;
     }
 
-    protected List<List<Object>> fetchDanmaku(String episodeUrl) {
+    private List<List<Object>> fetchDanmaku(String episodeUrl) {
         List<String> apiEndpoints = Arrays.asList(
                 "https://dmku.hls.one?ac=dm&url=",
                 "https://api.danmu.icu/?ac=dm&url="
@@ -185,13 +185,13 @@ public class DanmuFetcher {
         }
     }
 
-    protected String convertMode(String youkuMode) {
+    private String convertMode(String youkuMode) {
         if ("top".equals(youkuMode)) return "5";
         if ("bottom".equals(youkuMode)) return "4";
         return "1";
     }
 
-    protected String convertToBilibiliXML(List<List<Object>> danmakuData) {
+    private String convertToBilibiliXML(List<List<Object>> danmakuData) {
         StringBuilder xmlBuilder = new StringBuilder("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<i>\n");
         for (List<Object> danmaku : danmakuData) {
             int size = danmaku.size();
@@ -211,7 +211,7 @@ public class DanmuFetcher {
         return xmlBuilder.append("</i>").toString();
     }
 
-    protected String escapeXml(String text) {
+    private String escapeXml(String text) {
         if (text == null) return "";
         return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
                    .replace("\"", "&quot;").replace("'", "&apos;");
@@ -234,7 +234,7 @@ public class DanmuFetcher {
         }
     }
 
-    protected static String generateMd5(String input) {
+    private static String generateMd5(String input) {
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
             byte[] hashBytes = md.digest(input.getBytes(StandardCharsets.UTF_8));
@@ -246,7 +246,7 @@ public class DanmuFetcher {
         }
     }
 
-    protected static String getAllDanmakuXML(String title, int episode, int year) {
+    private static String getAllDanmakuXML(String title, int episode, int year) {
         String danmu = getBilibiliDanmakuXML(title, episode, year);
         if (danmu.isEmpty()) danmu = KanDanmuFetcher.getBilibiliDanmakuXML(title, episode, year);
         if (danmu.isEmpty()) danmu = IqiyiDanmuFetcher.getBilibiliDanmakuXML(title, episode, year);
