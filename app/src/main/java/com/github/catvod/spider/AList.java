@@ -57,6 +57,11 @@ import android.widget.Toast;
 import com.github.catvod.utils.Path;
 import java.io.File;
 import com.github.catvod.bean.DanmuFetcher;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 public class AList extends Spider {
 
@@ -124,12 +129,36 @@ public class AList extends Spider {
             ext = OkHttp.string(ext);
         Logger.log(ext);
         String ext1 = "{\"drives\":" + ext + "}";
-        Drive drive = Drive.objectFrom(ext1);
+        JsonObject jsonObject = JsonParser.parseString(ext1).getAsJsonObject();
+        JsonArray drives1 = jsonObject.getAsJsonArray("drives");
+        JsonObject globalConfig = null;
+        Iterator<JsonElement> iterator = drives1.iterator();
+        while (iterator.hasNext()) {
+            JsonElement element = iterator.next();
+            if (element.isJsonObject()) {
+                JsonObject item = element.getAsJsonObject();
+                if (item.has("type") && "global".equals(item.get("type").getAsString())) {
+                    globalConfig = item;
+                    iterator.remove();
+                }
+            }
+        }
+
+        if (globalConfig != null) {
+            jsonObject.add("globalConfig", globalConfig);
+        }
+
+        String result = new Gson().toJson(jsonObject);
+        Drive drive = Drive.objectFrom(result);
         drives = drive.getDrives();
         vodPic = drive.getVodPic();
 
         List<Drive> searcherDrivers = new ArrayList<>();
         for (Drive d : drives) {
+            if (globalConfig != null) {
+                d.globalConfig = drive.globalConfig;
+                DanmuFetcher.danmuApi = d.globalConfig.getDanmuApi();
+            }
             if (d.search()) {
                 searcherDrivers.add(d);
             }
@@ -140,22 +169,7 @@ public class AList extends Spider {
             defaultDrive = drives.get(0);
         }
 
-        //反代场景nginx无法正确替换https，通过探测对https/http进行纠正
-        //只有小雅的需要纠正（即与default drive相同的服务器地址），用户自定义的由用户自己保证
-        // List<Thread> threads = new ArrayList<>();
-        // for (Drive d : drives) {
-        //     if (d.getServer().equals(defaultDrive.getServer())) {
-        //         Thread thread = new Thread(() -> d.probeServer());
-        //         thread.start();
-        //         threads.add(thread); 
-        //     }
-        // }
-        // for (Thread thread : threads) {
-        //     try {
-        //         thread.join();
-        //     } catch (Exception e) {
-        //     }
-        // }
+        
 
         //默认驱动要执行exec，需要提前登陆，简单规避
         getList(defaultDrive.getName() + defaultDrive.getPath(), false);
