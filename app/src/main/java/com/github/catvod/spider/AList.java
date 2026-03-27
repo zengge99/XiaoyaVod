@@ -130,9 +130,9 @@ public class AList extends Spider {
         Logger.log(ext);
         String ext1 = "{\"drives\":" + ext + "}";
         JsonObject jsonObject = JsonParser.parseString(ext1).getAsJsonObject();
-        JsonArray drives = jsonObject.getAsJsonArray("drives");
+        JsonArray drives1 = jsonObject.getAsJsonArray("drives");
         JsonObject globalConfig = null;
-        Iterator<JsonElement> iterator = drives.iterator();
+        Iterator<JsonElement> iterator = drives1.iterator();
         while (iterator.hasNext()) {
             JsonElement element = iterator.next();
             if (element.isJsonObject()) {
