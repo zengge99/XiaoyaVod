@@ -33,8 +33,6 @@ import com.github.catvod.utils.Util;
 import com.github.catvod.spider.Logger;
 
 public class Drive {
-    @SerializedName("globalConfig")
-    public Drive globalConfig;
     @SerializedName("drives")
     private List<Drive> drives;
     @SerializedName("params")
