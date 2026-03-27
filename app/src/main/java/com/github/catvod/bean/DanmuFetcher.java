@@ -157,8 +157,8 @@ public class DanmuFetcher {
 
     private List<List<Object>> fetchDanmaku(String episodeUrl) {
         List<String> apiEndpoints = Arrays.asList(
-                "https://dmku.hls.one?ac=dm&url=",
-                "https://api.danmu.icu/?ac=dm&url="
+            "https://dmku.hls.one?ac=dm&url=",
+            "https://api.danmu.icu/?ac=dm&url="
         );
         for (String endpoint : apiEndpoints) {
             try {
