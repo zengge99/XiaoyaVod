@@ -55,10 +55,10 @@ public class LogvarDanmuFetcher extends DanmuFetcher {
             String xmlResponse = INSTANCE.sendGetRequest(danmuApi + "/api/v2/comment/" + episodeId + "?format=xml");
             xmlResponse = fixDanmuPosition(xmlResponse);
             if (xmlResponse != null && xmlResponse.startsWith("<?xml") && xmlResponse.contains("<d p=")) {
-                String[] lines = xmlResponse.split("</d>", 11);
+                String[] lines = xmlResponse.split("<", 11);
                 StringBuilder sb = new StringBuilder();
                 for (int i = 0; i < lines.length && i < 10; i++) {
-                    sb.append(lines[i]).append("</d>\n");
+                    sb.append(lines[i]).append("\n");
                 }
                 Logger.log("获取到弹幕 (前10行): \n" + sb.toString());
                 return xmlResponse;
