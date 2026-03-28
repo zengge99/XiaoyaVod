@@ -16,6 +16,8 @@ import com.google.gson.JsonParser;
 import com.github.catvod.spider.Logger;
 import com.github.catvod.utils.Path;
 import java.io.File;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class LogvarDanmuFetcher extends DanmuFetcher {
 
@@ -51,6 +53,7 @@ public class LogvarDanmuFetcher extends DanmuFetcher {
             }
             Logger.log("LogvarDanmuFetcher.getBilibiliDanmakuXML匹配到episodeId： " + episodeId);
             String xmlResponse = INSTANCE.sendGetRequest(danmuApi + "/api/v2/comment/" + episodeId + "?format=xml");
+            xmlResponse = fixDanmuPosition(xmlResponse);
             if (xmlResponse != null && xmlResponse.startsWith("<?xml") && xmlResponse.contains("<d p=")) {
                 String[] lines = xmlResponse.split("<", 11);
                 StringBuilder sb = new StringBuilder();
@@ -64,6 +67,18 @@ public class LogvarDanmuFetcher extends DanmuFetcher {
             Logger.log("LogvarDanmuFetcher.getBilibiliDanmakuXML" + e);
         }
         return "";
+    }
+
+    //有些弹幕是居中悬停的，非常讨厌，修改成滚动。
+    private static String fixDanmuPosition(String input) {
+        if (input == null || input.isEmpty()) {
+            return input;
+        }
+        String regex = "(<d\\s+p\\s*=\\s*\"[^\",]+),[^\",]+(,|\\s*\")";
+        String replacement = "$1,1$2";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(input);
+        return matcher.replaceAll(replacement);
     }
 
     public static void test() {
