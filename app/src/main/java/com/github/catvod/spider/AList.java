@@ -50,8 +50,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
 import com.github.catvod.bean.alist.LoginDlg;
 import android.widget.Toast;
 import com.github.catvod.utils.Path;

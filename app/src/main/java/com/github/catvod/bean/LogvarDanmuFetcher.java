@@ -16,6 +16,7 @@ import com.google.gson.JsonParser;
 import com.github.catvod.spider.Logger;
 import com.github.catvod.utils.Path;
 import java.io.File;
+import java.util.stream.Collectors;
 
 public class LogvarDanmuFetcher extends DanmuFetcher {
 
@@ -52,6 +53,20 @@ public class LogvarDanmuFetcher extends DanmuFetcher {
             Logger.log("LogvarDanmuFetcher.getBilibiliDanmakuXML匹配到episodeId： " + episodeId);
             String xmlResponse = INSTANCE.sendGetRequest(danmuApi + "/api/v2/comment/" + episodeId + "?format=xml");
             if (xmlResponse != null && xmlResponse.startsWith("<?xml") && xmlResponse.contains("<d p=")) {
+                StringBuilder preview = new StringBuilder();
+                BufferedReader br = new BufferedReader(new StringReader(xmlResponse));
+                try {
+                    String line;
+                    int count = 0;
+                    while ((line = br.readLine()) != null && count < 10) {
+                        preview.append(line).append("\n");
+                        count++;
+                    }
+                } catch (IOException e) {
+                    preview.append("解析预览失败");
+                }
+
+                Logger.log("LogvarDanmuFetcher.getBilibiliDanmakuXML获取到弹幕 (前10行): \n" + preview.toString());
                 return xmlResponse;
             }
         } catch (Exception e) {
