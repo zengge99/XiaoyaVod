@@ -35,7 +35,7 @@ public class LogvarDanmuFetcher extends DanmuFetcher {
             if (danmuApi == null || danmuApi.isEmpty()) {
                 return "";
             }
-            String fileNameJson = String.format("{filename: \"%s.%s.S01E%02d.mp4\" }", title, year, episode);
+            String fileNameJson = String.format("{fileName: \"%s.%s.S01E%02d.mp4\" }", title, year, episode);
             String jsonResponse = INSTANCE.sendPostRequest(danmuApi + "/api/v2/match", JsonParser.parseString(fileNameJson).getAsJsonObject());
             JsonObject root = JsonParser.parseString(jsonResponse).getAsJsonObject();
             JsonArray matches = root.getAsJsonArray("matches");
