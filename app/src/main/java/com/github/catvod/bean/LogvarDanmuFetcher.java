@@ -18,6 +18,7 @@ import com.github.catvod.utils.Path;
 import java.io.File;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.Random;
 
 public class LogvarDanmuFetcher extends DanmuFetcher {
 
@@ -37,6 +38,8 @@ public class LogvarDanmuFetcher extends DanmuFetcher {
             if (danmuApi == null || danmuApi.isEmpty() || !danmuApi.startsWith("http")) {
                 return "";
             }
+            int ms = new Random().nextInt(20001) + 1000;
+            Thread.sleep(ms);
             String fileNameJson = String.format("{fileName: \"%s.%s.S01E%02d.mp4\" }", title, year, episode);
             String jsonResponse = INSTANCE.sendPostRequest(danmuApi + "/api/v2/match", JsonParser.parseString(fileNameJson).getAsJsonObject());
             JsonObject root = JsonParser.parseString(jsonResponse).getAsJsonObject();
