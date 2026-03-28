@@ -195,8 +195,8 @@ public class DanmuFetcher {
     }
 
     private String convertMode(String youkuMode) {
-        if ("top".equals(youkuMode)) return "5";
-        if ("bottom".equals(youkuMode)) return "4";
+        //if ("top".equals(youkuMode)) return "5";
+        //if ("bottom".equals(youkuMode)) return "4";
         return "1";
     }
 
