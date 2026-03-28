@@ -79,7 +79,7 @@ public class DanmuFetcher {
     }
 
     protected String getDanmakutXml(String episodeUrl) {
-        String xml = getDanmakutXmlFromLogvar(episodeUrl);
+        String xml = ""; //getDanmakutXmlFromLogvar(episodeUrl);
         if (xml == null || xml.isEmpty()) {
             xml = getDanmakutXmlFromChenxi(episodeUrl);
         }
@@ -242,6 +242,36 @@ public class DanmuFetcher {
         }
     }
 
+    protected String sendPostRequest(String url, JsonObject jsonBody) throws IOException {
+        HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+        
+        conn.setRequestMethod("POST");
+        conn.setConnectTimeout(TIMEOUT);
+        conn.setReadTimeout(TIMEOUT);
+        
+        conn.setRequestProperty("User-Agent", "Mozilla/5.0");
+        conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+        conn.setRequestProperty("Accept", "application/json"); 
+        
+        conn.setDoOutput(true);
+
+        try (OutputStream os = conn.getOutputStream()) {
+            byte[] input = jsonBody.toString().getBytes(StandardCharsets.UTF_8);
+            os.write(input, 0, input.length);
+        }
+
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                sb.append(line);
+            }
+            return sb.toString();
+        } finally {
+            conn.disconnect();
+        }
+    }
+
     private static String generateMd5(String input) {
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
@@ -255,7 +285,8 @@ public class DanmuFetcher {
     }
 
     private static String getAllDanmakuXML(String title, int episode, int year) {
-        String danmu = getBilibiliDanmakuXML(title, episode, year);
+        String danmu = LogvarDanmuFetcher.getBilibiliDanmakuXML(title, episode, year);
+        if (danmu.isEmpty()) danmu = getBilibiliDanmakuXML(title, episode, year);
         if (danmu.isEmpty()) danmu = KanDanmuFetcher.getBilibiliDanmakuXML(title, episode, year);
         if (danmu.isEmpty()) danmu = IqiyiDanmuFetcher.getBilibiliDanmakuXML(title, episode, year);
         return danmu;

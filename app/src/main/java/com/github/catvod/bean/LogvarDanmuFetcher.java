@@ -12,13 +12,14 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 import com.github.catvod.spider.Logger;
 import com.github.catvod.utils.Path;
 import java.io.File;
 
 public class LogvarDanmuFetcher extends DanmuFetcher {
 
-    private static LogvarDanmuFetcher thisObject = new LogvarDanmuFetcher();
+    private static LogvarDanmuFetcher INSTANCE = new LogvarDanmuFetcher();
 
     /**
      * 获取 Bilibili 弹幕格式的 XML
@@ -31,50 +32,32 @@ public class LogvarDanmuFetcher extends DanmuFetcher {
      */
     public static String getBilibiliDanmakuXML(String title, int episode, int year) {
         try {
-            String episodeUrl = thisObject.getEpisodeUrl(title, episode, year);
-            if (episodeUrl == null) {
-                throw new RuntimeException("No matching episode found");
+            if (danmuApi == null || danmuApi.isEmpty()) {
+                return "";
             }
-
-            return thisObject.getDanmakutXml(episodeUrl);
+            String fileNameJson = String.format("{filename: \"%s.%s.S01E%02d.mp4\" }", title, year, episode);
+            String jsonResponse = INSTANCE.sendPostRequest(danmuApi + "/api/v2/match", JsonParser.parseString(fileNameJson).getAsJsonObject());
+            JsonObject root = JsonParser.parseString(jsonResponse).getAsJsonObject();
+            JsonArray matches = root.getAsJsonArray("matches");
+            String episodeId = "";
+            if (matches != null && matches.size() > 0) {
+                JsonObject firstMatch = matches.get(0).getAsJsonObject();
+                if (firstMatch.has("episodeId")) {
+                    episodeId = firstMatch.get("episodeId").getAsString();
+                }
+            }
+            if (episodeId.isEmpty()) {
+                return "";
+            }
+            Logger.log("LogvarDanmuFetcher.getBilibiliDanmakuXML匹配到episodeId： " + episodeId);
+            String xmlResponse = INSTANCE.sendGetRequest(danmuApi + "/api/v2/comment/" + episodeId + "?format=xml");
+            if (xmlResponse != null && xmlResponse.startsWith("<?xml") && xmlResponse.contains("<d p=")) {
+                return xmlResponse;
+            }
         } catch (Exception e) {
             Logger.log("LogvarDanmuFetcher.getBilibiliDanmakuXML" + e);
-            return "";
         }
-    }
-
-    private String getEpisodeUrl(String title, int episode, int year) throws IOException {
-        String encodedTitle = URLEncoder.encode(title, "UTF-8");
-        String episodeUrl = "https://search.video.iqiyi.com/o?if=html5&pageNum=1&pos=1&pageSize=24&site=iqiyi&key=" + encodedTitle;
-        String jsonResponse = sendGetRequest(episodeUrl);
-
-        Gson gson = new Gson();
-        JsonObject response = gson.fromJson(jsonResponse, JsonObject.class);
-        JsonArray docInfos = response.getAsJsonObject("data").getAsJsonArray("docinfos");
-
-        for (JsonElement item : docInfos) {
-            JsonObject docData = item.getAsJsonObject();
-            JsonObject albumDocInfo = docData.getAsJsonObject("albumDocInfo"); // 深入 albumDocInfo
-            String albumTitle = albumDocInfo.get("albumTitle").getAsString();
-            String releaseDate = albumDocInfo.get("releaseDate").getAsString();
-            if (releaseDate != null && !releaseDate.isEmpty()) {
-                if (!releaseDate.contains(String.valueOf(year))) {
-                    continue;
-                }
-            }
-            if (albumTitle.equals(title)) {
-                JsonArray videoInfos = albumDocInfo.getAsJsonArray("videoinfos"); // 注意字段名是 videoinfos
-                for (JsonElement videoItem : videoInfos) {
-                    JsonObject episodeData = videoItem.getAsJsonObject();
-                    int itemNumber = episodeData.get("itemNumber").getAsInt();
-                    if (itemNumber == episode) {
-                        Logger.log("Found url at iqiyi: " + episodeData.get("itemLink").getAsString().split("\\?")[0]);
-                        return episodeData.get("itemLink").getAsString().split("\\?")[0]; // 返回剧集URL
-                    }
-                }
-            }
-        }
-        return null;
+        return "";
     }
 
     public static void test() {
