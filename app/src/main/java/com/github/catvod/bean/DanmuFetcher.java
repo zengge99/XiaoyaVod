@@ -22,6 +22,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.io.OutputStream;
 
 public class DanmuFetcher {
     private static final DanmuFetcher INSTANCE = new DanmuFetcher();
