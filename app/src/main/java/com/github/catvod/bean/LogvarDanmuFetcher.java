@@ -32,7 +32,7 @@ public class LogvarDanmuFetcher extends DanmuFetcher {
      */
     public static String getBilibiliDanmakuXML(String title, int episode, int year) {
         try {
-            if (danmuApi == null || danmuApi.isEmpty()) {
+            if (danmuApi == null || danmuApi.isEmpty() || !danmuApi.startsWith("http")) {
                 return "";
             }
             String fileNameJson = String.format("{fileName: \"%s.%s.S01E%02d.mp4\" }", title, year, episode);
