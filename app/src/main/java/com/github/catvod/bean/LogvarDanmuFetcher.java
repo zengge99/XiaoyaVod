@@ -1,0 +1,73 @@
+package com.github.catvod.bean;
+ 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
+import com.github.catvod.spider.Logger;
+import com.github.catvod.utils.Path;
+import java.io.File;
+
+public class LogvarDanmuFetcher extends DanmuFetcher {
+
+    private static LogvarDanmuFetcher INSTANCE = new LogvarDanmuFetcher();
+
+    /**
+     * 获取 Bilibili 弹幕格式的 XML
+     *
+     * @param title   影片名
+     * @param episode 集数
+     * @param year    年份
+     * @return Bilibili 弹幕格式的 XML 字符串
+     * @throws IOException 如果请求失败
+     */
+    public static String getBilibiliDanmakuXML(String title, int episode, int year) {
+        try {
+            if (danmuApi == null || danmuApi.isEmpty()) {
+                return "";
+            }
+            String fileNameJson = String.format("{filename: \"%s.%s.S01E%02d.mp4\" }", title, year, episode);
+            String jsonResponse = INSTANCE.sendPostRequest(danmuApi + "/api/v2/match", JsonParser.parseString(fileNameJson).getAsJsonObject());
+            JsonObject root = JsonParser.parseString(jsonResponse).getAsJsonObject();
+            JsonArray matches = root.getAsJsonArray("matches");
+            String episodeId = "";
+            if (matches != null && matches.size() > 0) {
+                JsonObject firstMatch = matches.get(0).getAsJsonObject();
+                if (firstMatch.has("episodeId")) {
+                    episodeId = firstMatch.get("episodeId").getAsString();
+                }
+            }
+            if (episodeId.isEmpty()) {
+                return "";
+            }
+            Logger.log("LogvarDanmuFetcher.getBilibiliDanmakuXML匹配到episodeId： " + episodeId);
+            String xmlResponse = INSTANCE.sendGetRequest(danmuApi + "/api/v2/comment/" + episodeId + "?format=xml");
+            if (xmlResponse != null && xmlResponse.startsWith("<?xml") && xmlResponse.contains("<d p=")) {
+                String[] lines = xmlResponse.split("\n", 11);
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < lines.length && i < 10; i++) {
+                    sb.append(lines[i]).append("\n");
+                }
+                Logger.log("获取到弹幕 (前10行): \n" + sb.toString());
+                return xmlResponse;
+            }
+        } catch (Exception e) {
+            Logger.log("LogvarDanmuFetcher.getBilibiliDanmakuXML" + e);
+        }
+        return "";
+    }
+
+    public static void test() {
+        String xml = LogvarDanmuFetcher.getBilibiliDanmakuXML("北上广不相信眼泪", 1, 2015);
+        Logger.log(xml);
+    }
+}
