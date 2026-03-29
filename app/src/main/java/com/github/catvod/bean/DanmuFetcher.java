@@ -287,6 +287,8 @@ public class DanmuFetcher {
 
     private static String getAllDanmakuXML(String title, int episode, int year) {
         String danmu = LogvarDanmuFetcher.getBilibiliDanmakuXML(title, episode, year);
+        //Logvar试一次（首次拉官方弹幕失败概率大）
+        if (danmu.isEmpty()) LogvarDanmuFetcher.getBilibiliDanmakuXML(title, episode, year);
         if (danmu.isEmpty()) danmu = getBilibiliDanmakuXML(title, episode, year);
         if (danmu.isEmpty()) danmu = KanDanmuFetcher.getBilibiliDanmakuXML(title, episode, year);
         if (danmu.isEmpty()) danmu = IqiyiDanmuFetcher.getBilibiliDanmakuXML(title, episode, year);
