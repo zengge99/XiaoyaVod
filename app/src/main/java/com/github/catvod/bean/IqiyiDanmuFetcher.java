@@ -18,25 +18,21 @@ import java.io.File;
 
 public class IqiyiDanmuFetcher extends DanmuFetcher {
 
-    private static IqiyiDanmuFetcher thisObject = new IqiyiDanmuFetcher();
+    private static IqiyiDanmuFetcher INSTANCE = new IqiyiDanmuFetcher();
 
-    /**
-     * 获取 Bilibili 弹幕格式的 XML
-     *
-     * @param title   影片名
-     * @param episode 集数
-     * @param year    年份
-     * @return Bilibili 弹幕格式的 XML 字符串
-     * @throws IOException 如果请求失败
-     */
-    public static String getBilibiliDanmakuXML(String title, int episode, int year) {
+    protected DanmuFetcher() {
+        srvLst.add(this);
+    }
+
+    @Override
+    protected String getBilibiliDanmakuXML(String title, int episode, int year)
         try {
-            String episodeUrl = thisObject.getEpisodeUrl(title, episode, year);
+            String episodeUrl = getEpisodeUrl(title, episode, year);
             if (episodeUrl == null) {
                 throw new RuntimeException("No matching episode found");
             }
 
-            return thisObject.getDanmakutXml(episodeUrl);
+            return getDanmakutXml(episodeUrl);
         } catch (Exception e) {
             Logger.log("IqiyiDanmuFetcher.getBilibiliDanmakuXML" + e);
             return "";
@@ -75,10 +71,5 @@ public class IqiyiDanmuFetcher extends DanmuFetcher {
             }
         }
         return null;
-    }
-
-    public static void test() {
-        String xml = IqiyiDanmuFetcher.getBilibiliDanmakuXML("北上广不相信眼泪", 1, 2015);
-        Logger.log(xml);
     }
 }
