@@ -25,7 +25,7 @@ public class IqiyiDanmuFetcher extends DanmuFetcher {
     }
 
     @Override
-    protected String getBilibiliDanmakuXML(String title, int episode, int year)
+    protected String getBilibiliDanmakuXML(String title, int episode, int year) {
         try {
             String episodeUrl = getEpisodeUrl(title, episode, year);
             if (episodeUrl == null) {

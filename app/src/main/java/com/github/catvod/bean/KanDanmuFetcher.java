@@ -25,7 +25,7 @@ public class KanDanmuFetcher extends DanmuFetcher {
     }
 
     @Override
-    protected String getBilibiliDanmakuXML(String title, int episode, int year)
+    protected String getBilibiliDanmakuXML(String title, int episode, int year) {
         try {
             String showId = searchEnId(title, year);
             if (showId == null) {

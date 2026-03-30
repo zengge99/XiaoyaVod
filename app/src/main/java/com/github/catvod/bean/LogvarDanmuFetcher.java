@@ -29,7 +29,7 @@ public class LogvarDanmuFetcher extends DanmuFetcher {
     }
 
     @Override
-    protected String getBilibiliDanmakuXML(String title, int episode, int year)
+    protected String getBilibiliDanmakuXML(String title, int episode, int year) {
         try {
             if (danmuApi == null || danmuApi.isEmpty() || !danmuApi.startsWith("http")) {
                 return "";
