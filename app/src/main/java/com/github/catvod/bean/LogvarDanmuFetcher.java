@@ -24,16 +24,12 @@ public class LogvarDanmuFetcher extends DanmuFetcher {
 
     private static LogvarDanmuFetcher INSTANCE = new LogvarDanmuFetcher();
 
-    /**
-     * 获取 Bilibili 弹幕格式的 XML
-     *
-     * @param title   影片名
-     * @param episode 集数
-     * @param year    年份
-     * @return Bilibili 弹幕格式的 XML 字符串
-     * @throws IOException 如果请求失败
-     */
-    public static String getBilibiliDanmakuXML(String title, int episode, int year) {
+    protected DanmuFetcher() {
+        srvLst.add(this);
+    }
+
+    @Override
+    protected String getBilibiliDanmakuXML(String title, int episode, int year)
         try {
             if (danmuApi == null || danmuApi.isEmpty() || !danmuApi.startsWith("http")) {
                 return "";
@@ -41,7 +37,7 @@ public class LogvarDanmuFetcher extends DanmuFetcher {
             int ms = new Random().nextInt(20001) + 1000;
             Thread.sleep(ms);
             String fileNameJson = String.format("{fileName: \"%s.%s.S01E%02d.mp4\" }", title, year, episode);
-            String jsonResponse = INSTANCE.sendPostRequest(danmuApi + "/api/v2/match", JsonParser.parseString(fileNameJson).getAsJsonObject());
+            String jsonResponse = sendPostRequest(danmuApi + "/api/v2/match", JsonParser.parseString(fileNameJson).getAsJsonObject());
             JsonObject root = JsonParser.parseString(jsonResponse).getAsJsonObject();
             JsonArray matches = root.getAsJsonArray("matches");
             String episodeId = "";
@@ -55,7 +51,7 @@ public class LogvarDanmuFetcher extends DanmuFetcher {
                 return "";
             }
             Logger.log("LogvarDanmuFetcher.getBilibiliDanmakuXML匹配到episodeId： " + episodeId);
-            String xmlResponse = INSTANCE.sendGetRequest(danmuApi + "/api/v2/comment/" + episodeId + "?format=xml");
+            String xmlResponse = sendGetRequest(danmuApi + "/api/v2/comment/" + episodeId + "?format=xml");
             xmlResponse = fixDanmuPosition(xmlResponse);
             if (xmlResponse != null && xmlResponse.startsWith("<?xml") && xmlResponse.contains("<d p=")) {
                 String[] lines = xmlResponse.split("</d>", 11);
@@ -82,10 +78,5 @@ public class LogvarDanmuFetcher extends DanmuFetcher {
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(input);
         return matcher.replaceAll(replacement);
-    }
-
-    public static void test() {
-        String xml = LogvarDanmuFetcher.getBilibiliDanmakuXML("北上广不相信眼泪", 1, 2015);
-        Logger.log(xml);
     }
 }
