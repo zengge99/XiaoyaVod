@@ -29,7 +29,7 @@ import java.util.Comparator;
 
 public class DanmuFetcher {
     private static final DanmuFetcher INSTANCE = new DanmuFetcher();
-    protected static List<DanmuFetcher> srvLst = null;
+    private static List<DanmuFetcher> srvLst = null;
     protected String danmuApi;
     private volatile String recent;
     private String DANMU_ROOT = Path.cache() + "/TV/danmu";
