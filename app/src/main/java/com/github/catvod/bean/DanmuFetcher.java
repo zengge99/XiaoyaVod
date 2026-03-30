@@ -39,7 +39,7 @@ public class DanmuFetcher {
     private int TIMEOUT = 20000;
 
     //每增加一个解析器都需要手动在这里注册（添加子类要修改父类其实不太好，有空再重构）
-    private registerServices() {
+    private void registerServices() {
         if (srvLst == null) {
             srvLst = new ArrayList<>();
             srvLst.add(LogvarDanmuFetcher.get());
