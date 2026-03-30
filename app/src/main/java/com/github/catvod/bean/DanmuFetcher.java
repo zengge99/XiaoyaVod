@@ -39,11 +39,15 @@ public class DanmuFetcher {
     private int TIMEOUT = 20000;
     
     protected DanmuFetcher() {
-        srvLst.add(this);
+        register();
     }
 
-    protected int getPriority() {
-        return 1;
+    // 每增加一个解析器需要在这里注册
+    private register() {
+        srvLst.add(LogvarDanmuFetcher.get());
+        srvLst.add(DanmuFetcher.get());
+        srvLst.add(IqiyiDanmuFetcher.get());
+        srvLst.add(KanDanmuFetcher.get());
     }
 
     public static DanmuFetcher get() {
@@ -307,12 +311,6 @@ public class DanmuFetcher {
 
     private String getAllDanmakuXML(String title, int episode, int year) {
         String danmu = "";
-        Collections.sort(srvLst, new Comparator<DanmuFetcher>() {
-            @Override
-            public int compare(DanmuFetcher f1, DanmuFetcher f2) {
-                return f1.getPriority() - f2.getPriority();
-            }
-        });
         for (DanmuFetcher f : srvLst) {
             danmu = f.getBilibiliDanmakuXML(title, episode, year);
             if (danmu != null && !danmu.isEmpty()) {

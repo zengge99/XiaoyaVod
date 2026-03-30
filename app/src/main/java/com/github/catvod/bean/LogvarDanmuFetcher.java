@@ -36,6 +36,10 @@ public class LogvarDanmuFetcher extends DanmuFetcher {
         return danmu;
     }
 
+    public static LogvarDanmuFetcher get() {
+        return INSTANCE;
+    }
+
     private String _getBilibiliDanmakuXML(String title, int episode, int year) {
         try {
             if (danmuApi == null || danmuApi.isEmpty() || !danmuApi.startsWith("http")) {
