@@ -29,7 +29,7 @@ import java.util.Comparator;
 
 public class DanmuFetcher {
     private static final DanmuFetcher INSTANCE = new DanmuFetcher();
-    protected static List<DanmuFetcher> srvLst = new ArrayList<>();
+    protected static List<DanmuFetcher> srvLst = null;
     protected String danmuApi;
     private volatile String recent;
     private String DANMU_ROOT = Path.cache() + "/TV/danmu";
@@ -37,17 +37,16 @@ public class DanmuFetcher {
     private ExecutorService EXECUTOR = Executors.newCachedThreadPool();
     private Pattern NUMBER_PATTERN = Pattern.compile("\\d{1,4}");
     private int TIMEOUT = 20000;
-    
-    protected DanmuFetcher() {
-        register();
-    }
 
-    // 每增加一个解析器需要在这里注册
-    private register() {
-        srvLst.add(LogvarDanmuFetcher.get());
-        srvLst.add(DanmuFetcher.get());
-        srvLst.add(IqiyiDanmuFetcher.get());
-        srvLst.add(KanDanmuFetcher.get());
+    //每增加一个解析器都需要手动在这里注册
+    private List<DanmuFetcher> getAllServices() {
+        if (srvLst == null) {
+            srvLst = new ArrayList<>();
+            srvLst.add(LogvarDanmuFetcher.get());
+            srvLst.add(DanmuFetcher.get());
+            srvLst.add(IqiyiDanmuFetcher.get());
+            srvLst.add(KanDanmuFetcher.get());
+        }
     }
 
     public static DanmuFetcher get() {
