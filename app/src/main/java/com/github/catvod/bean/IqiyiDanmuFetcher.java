@@ -20,10 +20,6 @@ public class IqiyiDanmuFetcher extends DanmuFetcher {
 
     private static IqiyiDanmuFetcher INSTANCE = new IqiyiDanmuFetcher();
 
-    protected DanmuFetcher() {
-        srvLst.add(this);
-    }
-
     @Override
     protected String getBilibiliDanmakuXML(String title, int episode, int year) {
         try {

@@ -24,10 +24,6 @@ public class LogvarDanmuFetcher extends DanmuFetcher {
 
     private static LogvarDanmuFetcher INSTANCE = new LogvarDanmuFetcher();
 
-    protected DanmuFetcher() {
-        srvLst.add(this);
-    }
-
     @Override
     protected String getBilibiliDanmakuXML(String title, int episode, int year) {
         try {

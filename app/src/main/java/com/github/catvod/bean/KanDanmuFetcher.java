@@ -20,10 +20,6 @@ public class KanDanmuFetcher extends DanmuFetcher {
 
     private static KanDanmuFetcher INSTANCE = new KanDanmuFetcher();
 
-    protected DanmuFetcher() {
-        srvLst.add(this);
-    }
-
     @Override
     protected String getBilibiliDanmakuXML(String title, int episode, int year) {
         try {
