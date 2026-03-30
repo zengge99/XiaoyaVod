@@ -40,6 +40,11 @@ public class KanDanmuFetcher extends DanmuFetcher {
         }
     }
 
+    @Override
+    protected int getPriority() {
+        return 3;
+    }
+
     private String searchEnId(String title, int year) throws IOException {
         // URL 编码影片名
         String encodedTitle = URLEncoder.encode(title, "UTF-8");

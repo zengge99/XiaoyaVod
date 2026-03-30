@@ -24,6 +24,8 @@ import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.io.OutputStream;
+import java.util.Collections;
+import java.util.Comparator;
 
 public class DanmuFetcher {
     private static final DanmuFetcher INSTANCE = new DanmuFetcher();
@@ -38,6 +40,10 @@ public class DanmuFetcher {
     
     protected DanmuFetcher() {
         srvLst.add(this);
+    }
+
+    protected int getPriority() {
+        return 1;
     }
 
     public static DanmuFetcher get() {
@@ -301,6 +307,12 @@ public class DanmuFetcher {
 
     private String getAllDanmakuXML(String title, int episode, int year) {
         String danmu = "";
+            Collections.sort(srvLst, new Comparator<DanmuFetcher>() {
+                @Override
+                public int compare(DanmuFetcher f1, DanmuFetcher f2) {
+                    return f1.getPriority() - f2.getPriority();
+                }
+            });
         for (DanmuFetcher f : srvLst) {
             danmu = f.getBilibiliDanmakuXML(title, episode, year);
             if (danmu != null && !danmu.isEmpty()) {
