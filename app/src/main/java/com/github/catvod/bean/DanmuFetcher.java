@@ -30,7 +30,7 @@ import java.util.Comparator;
 public class DanmuFetcher {
     private static final DanmuFetcher INSTANCE = new DanmuFetcher();
     private static List<DanmuFetcher> srvLst = null;
-    protected String danmuApi;
+    protected static String danmuApi;
     private volatile String recent;
     private String DANMU_ROOT = Path.cache() + "/TV/danmu";
     private Gson GSON = new Gson();
@@ -43,9 +43,9 @@ public class DanmuFetcher {
         if (srvLst == null) {
             srvLst = new ArrayList<>();
             srvLst.add(LogvarDanmuFetcher.get());
-            //srvLst.add(DanmuFetcher.get());
-            //srvLst.add(IqiyiDanmuFetcher.get());
-            //srvLst.add(KanDanmuFetcher.get());
+            srvLst.add(DanmuFetcher.get());
+            srvLst.add(IqiyiDanmuFetcher.get());
+            srvLst.add(KanDanmuFetcher.get());
         }
     }
 
