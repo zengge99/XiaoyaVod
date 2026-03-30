@@ -307,7 +307,6 @@ public class DanmuFetcher {
     }
 
     private String getAllDanmakuXML(String title, int episode, int year) {
-        Logger.log("getAllDanmakuXML注册");
         registerServices();
         String danmu = "";
         for (DanmuFetcher f : srvLst) {
