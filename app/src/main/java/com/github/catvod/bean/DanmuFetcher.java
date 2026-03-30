@@ -17,6 +17,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -26,15 +27,28 @@ import java.io.OutputStream;
 
 public class DanmuFetcher {
     private static final DanmuFetcher INSTANCE = new DanmuFetcher();
-    private static volatile String recent;
-    private static final String DANMU_ROOT = Path.cache() + "/TV/danmu";
-    private static final Gson GSON = new Gson();
-    private static final ExecutorService EXECUTOR = Executors.newCachedThreadPool(); // 使用线程池代替 new Thread
-    private static final Pattern NUMBER_PATTERN = Pattern.compile("\\d{1,4}");
-    private static final int TIMEOUT = 20000;
-    public static String danmuApi;
+    protected List<DanmuFetcher> srvLst = new ArrayList<>();
+    private volatile String recent;
+    private String DANMU_ROOT = Path.cache() + "/TV/danmu";
+    private Gson GSON = new Gson();
+    private ExecutorService EXECUTOR = Executors.newCachedThreadPool();
+    private Pattern NUMBER_PATTERN = Pattern.compile("\\d{1,4}");
+    private int TIMEOUT = 20000;
+    private String danmuApi;
+    
+    protected DanmuFetcher() {
+        srvLst.add(this);
+    }
 
-    public static void pushDanmu(String title, int episode, int year) {
+    public static DanmuFetcher get() {
+        return INSTANCE;
+    }
+
+    public void setDanmuApi(String api) {
+        danmuApi = api;
+    }
+
+    public void pushDanmu(String title, int episode, int year) {
         String key = title + episode + year;
         recent = key;
         String fileName = generateMd5(key) + ".txt";
@@ -50,7 +64,7 @@ public class DanmuFetcher {
                 if (danmuFile.exists() && danmuFile.length() > 0) {
                     String danmuProxyPath = "http://127.0.0.1:9978/proxy?do=fs&file=" + danmuPath;
                     String actionUrl = "http://127.0.0.1:9978/action?do=refresh&type=danmaku&path=" + URLEncoder.encode(danmuProxyPath, "UTF-8");
-                    INSTANCE.sendGetRequest(actionUrl);
+                    sendGetRequest(actionUrl);
                 }
             } catch (Exception e) {
                 Logger.log("pushDanmu Cache: " + e.getMessage());
@@ -64,15 +78,16 @@ public class DanmuFetcher {
         pushDanmuBg(title, episode + 1, year);
     }
 
-    public static String getBilibiliDanmakuXML(String title, int episode, int year) {
+    @Override
+    protected String getBilibiliDanmakuXML(String title, int episode, int year) {
         try {
-            String showId = INSTANCE.searchShowId(title, year);
+            String showId = searchShowId(title, year);
             if (showId == null) return "";
 
-            String episodeUrl = INSTANCE.getEpisodeUrl(showId, episode);
+            String episodeUrl = getEpisodeUrl(showId, episode);
             if (episodeUrl == null) return "";
 
-            return INSTANCE.getDanmakutXml(episodeUrl);
+            return getDanmakutXml(episodeUrl);
         } catch (Exception e) {
             Logger.log("getBilibiliDanmakuXML: " + e.getMessage());
             return "";
@@ -273,7 +288,7 @@ public class DanmuFetcher {
         }
     }
 
-    private static String generateMd5(String input) {
+    private String generateMd5(String input) {
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
             byte[] hashBytes = md.digest(input.getBytes(StandardCharsets.UTF_8));
@@ -285,17 +300,18 @@ public class DanmuFetcher {
         }
     }
 
-    private static String getAllDanmakuXML(String title, int episode, int year) {
-        String danmu = LogvarDanmuFetcher.getBilibiliDanmakuXML(title, episode, year);
-        //Logvar试一次（首次拉官方弹幕失败概率大）
-        if (danmu.isEmpty()) danmu = LogvarDanmuFetcher.getBilibiliDanmakuXML(title, episode, year);
-        if (danmu.isEmpty()) danmu = getBilibiliDanmakuXML(title, episode, year);
-        if (danmu.isEmpty()) danmu = KanDanmuFetcher.getBilibiliDanmakuXML(title, episode, year);
-        if (danmu.isEmpty()) danmu = IqiyiDanmuFetcher.getBilibiliDanmakuXML(title, episode, year);
+    private String getAllDanmakuXML(String title, int episode, int year) {
+        String danmu = "";
+        for (DanmuFetcher f : srvLst) {
+            danmu = f.getBilibiliDanmakuXML(title, episode, year);
+            if (danmu != null && !danmu.isEmpty()) {
+                break;
+            }
+        }
         return danmu;
     }
 
-    private static void pushDanmuBg(String title, int episode, int year) {
+    private void pushDanmuBg(String title, int episode, int year) {
         String key = title + episode + year;
         String danmuPath = DANMU_ROOT + "/" + generateMd5(key) + ".txt";
         
@@ -321,7 +337,7 @@ public class DanmuFetcher {
                 if (recent.equals(key)) {
                     String proxy = "http://127.0.0.1:9978/proxy?do=fs&file=" + danmuPath;
                     String action = "http://127.0.0.1:9978/action?do=refresh&type=danmaku&path=" + URLEncoder.encode(proxy, "UTF-8");
-                    INSTANCE.sendGetRequest(action);
+                    sendGetRequest(action);
                 }
             } catch (Exception e) {
                 Logger.log("pushDanmuBg Error: " + e.getMessage());
@@ -329,7 +345,7 @@ public class DanmuFetcher {
         });
     }
 
-    private static void clearOldDanmu() {
+    private void clearOldDanmu() {
         File directory = new File(DANMU_ROOT);
         if (!directory.exists() || !directory.isDirectory()) return;
         
@@ -340,10 +356,6 @@ public class DanmuFetcher {
                 if (file.lastModified() < cutoff) file.delete();
             }
         }
-    }
-
-    public static void test() {
-        Logger.log(getBilibiliDanmakuXML("北上", 1, 2025));
     }
 }
 
