@@ -18,30 +18,26 @@ import java.io.File;
 
 public class KanDanmuFetcher extends DanmuFetcher {
 
-    private static KanDanmuFetcher thisObject = new KanDanmuFetcher();
+    private static KanDanmuFetcher INSTANCE = new KanDanmuFetcher();
 
-    /**
-     * 获取 Bilibili 弹幕格式的 XML
-     *
-     * @param title   影片名
-     * @param episode 集数
-     * @param year    年份
-     * @return Bilibili 弹幕格式的 XML 字符串
-     * @throws IOException 如果请求失败
-     */
-    public static String getBilibiliDanmakuXML(String title, int episode, int year) {
+    protected DanmuFetcher() {
+        srvLst.add(this);
+    }
+
+    @Override
+    protected String getBilibiliDanmakuXML(String title, int episode, int year)
         try {
-            String showId = thisObject.searchEnId(title, year);
+            String showId = searchEnId(title, year);
             if (showId == null) {
                 throw new RuntimeException("No matching show found");
             }
 
-            String episodeUrl = thisObject.getEpisodeUrl(showId, episode);
+            String episodeUrl = .getEpisodeUrl(showId, episode);
             if (episodeUrl == null) {
                 throw new RuntimeException("No matching episode found");
             }
 
-            return thisObject.getDanmakutXml(episodeUrl);
+            return getDanmakutXml(episodeUrl);
         } catch (Exception e) {
             Logger.log("getBilibiliDanmakuXML" + e);
             return "";
@@ -96,10 +92,5 @@ public class KanDanmuFetcher extends DanmuFetcher {
 
         // 如果未找到匹配的剧集，返回 null
         return null;
-    }
-
-    public static void test() {
-        String xml = KanDanmuFetcher.getBilibiliDanmakuXML("北上广不相信眼泪", 1, 2015);
-        Logger.log(xml);
     }
 }
