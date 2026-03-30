@@ -176,7 +176,7 @@ public class AList extends Spider {
             defaultDrive = drives.get(0);
         }
 
-        DanmuFetcher.setDanmuApi(defaultDrive.getDanmuApi());
+        DanmuFetcher.get().setDanmuApi(defaultDrive.getDanmuApi());
 
         //默认驱动要执行exec，需要提前登陆，简单规避
         getList(defaultDrive.getName() + defaultDrive.getPath(), false);
