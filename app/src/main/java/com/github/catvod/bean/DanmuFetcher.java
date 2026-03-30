@@ -38,8 +38,8 @@ public class DanmuFetcher {
     private Pattern NUMBER_PATTERN = Pattern.compile("\\d{1,4}");
     private int TIMEOUT = 20000;
 
-    //每增加一个解析器都需要手动在这里注册（添加子类要修改父类其实不太好，先简单处理吧，有空再重构）
-    private List<DanmuFetcher> getAllServices() {
+    //每增加一个解析器都需要手动在这里注册（添加子类要修改父类其实不太好，有空再重构）
+    private registerServices() {
         if (srvLst == null) {
             srvLst = new ArrayList<>();
             srvLst.add(LogvarDanmuFetcher.get());
@@ -309,6 +309,7 @@ public class DanmuFetcher {
     }
 
     private String getAllDanmakuXML(String title, int episode, int year) {
+        registerServices();
         String danmu = "";
         for (DanmuFetcher f : srvLst) {
             danmu = f.getBilibiliDanmakuXML(title, episode, year);
