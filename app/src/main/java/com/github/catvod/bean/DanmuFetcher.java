@@ -307,12 +307,12 @@ public class DanmuFetcher {
 
     private String getAllDanmakuXML(String title, int episode, int year) {
         String danmu = "";
-            Collections.sort(srvLst, new Comparator<DanmuFetcher>() {
-                @Override
-                public int compare(DanmuFetcher f1, DanmuFetcher f2) {
-                    return f1.getPriority() - f2.getPriority();
-                }
-            });
+        Collections.sort(srvLst, new Comparator<DanmuFetcher>() {
+            @Override
+            public int compare(DanmuFetcher f1, DanmuFetcher f2) {
+                return f1.getPriority() - f2.getPriority();
+            }
+        });
         for (DanmuFetcher f : srvLst) {
             danmu = f.getBilibiliDanmakuXML(title, episode, year);
             if (danmu != null && !danmu.isEmpty()) {

@@ -29,9 +29,10 @@ public class LogvarDanmuFetcher extends DanmuFetcher {
         for (int i = 0; i < 2; i++) {
             String danmu = _getBilibiliDanmakuXML(title, episode, year);
             if (danmu != null && !danmu.isEmpty()) {
-                return danmu;
+                break;
             }
         }
+        return danmu;
     }
 
     @Override
