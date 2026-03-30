@@ -28,13 +28,13 @@ import java.io.OutputStream;
 public class DanmuFetcher {
     private static final DanmuFetcher INSTANCE = new DanmuFetcher();
     protected List<DanmuFetcher> srvLst = new ArrayList<>();
+    protected String danmuApi;
     private volatile String recent;
     private String DANMU_ROOT = Path.cache() + "/TV/danmu";
     private Gson GSON = new Gson();
     private ExecutorService EXECUTOR = Executors.newCachedThreadPool();
     private Pattern NUMBER_PATTERN = Pattern.compile("\\d{1,4}");
     private int TIMEOUT = 20000;
-    private String danmuApi;
     
     protected DanmuFetcher() {
         srvLst.add(this);
