@@ -28,7 +28,7 @@ public class KanDanmuFetcher extends DanmuFetcher {
                 throw new RuntimeException("No matching show found");
             }
 
-            String episodeUrl = .getEpisodeUrl(showId, episode);
+            String episodeUrl = getEpisodeUrl(showId, episode);
             if (episodeUrl == null) {
                 throw new RuntimeException("No matching episode found");
             }
