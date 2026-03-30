@@ -26,6 +26,7 @@ public class LogvarDanmuFetcher extends DanmuFetcher {
 
     @Override
     protected String getBilibiliDanmakuXML(String title, int episode, int year) {
+        Logger.log("LogvarDanmuFetcher.getBilibiliDanmakuXML: " + danmuApi);
         String danmu = "";
         for (int i = 0; i < 2; i++) {
             danmu = _getBilibiliDanmakuXML(title, episode, year);

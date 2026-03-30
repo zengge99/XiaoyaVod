@@ -313,7 +313,6 @@ public class DanmuFetcher {
         registerServices();
         String danmu = "";
         for (DanmuFetcher f : srvLst) {
-            Logger.log("getAllDanmakuXML 当前执行的对象类型: " + f.getClass().getName());
             danmu = f.getBilibiliDanmakuXML(title, episode, year);
             if (danmu != null && !danmu.isEmpty()) {
                 break;
