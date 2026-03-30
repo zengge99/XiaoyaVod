@@ -43,9 +43,9 @@ public class DanmuFetcher {
         if (srvLst == null) {
             srvLst = new ArrayList<>();
             srvLst.add(LogvarDanmuFetcher.get());
-            srvLst.add(DanmuFetcher.get());
-            srvLst.add(IqiyiDanmuFetcher.get());
-            srvLst.add(KanDanmuFetcher.get());
+            //srvLst.add(DanmuFetcher.get());
+            //srvLst.add(IqiyiDanmuFetcher.get());
+            //srvLst.add(KanDanmuFetcher.get());
         }
     }
 
