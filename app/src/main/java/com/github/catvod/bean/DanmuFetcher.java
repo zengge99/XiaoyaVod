@@ -78,7 +78,6 @@ public class DanmuFetcher {
         pushDanmuBg(title, episode + 1, year);
     }
 
-    @Override
     protected String getBilibiliDanmakuXML(String title, int episode, int year) {
         try {
             String showId = searchShowId(title, year);

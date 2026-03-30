@@ -413,7 +413,7 @@ public class AList extends Spider {
                 String danmuEp = danmuParams[1];
                 String danmuYear = danmuParams[2];
                 if (!danmuName.isEmpty() && !danmuEp.isEmpty() && !danmuYear.isEmpty()) {
-                    DanmuFetcher.pushDanmu(danmuName, Integer.parseInt(danmuEp), Integer.parseInt(danmuYear));
+                    DanmuFetcher.get().pushDanmu(danmuName, Integer.parseInt(danmuEp), Integer.parseInt(danmuYear));
                 }
             }
 
