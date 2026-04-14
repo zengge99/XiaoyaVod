@@ -1213,7 +1213,7 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
                 vod.setVodYear(item.doubanInfo.getYear());
                 vod.doubanInfo = item.doubanInfo;
                 vod.setVodId(vod.getVodId() + "/~xiaoya");
-                if (TextUtils.isEmpty(item.getThumb()) || TextUtils.isEmpty(item.doubanInfo.getId())) {
+                if (TextUtils.isEmpty(item.getThumb()) || !item.getThumb().contains("douban")) {
                     vod.setVodPic(Image.XIAOYA);
                     noPicList.add(vod);
                 } else {
