@@ -346,7 +346,7 @@ public class AListSh extends AList {
         
         String totalCmd = cmd + " | grep -n '' | tail -n 1 | cut -d ':' -f 1";
                 
-        cmd = String.format("{ %s | grep http; %s | grep -v http; }", cmd, cmd);
+        cmd = String.format("{ %s | grep douban; %s | grep -v douban; }", cmd, cmd);
 
         boolean keepOrder = false;
         String doubansort = fl.get("doubansort");
