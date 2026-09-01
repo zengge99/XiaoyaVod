@@ -325,7 +325,8 @@ public class WatchSync {
             Set<String> current = new HashSet<>();
             for (Object o : local) current.add(vodNameOf(o));
 
-            // 判定删除：上次推送过、当前本地没有 -> 生成本机墓碑
+            // 判定删除：本机已知(曾见过)、当前本地没有、且无墓碑 -> 生成本机墓碑
+            // lastPushed 作为“本机已知全集”（只增不减），确保任何本机曾拥有的记录被删时都能命中生成墓碑
             long now = System.currentTimeMillis();
             for (String name : lastPushed) {
                 if (!current.contains(name) && !localTombs.containsKey(name)) {
@@ -333,7 +334,7 @@ public class WatchSync {
                     Logger.log("WatchSync > 检测到本机删除，生成墓碑: " + name);
                 }
             }
-            lastPushed.clear();
+            // 只增不减累积已知集合，不清空（否则会漏掉“曾有过但现在没有”的名字，导致复活）
             lastPushed.addAll(current);
 
             String raw = readRemote();
