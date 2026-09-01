@@ -50,7 +50,6 @@ public class AListSh extends Spider {
         return drive.getCombinedMode() ? "{ cat index.combined.txt;echo ''; }" : "{ cat index.video.txt;echo ''; }";
     }
 
-
     protected List<Drive> drives;
     protected Drive defaultDrive;
     protected String vodPic;
@@ -61,9 +60,6 @@ public class AListSh extends Spider {
     protected Map<String, Pager> drivePagerMap = new HashMap<>();
     protected ExecutorService executor = Executors.newCachedThreadPool();
     protected String jarVer = "%JARVER%";
-
-
-
 
     protected List<Filter> getFilter(String tid) {
         List<Filter> items = new ArrayList<>();
@@ -346,9 +342,9 @@ public class AListSh extends Spider {
         if (douban != null && !douban.equals("0")) {
             cmd +=  String.format(" | awk -F '#' '$4 >= %s'", douban);
         }
-        
+
         String totalCmd = cmd + " | grep -n '' | tail -n 1 | cut -d ':' -f 1";
-                
+
         cmd = String.format("{ %s | grep douban; %s | grep -v douban; }", cmd, cmd);
 
         boolean keepOrder = false;
@@ -535,10 +531,6 @@ public class AListSh extends Spider {
         return response;
     }
 
-
-
-
-
     @Override
     public String categoryContent(String tid, String pg, boolean filter, HashMap<String, String> extend)
             throws Exception {
@@ -561,7 +553,7 @@ public class AListSh extends Spider {
         //兼容老id格式
         id = id.replace("~soulist", "~xiaoya").replace("~soufile", "~xiaoya");
         ids.set(0, id);
-        
+
         Boolean isFile = id.endsWith("~playlist") ? false : true;
         //String path = id.substring(id.indexOf("/"));
         if (id.endsWith("~xiaoya")) {
@@ -586,8 +578,6 @@ public class AListSh extends Spider {
 
         return defaultDetailContent(ids);
     }
-
-
 
     @Override
     public String playerContent(String flag, String id, List<String> vipFlags) {
@@ -718,7 +708,7 @@ public class AListSh extends Spider {
         path = fixPath(path);
 
         vod.setVodPlayFrom(drive.getName());
-        
+
         if (id.endsWith("~xiaoya") && !vod.doubanInfo.getId().isEmpty()) {
             vod.doubanInfo = DoubanParser.getDoubanInfo(vod.doubanInfo.getId(), vod.doubanInfo);
             vod.setVodContent(vod.doubanInfo.getPlot().isEmpty() ? "文件路径: \r\n" + path.substring(path.indexOf("/") + 1) : vod.doubanInfo.getPlot() + "\r\n\r\n文件路径: \r\n" + path.substring(path.indexOf("/") + 1));
@@ -737,7 +727,7 @@ public class AListSh extends Spider {
                 List<String> paths = new ArrayList<>();
                 List<String> playUrls = new ArrayList<>();
                 List<String> displayPaths = new ArrayList<>();
-                
+
                 for (String s : splits) {
                     s = s.replaceAll("^\\./", "");
                     paths.add(s);
@@ -751,17 +741,17 @@ public class AListSh extends Spider {
                 int n = 0;
                 for (String s : paths) {
                     String fileName = s.substring(s.lastIndexOf("/") + 1);
-                    
+
                     String fullPathForPlayer = key + "/" + s;
 
                     String doubanName = vod.doubanInfo.getName();
                     String doubanYear = vod.doubanInfo.getYear();
-                    
+
                     String formattedUrl = String.format("%d: %s$%s~~~danmu:%s,1,%s", 
                                             ++n, fileName, fullPathForPlayer, doubanName, doubanYear);
                     playUrls.add(formattedUrl);
                 }
-                
+
                 String displayPlot = vod.doubanInfo.getPlot().isEmpty() ? "文件路径: \r\n" + TextUtils.join("\r\n", displayPaths) : vod.doubanInfo.getPlot() + "\r\n\r\n文件路径: \r\n" + TextUtils.join("\r\n", displayPaths);
                 Logger.log("fileDetailContent displayPlot: " + displayPlot);
                 vod.setVodContent(displayPlot);
@@ -793,7 +783,7 @@ public class AListSh extends Spider {
             String[] splits = order.split("_");
             Sorter.sort(splits[0], splits[1], items);
         }
-        
+
         List<String> playUrls = new ArrayList<>();
         Boolean haveFile = false;
         int i = 1;
@@ -823,9 +813,6 @@ public class AListSh extends Spider {
         }
     }
 
-
-
-
     protected String alistCategoryContent(String tid, String pg, boolean filter, HashMap<String, String> extend)
             throws Exception {
         Logger.log(tid);
@@ -850,7 +837,7 @@ public class AListSh extends Spider {
             } else {
                 files.add(item);
             }
-                
+
         }
         if (!TextUtils.isEmpty(order)) {
             String splits[] = order.split("_");
@@ -872,7 +859,7 @@ public class AListSh extends Spider {
             vod.setVodRemarks(item.getModified().split("T")[0] + "\t文件夹");
             list.add(vod);
         }
-            
+
         for (Item item : files) {
             Vod vod = item.getVod(tid, vodPic);
             vod.setVodRemarks(item.getModified().split("T")[0] + "\t" + getSize(item.getSize()));
@@ -905,7 +892,7 @@ public class AListSh extends Spider {
             Path.write(loginFile, "\n\n");
             return false;
         }
-        
+
         //服务器相同则用户名密码相同，快速复制登陆结果到其它驱动（TBD：可能引入问题）
         if (!drive.getToken().isEmpty()) {
             for (Drive d : drives) {
@@ -968,7 +955,7 @@ public class AListSh extends Spider {
             return false;
         }
     }
-    
+
     protected boolean loginByFile(Drive drive) {
         try {
             JSONObject params = new JSONObject();
@@ -1138,8 +1125,6 @@ public class AListSh extends Spider {
         }
     }
 
-
-
     protected String findSubs(String path, List<Item> items) {
         StringBuilder sb = new StringBuilder();
         for (Item item : items)
@@ -1148,8 +1133,6 @@ public class AListSh extends Spider {
                         .append(item.getVodId(path));
         return sb.toString();
     }
-
-
 
     protected List<Sub> getSubs(String[] ids) {
         List<Sub> allSubs = new ArrayList<>();
@@ -1169,7 +1152,7 @@ public class AListSh extends Spider {
             String name = split[0];
             String ext = split[1];
             String url = getDetail(split[2]).getUrl();
-            
+
             // 1. 计算当前项的相似度和 CHS 状态
             double currentSim = similarity(movieId, url);
             boolean currentHasChs = name.toLowerCase().contains("chs");
@@ -1206,7 +1189,7 @@ public class AListSh extends Spider {
         if (bestSub != null) {
             // 先放最优的那个
             result.add(bestSub);
-            
+
             // 再放其他的，且保持在 ids 中的原始顺序
             for (Sub s : allSubs) {
                 if (s != bestSub) { // 通过引用判断，剔除掉那个已经放进首位的最优项
@@ -1253,7 +1236,7 @@ public class AListSh extends Spider {
             sourceChar = sourceStr.charAt(i - 1);
             for (int j = 1; j <= targetLen; j++) {
                 targetChar = targetStr.charAt(j - 1);
-                
+
                 if (sourceChar == targetChar) {
                     arr[i][j] = arr[i - 1][j - 1];
                 } else {
@@ -1333,7 +1316,7 @@ public class AListSh extends Spider {
         if (line == null || line.isEmpty()) {
             return "";
         }
-        
+
         String out = "";
         String lowerLine = line.toLowerCase();
         int index = lowerLine.indexOf('#');
@@ -1363,8 +1346,5 @@ public class AListSh extends Spider {
         }
         return out;
     }
-
-
-
 
 }
