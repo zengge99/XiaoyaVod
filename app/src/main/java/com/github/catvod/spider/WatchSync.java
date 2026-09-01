@@ -70,6 +70,8 @@ public class WatchSync {
     private Method historySync;       // History.sync(List) -> void
     private Method histGetVodName;
     private Method histCanSave;
+    private Method histGetPosition;
+    private Method histGetDuration;
     private Method histDelete;        // History.delete() -> void
 
     // 本机墓碑：name -> 删除时间
@@ -158,10 +160,24 @@ public class WatchSync {
         historyObjectFrom = hist.getMethod("objectFrom", String.class);
         historySync = hist.getMethod("sync", List.class);
         histGetVodName = hist.getMethod("getVodName");
-        histCanSave = hist.getMethod("canSave");
+        try {
+            histCanSave = hist.getMethod("canSave");
+        } catch (Throwable t) {
+            histCanSave = null; // canSave 缺失：改用 getPosition/getDuration 自实现进度判断，不阻断启动
+            Logger.log("WatchSync > WARN: 未找到 History.canSave(), 改用 getPosition/getDuration: " + t);
+        }
+        try {
+            histGetPosition = hist.getMethod("getPosition");
+            histGetDuration = hist.getMethod("getDuration");
+        } catch (Throwable t) {
+            histGetPosition = null;
+            histGetDuration = null;
+            Logger.log("WatchSync > WARN: 亦未找到 getPosition/getDuration, 进度保护不可用: " + t);
+        }
         try {
             histDelete = hist.getMethod("delete");
         } catch (Throwable t) {
+            histDelete = null;
             Logger.log("WatchSync > WARN: 未找到 History.delete(): " + t);
         }
         Logger.log("WatchSync > 反射初始化完成: get/sync/findByName/delete 均可调用");
@@ -480,17 +496,32 @@ public class WatchSync {
         }
     }
 
+    /** 等价 History.canSave(): position>=0 && duration>0。优先用 canSave()，缺失时用 getPosition/getDuration 自算；取不到则放行(宽松)。 */
+    private boolean hasProgress(Object hist) {
+        try {
+            if (histCanSave != null) return (Boolean) histCanSave.invoke(hist);
+            if (histGetPosition != null && histGetDuration != null) {
+                long pos = ((Number) histGetPosition.invoke(hist)).longValue();
+                long dur = ((Number) histGetDuration.invoke(hist)).longValue();
+                return pos >= 0 && dur > 0;
+            }
+            return true;
+        } catch (Throwable t) {
+            return true;
+        }
+    }
+
     private boolean canSafeMerge(JSONObject rec) {
         try {
             Object hist = historyObjectFrom.invoke(null, rec.toString());
             if (hist == null) return true;
-            boolean remoteCanSave = (Boolean) histCanSave.invoke(hist);
+            boolean remoteCanSave = hasProgress(hist);
             if (remoteCanSave) return true;
             String vodName = (String) histGetVodName.invoke(hist);
             Object locals = historyFindByName.invoke(null, vodName);
             if (locals == null) return true;
             for (Object it : (List<?>) locals) {
-                if ((Boolean) histCanSave.invoke(it)) {
+                if (hasProgress(it)) {
                     Logger.log("WatchSync > 进度保护：无进度记录不覆盖本地有进度记录 name=" + vodName);
                     return false;
                 }
