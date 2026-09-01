@@ -231,8 +231,30 @@ public class WatchSync {
             }
             Logger.log("WatchSync > pull 完成，远端总数=" + arr.length() + " 属于本用户=" + mine.size() + " 可合并=" + mine.size());
             if (!mine.isEmpty()) syncMerge(mine);
+            reconcile(); // 对账：合并后若服务器与本地不一致，补一次 push
         } catch (Throwable t) {
             Logger.log("WatchSync > pull err: " + t);
+        }
+    }
+
+    /**
+     * 对账：比较服务器 watch.txt 与本地当前记录是否一致，不一致则补一次 push，
+     * 确保本地多出的/更新的记录也能及时推到远端（防漏推）。
+     */
+    private void reconcile() {
+        try {
+            List<?> local = localHistory();
+            String localJson = pack(local);
+            String remote = readRemote();
+            if (remote == null) { Logger.log("WatchSync > 对账：远端读取失败，跳过"); return; }
+            if (localJson.equals(remote)) {
+                Logger.log("WatchSync > 对账：服务器与本地一致，无需 push");
+            } else {
+                Logger.log("WatchSync > 对账：服务器与本地不一致，补一次 push（本地=" + local.size() + "条）");
+                writeRemote(localJson);
+            }
+        } catch (Throwable t) {
+            Logger.log("WatchSync > 对账 err: " + t);
         }
     }
 
