@@ -67,6 +67,12 @@ public class Drive {
     private Boolean combinedMode;
     @SerializedName("danmuApi")
     private String danmuApi;
+    @SerializedName("syncWatch")
+    private Boolean syncWatch;
+    @SerializedName("username")
+    private String username;
+    @SerializedName("syncPath")
+    private String syncPath;
     public HashMap<String, String> fl;
 
     private static class SignCache {
@@ -214,6 +220,18 @@ public class Drive {
             r = r.substring(0, r.lastIndexOf("/"));
         }
         return r;
+    }
+
+    public boolean syncWatch() {
+        return syncWatch != null && syncWatch;
+    }
+
+    public String getUsername() {
+        return TextUtils.isEmpty(username) ? "" : username;
+    }
+
+    public String getSyncPath() {
+        return TextUtils.isEmpty(syncPath) ? "" : syncPath;
     }
 
     public int getVersion() {
