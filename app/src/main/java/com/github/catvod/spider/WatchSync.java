@@ -334,7 +334,7 @@ public class WatchSync {
                     JSONObject item = arr.optJSONObject(i);
                     if (item == null) continue;
                     if (!"tombstone".equals(item.optString("kind"))) continue;
-                    if (!username.equals(item.optString("user"))) continue;
+                    // 每用户一个文件，文件即本用户，不再按 user 字段过滤
                     long t = item.optLong("time", 0);
                     if (now - t > TOMBSTONE_TTL_MS) continue;
                     tombs.put(item.optString("name", ""), t);
@@ -442,7 +442,8 @@ public class WatchSync {
         Map<String, Long> allTombs = new LinkedHashMap<>(localTombs);
 
         for (Map.Entry<String, Long> e : localTombs.entrySet()) {
-            tombMap.put(username + "\u0000" + e.getKey(), Math.max(tombMap.getOrDefault(username + "\u0000" + e.getKey(), 0L), e.getValue()));
+            // 每用户一文件，墓碑 key 直接用 name（不再用 user\u0000name 区分）
+            tombMap.put(e.getKey(), Math.max(tombMap.getOrDefault(e.getKey(), 0L), e.getValue()));
         }
         Set<String> seenHistory = new HashSet<>();
 
@@ -454,30 +455,25 @@ public class WatchSync {
                     if (item == null) continue;
                     String kind = item.optString("kind");
                     if ("tombstone".equals(kind)) {
-                        String tu = item.optString("user");
                         String tn = item.optString("name", "");
                         long tt = item.optLong("time", 0);
-                        // 复活：本用户墓碑对应的记录本机正拥有（重新观看）→ 丢弃该墓碑，使其作为 history 正常同步
-                        if (tu.equals(username) && localNames.contains(tn)) {
+                        // 复活：本机正拥有该记录（重新观看）→ 丢弃该墓碑，使其作为 history 正常同步
+                        if (localNames.contains(tn)) {
                             continue;
                         }
-                        if (username.equals(tu)) {
-                            allTombs.put(tn, Math.max(allTombs.getOrDefault(tn, 0L), tt));
-                        }
-                        String tk = tu + "\u0000" + tn;
-                        tombMap.put(tk, Math.max(tombMap.getOrDefault(tk, 0L), tt));
+                        allTombs.put(tn, Math.max(allTombs.getOrDefault(tn, 0L), tt));
+                        tombMap.put(tn, Math.max(tombMap.getOrDefault(tn, 0L), tt));
                         continue;
                     }
                     // history
-                    String u = item.optString("user");
                     String n = nameFromHistory(item.optJSONObject("history"));
                     if (n.isEmpty()) continue;
                     if (allTombs.containsKey(n)) continue;
-                    if (username.equals(u) && localNames.contains(n)) continue;
+                    if (localNames.contains(n)) continue;
 
-                    if (!seenHistory.contains(u + "\u0000" + n)) {
+                    if (!seenHistory.contains(n)) {
                         merged.put(item);
-                        seenHistory.add(u + "\u0000" + n);
+                        seenHistory.add(n);
                     }
                 }
             } catch (Throwable t) {
@@ -494,24 +490,21 @@ public class WatchSync {
 
             JSONObject wrap = new JSONObject();
             wrap.put("kind", "history");
-            wrap.put("user", username);
             wrap.put("history", histJson);
-            if (!seenHistory.contains(username + "\u0000" + n)) {
+            if (!seenHistory.contains(n)) {
                 merged.put(wrap);
-                seenHistory.add(username + "\u0000" + n);
+                seenHistory.add(n);
             }
         }
 
-        // 输出墓碑
+        // 输出墓碑：key 即 name
         for (Map.Entry<String, Long> e : tombMap.entrySet()) {
             if (now - e.getValue() > TOMBSTONE_TTL_MS) continue;
-            String tk = e.getKey();
-            int sep = tk.indexOf("\u0000");
-            if (sep < 0) continue; // 修复：允许空用户名
+            String name = e.getKey();
+            if (name.isEmpty()) continue;
             JSONObject tb = new JSONObject();
             tb.put("kind", "tombstone");
-            tb.put("user", tk.substring(0, sep));
-            tb.put("name", tk.substring(sep + 1));
+            tb.put("name", name);
             tb.put("time", e.getValue());
             merged.put(tb);
         }
@@ -562,7 +555,7 @@ public class WatchSync {
                 JSONObject wrap = arr.optJSONObject(i);
                 if (wrap == null) continue;
                 if (!"history".equals(wrap.optString("kind"))) continue;
-                if (!username.equals(wrap.optString("user"))) continue;
+                // 每用户一个文件，文件即本用户，不再按 user 字段过滤
                 JSONObject rec = wrap.optJSONObject("history");
                 if (rec == null) continue;
                 String n = nameFromHistory(rec);
