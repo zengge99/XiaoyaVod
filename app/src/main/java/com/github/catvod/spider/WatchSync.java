@@ -74,8 +74,7 @@ public class WatchSync {
             ws.initReflection();
             ws.startWatching();
             ws.schedule();
-            ws.pull();       // 启动兜底：立即拉一次
-            ws.push();       // 启动时先把现有记录推上去
+            ws.pull();       // 启动兜底：读一次远端 + 合并本地 + 对账（不一致才写），不再单独 push
             Logger.log("WatchSync > 启动完成");
             return ws;
         } catch (Throwable t) {
@@ -180,11 +179,12 @@ public class WatchSync {
 
     // ---------------- 推送 ----------------
 
-    /** 读取当前源(小雅)记录 -> 覆盖写服务器 watch.txt。 */
+    /** 读取当前源(小雅)记录 -> merge-write 写服务器 watch.txt（事件驱动）。 */
     private void push() {
         try {
             List<?> local = localHistory();
-            String json = merge(local);   // merge-write：保留远端别人记录，只刷新自己的部分
+            String raw = readRemote();          // 只读一次远端，用于合并
+            String json = merge(local, raw);    // merge-write：保留远端别人记录，只刷新自己的部分
             writeRemote(json);
             Logger.log("WatchSync > push 完成（merge-write，保留他人记录），本机=" + local.size() + " 条，json长度=" + json.length());
         } catch (Throwable t) {
@@ -201,13 +201,12 @@ public class WatchSync {
     }
 
     /**
-     * merge-write：读远端 watch.txt(所有用户)，先原样保留 user != 本机 的记录，
+     * merge-write：基于已读的远端 raw(所有用户)，先原样保留 user != 本机 的记录，
      * 再用本机当前记录覆盖 user == 本机 的部分，返回全量合并 JSON。
      * 确保 push 绝不覆盖其他用户的信息。
      */
-    private String merge(List<?> local) throws Exception {
+    private String merge(List<?> local, String raw) throws Exception {
         JSONArray merged = new JSONArray();
-        String raw = readRemote();
         if (raw != null && !raw.trim().isEmpty()) {
             try {
                 JSONArray remote = new JSONArray(raw);
@@ -232,10 +231,20 @@ public class WatchSync {
 
     private void pull() {
         try {
-            String raw = readRemote();
+            String raw = readRemote();           // 读一次远端，透传给 syncMine/reconcile（避免重复读）
             if (raw == null || raw.trim().isEmpty()) { Logger.log("WatchSync > pull: 远端为空或读取失败"); return; }
-            JSONArray arr = new JSONArray(raw);
+            syncMine(raw);                        // 过滤出本机组记录并 History.sync 合并本地
+            reconcile(raw);                       // 对账：合并后拉取预期内容 vs 远端，不一致才写
+        } catch (Throwable t) {
+            Logger.log("WatchSync > pull err: " + t);
+        }
+    }
+
+    /** 从远端 raw 过滤出 user==本机 的记录，经 canSave 保护后 History.sync 合并进本地 DB。 */
+    private void syncMine(String raw) {
+        try {
             List<Object> mine = new ArrayList<>();
+            JSONArray arr = new JSONArray(raw);
             for (int i = 0; i < arr.length(); i++) {
                 JSONObject wrap = arr.optJSONObject(i);
                 if (wrap == null) continue;
@@ -245,25 +254,22 @@ public class WatchSync {
                 if (!canSafeMerge(rec)) continue; // canSave 进度保护
                 mine.add(historyObjectFrom.invoke(null, rec.toString()));
             }
-            Logger.log("WatchSync > pull 完成，远端总数=" + arr.length() + " 属于本用户=" + mine.size() + " 可合并=" + mine.size());
+            Logger.log("WatchSync > pull 完成，远端总数=" + arr.length() + " 属于本用户=" + mine.size());
             if (!mine.isEmpty()) syncMerge(mine);
-            reconcile(); // 对账：合并后若服务器与本地不一致，补一次 push
         } catch (Throwable t) {
-            Logger.log("WatchSync > pull err: " + t);
+            Logger.log("WatchSync > syncMine err: " + t);
         }
     }
 
     /**
-     * 对账：比较服务器 watch.txt 与本地当前记录是否一致，不一致则补一次 push，
-     * 确保本地多出的/更新的记录也能及时推到远端（防漏推）。
+     * 对账：用已经读到的远端 raw + 本地当前记录生成预期 merge 内容，
+     * 与远端 raw 比较，不一致才 merge-write（防漏推，也避免无意义写入）。
      */
-    private void reconcile() {
+    private void reconcile(String raw) {
         try {
             List<?> local = localHistory();
-            String merged = merge(local);
-            String remote = readRemote();
-            if (remote == null) { Logger.log("WatchSync > 对账：远端读取失败，跳过"); return; }
-            if (merged.equals(remote)) {
+            String merged = merge(local, raw);
+            if (merged.equals(raw)) {
                 Logger.log("WatchSync > 对账：服务器与本地一致，无需 push");
             } else {
                 Logger.log("WatchSync > 对账：服务器与本地不一致，补一次 merge-write push（本机=" + local.size() + "条）");
