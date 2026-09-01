@@ -219,6 +219,7 @@ public class WatchSync {
                     observerMain = new FileObserver(dirPath, FileObserver.MODIFY | FileObserver.CLOSE_WRITE | FileObserver.CREATE) {
                         @Override
                         public void onEvent(int event, String path) {
+                            Logger.log("WatchSync > 文件事件 event=" + event + " path=" + path);
                             if (path != null && (path.equals("tv") || path.equals("tv-wal"))) {
                                 onDbChanged();
                             }
