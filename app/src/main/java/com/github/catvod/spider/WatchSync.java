@@ -10,9 +10,15 @@ import com.github.catvod.bean.alist.Drive;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.File;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -23,20 +29,28 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * - 只反射访问蜂蜜影视(com.fongmi.android.tv)中被 R8 keep 的 bean.History 类，
  *   编译期无依赖，失败静默降级（不影响播放）。
- * - 单文件 watch.txt 存放所有用户的记录，用 user 字段区分（各设备通过 defaultDrive 配置 username）。
+ * - 单文件 watch.txt 存放所有用户的记录，用 user 字段区分；每条带 kind：
+ *     history   = 正常观看记录
+ *     tombstone = 删除墓碑（user + name + 删除时间），用于全网传播删除
  * - 触发：
  *     1) FileObserver 监视 tv / tv-wal 数据库文件变化 -> 事件驱动推送(5s 防抖)
  *     2) 每 30s 定时拉取合并
  *     3) start() 后立即 pull 一次
- * - 合并：复用蜂蜜影视 History.sync()（{@link #syncMerge}）的 LWW / mergeFrom / 定向当前源语义；
- *         并在喂给 sync 前用 History.findByName 做 canSave 进度保护（无进度记录不覆盖有进度的本地）。
+ * - 删除语义（tombstone）：
+ *     本机维护 lastPushed(上次推送的名称集合)。push 时若某名称上次推送过、当前本地没有了，
+ *     判定为"我删了它" -> 生成墓碑。远端 history 只有"存在墓碑"才删除，绝不因"本地暂无"而删，
+ *     从而避免乙设备 push 误删甲设备刚新增的记录。
+ * - 删除赢：任一设备删除某片 -> 墓碑传播 -> 全网删除该片。
+ * - 墓碑保留 60 天，过期在 merge 时自动清理。
  */
 public class WatchSync {
 
     private static final String HISTORY_CLS = "com.fongmi.android.tv.bean.History";
+    private static final String STATE_FILE = "watch_sync_state.json";
 
     private static final long PUSH_DEBOUNCE_MS = 5000;
     private static final long PULL_PERIOD_SEC = 30;
+    private static final long TOMBSTONE_TTL_MS = 60L * 24 * 60 * 60 * 1000; // 60 天
 
     private final Context context;
     private final Drive drive;
@@ -56,6 +70,12 @@ public class WatchSync {
     private Method historySync;       // History.sync(List) -> void
     private Method histGetVodName;
     private Method histCanSave;
+    private Method histDelete;        // History.delete() -> void
+
+    // 本机墓碑：name -> 删除时间
+    private final Map<String, Long> localTombs = new HashMap<>();
+    // 本机上次推送过的名称集合（判定删除用）
+    private final Set<String> lastPushed = new HashSet<>();
 
     private WatchSync(Context context, Drive drive, String username, String syncPath) {
         this.context = context;
@@ -71,15 +91,62 @@ public class WatchSync {
             Logger.log("WatchSync > defaultDrive=" + drive.getName() + " syncWatch=" + drive.syncWatch() + " username=[" + drive.getUsername() + "] syncPath=[" + drive.getSyncPath() + "]");
             if (!drive.syncWatch() || drive.getSyncPath().isEmpty()) { Logger.log("WatchSync > 未启用：syncWatch=false 或 syncPath 为空"); return null; }
             WatchSync ws = new WatchSync(context, drive, drive.getUsername(), drive.getSyncPath());
+            ws.loadState();
             ws.initReflection();
             ws.startWatching();
             ws.schedule();
-            ws.pull();       // 启动兜底：读一次远端 + 合并本地 + 对账（不一致才写），不再单独 push
+            ws.pull();       // 启动兜底：读一次远端 + 合并本地 + 对账
             Logger.log("WatchSync > 启动完成");
             return ws;
         } catch (Throwable t) {
             Logger.log("WatchSync > start failed: " + t);
             return null;
+        }
+    }
+
+    // ---------------- 本机状态持久化 ----------------
+
+    private File stateFile() {
+        return new File(context.getFilesDir(), STATE_FILE);
+    }
+
+    private void loadState() {
+        try {
+            File f = stateFile();
+            if (f.exists()) {
+                JSONObject o = new JSONObject(com.github.catvod.utils.Path.read(f));
+                if (o.has("lastPushed")) {
+                    JSONArray arr = o.getJSONArray("lastPushed");
+                    for (int i = 0; i < arr.length(); i++) lastPushed.add(arr.getString(i));
+                }
+                if (o.has("tombs")) {
+                    JSONObject tb = o.getJSONObject("tombs");
+                    java.util.Iterator<String> it = tb.keys();
+                    while (it.hasNext()) {
+                        String k = it.next();
+                        localTombs.put(k, tb.getLong(k));
+                    }
+                }
+            }
+            Logger.log("WatchSync > 加载本机状态: lastPushed=" + lastPushed.size() + " tombs=" + localTombs.size());
+        } catch (Throwable t) {
+            Logger.log("WatchSync > loadState err: " + t);
+        }
+    }
+
+    private void saveState() {
+        try {
+            JSONObject o = new JSONObject();
+            JSONArray lp = new JSONArray();
+            for (String s : lastPushed) lp.put(s);
+            JSONObject tb = new JSONObject();
+            for (Map.Entry<String, Long> e : localTombs.entrySet()) tb.put(e.getKey(), e.getValue());
+            o.put("lastPushed", lp);
+            o.put("tombs", tb);
+            com.github.catvod.utils.Path.write(stateFile(), o.toString().getBytes("UTF-8"));
+            Logger.log("WatchSync > 保存本机状态: lastPushed=" + lastPushed.size() + " tombs=" + localTombs.size());
+        } catch (Throwable t) {
+            Logger.log("WatchSync > saveState err: " + t);
         }
     }
 
@@ -92,22 +159,21 @@ public class WatchSync {
         historySync = hist.getMethod("sync", List.class);
         histGetVodName = hist.getMethod("getVodName");
         histCanSave = hist.getMethod("canSave");
-        Logger.log("WatchSync > 反射初始化完成: get/sync/findByName 均可调用");
+        try {
+            histDelete = hist.getMethod("delete");
+        } catch (Throwable t) {
+            Logger.log("WatchSync > WARN: 未找到 History.delete(): " + t);
+        }
+        Logger.log("WatchSync > 反射初始化完成: get/sync/findByName/delete 均可调用");
     }
 
     /**
-     * 解析蜂蜜影视宿主真实的 History 类。
-     * 宿主类可能被二次开发改了包名，故按下列顺序探测：
-     * 1) 从宿主的 Application 类名推导包名前缀 + bean.History
-     * 2) 从 context.getPackageName() 推导 + .bean.History
-     * 3) 兜底原始包名 com.fongmi.android.tv.bean.History
-     * 全部失败则抛出，由调用方静默降级。
+     * 解析蜂蜜影视宿主真实的 History 类（换皮可能改包名）。
      */
     private Class<?> resolveHistoryClass() throws Exception {
         List<String> candidates = new ArrayList<>();
         String suffix = "bean.History";
         try {
-            // 宿主 Application 类（如 com.fongmi.android.tv.App / <换皮包>.App），取包前缀
             String appCls = context.getApplicationInfo().className;
             if (appCls != null && appCls.lastIndexOf('.') > 0)
                 candidates.add(appCls.substring(0, appCls.lastIndexOf('.') + 1) + suffix);
@@ -121,7 +187,7 @@ public class WatchSync {
         } catch (Throwable t) {
             Logger.log("WatchSync > 解析候选2(packageName)失败: " + t);
         }
-        candidates.add(HISTORY_CLS); // 兜底原始包名
+        candidates.add(HISTORY_CLS);
         for (String cand : candidates) {
             try {
                 Class<?> cls = Class.forName(cand);
@@ -138,7 +204,7 @@ public class WatchSync {
 
     private void startWatching() {
         try {
-            String dir = context.getDatabasePath("tv").getParent(); // .../databases
+            String dir = context.getDatabasePath("tv").getParent();
             Logger.log("WatchSync > 开始监视数据库目录: " + dir);
             watchThread = new HandlerThread("watch-sync");
             watchThread.start();
@@ -146,7 +212,6 @@ public class WatchSync {
                 try {
                     observerMain = new FileObserver(dir, FileObserver.MODIFY | FileObserver.CLOSE_WRITE | FileObserver.CREATE) {
                         @Override public void onEvent(int event, String path) {
-                            // 只关心 tv / tv-wal 两个文件的变化（覆盖首次创建和 WAL 写入）
                             Logger.log("WatchSync > 文件事件 event=" + event + " path=" + path);
                             if (path != null && (path.equals("tv") || path.equals("tv-wal"))) onDbChanged();
                         }
@@ -162,7 +227,6 @@ public class WatchSync {
         }
     }
 
-    /** DB 文件变化 -> push，带 5s 防抖。 */
     private void onDbChanged() {
         long now = System.currentTimeMillis();
         long last = lastPushEvent.get();
@@ -177,110 +241,241 @@ public class WatchSync {
         scheduler.scheduleWithFixedDelay(this::pull, PULL_PERIOD_SEC, PULL_PERIOD_SEC, TimeUnit.SECONDS);
     }
 
+    // ---------------- 工具 ----------------
+
+    private List<?> localHistory() throws Exception {
+        Object list = historyGet.invoke(null);
+        List<?> r = list == null ? new ArrayList<>() : (List<?>) list;
+        return r;
+    }
+
+    private String vodNameOf(Object o) {
+        try {
+            Object n = histGetVodName.invoke(o);
+            return n == null ? "" : n.toString();
+        } catch (Throwable t) {
+            return "";
+        }
+    }
+
+    /** 解析远端 raw 中属于本用户的墓碑集合 name->time（含过期清理）。 */
+    private Map<String, Long> parseTombstones(String raw) {
+        Map<String, Long> tombs = new HashMap<>();
+        long now = System.currentTimeMillis();
+        try {
+            if (raw != null && !raw.trim().isEmpty()) {
+                JSONArray arr = new JSONArray(raw);
+                for (int i = 0; i < arr.length(); i++) {
+                    JSONObject item = arr.optJSONObject(i);
+                    if (item == null) continue;
+                    if (!"tombstone".equals(item.optString("kind"))) continue;
+                    if (!username.equals(item.optString("user"))) continue;
+                    long t = item.optLong("time", 0);
+                    if (now - t > TOMBSTONE_TTL_MS) continue; // 过期墓碑忽略
+                    tombs.put(item.optString("name", ""), t);
+                }
+            }
+        } catch (Throwable t) {
+            Logger.log("WatchSync > parseTombstones err: " + t);
+        }
+        return tombs;
+    }
+
+    /** 远端墓碑导致的删除：删本地同名记录，并同步到本机墓碑。 */
+    private void applyRemoteTombstones(Map<String, Long> remoteTombs) {
+        if (histDelete == null) return;
+        for (Map.Entry<String, Long> e : remoteTombs.entrySet()) {
+            String name = e.getKey();
+            localTombs.put(name, Math.max(localTombs.getOrDefault(name, 0L), e.getValue()));
+            try {
+                Object locals = historyFindByName.invoke(null, name);
+                if (locals == null) continue;
+                for (Object it : (List<?>) locals) {
+                    histDelete.invoke(it);
+                    Logger.log("WatchSync > 远端墓碑，删除本地记录: " + name);
+                }
+            } catch (Throwable t) {
+                Logger.log("WatchSync > applyRemoteTombstones err (" + name + "): " + t);
+            }
+        }
+    }
+
     // ---------------- 推送 ----------------
 
-    /** 读取当前源(小雅)记录 -> merge-write 写服务器 watch.txt（事件驱动）。 */
+    /** 事件驱动：先判定本机删除生成墓碑，再 merge-write 远端。 */
     private void push() {
         try {
             List<?> local = localHistory();
-            String raw = readRemote();          // 只读一次远端，用于合并
-            String json = merge(local, raw);    // merge-write：保留远端别人记录，只刷新自己的部分
+            Set<String> current = new HashSet<>();
+            for (Object o : local) current.add(vodNameOf(o));
+
+            // 判定删除：上次推送过、当前本地没有 -> 生成本机墓碑
+            long now = System.currentTimeMillis();
+            for (String name : lastPushed) {
+                if (!current.contains(name) && !localTombs.containsKey(name)) {
+                    localTombs.put(name, now);
+                    Logger.log("WatchSync > 检测到本机删除，生成墓碑: " + name);
+                }
+            }
+            lastPushed.clear();
+            lastPushed.addAll(current);
+
+            String raw = readRemote();
+            String json = merge(local, current, raw);
             writeRemote(json);
-            Logger.log("WatchSync > push 完成（merge-write，保留他人记录），本机=" + local.size() + " 条，json长度=" + json.length());
+            saveState();
+            Logger.log("WatchSync > push 完成（merge-write），本机=" + local.size() + " 条，json长度=" + json.length());
         } catch (Throwable t) {
             Logger.log("WatchSync > push err: " + t);
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private List<?> localHistory() throws Exception {
-        Object list = historyGet.invoke(null); // History.get() = 当前源(cid)记录
-        List<?> r = list == null ? new ArrayList<>() : (List<?>) list;
-        Logger.log("WatchSync > 本地读取(History.get) 条数=" + r.size());
-        return r;
-    }
-
     /**
-     * merge-write：基于已读的远端 raw(所有用户)，先原样保留 user != 本机 的记录，
-     * 再用本机当前记录覆盖 user == 本机 的部分，返回全量合并 JSON。
-     * 确保 push 绝不覆盖其他用户的信息。
+     * merge-write：保留远端他人 + 未删除的历史；只有墓碑才删除历史；追加本机记录与墓碑。
+     * 远端 history 绝不因"本机暂无"而删除（防乙设备 push 误删甲新记录）。
      */
-    private String merge(List<?> local, String raw) throws Exception {
+    private String merge(List<?> local, Set<String> localNames, String raw) throws Exception {
+        long now = System.currentTimeMillis();
         JSONArray merged = new JSONArray();
+        Map<String, Long> allTombs = new LinkedHashMap<>();
+        allTombs.putAll(localTombs);
+        allTombs.putAll(parseTombstones(raw));
+        Set<String> seenHistory = new HashSet<>();
+
+        // 先收远端：历史保留除非被墓碑删除；墓碑去重保留（含过期清理）
         if (raw != null && !raw.trim().isEmpty()) {
             try {
                 JSONArray remote = new JSONArray(raw);
                 for (int i = 0; i < remote.length(); i++) {
                     JSONObject item = remote.optJSONObject(i);
-                    if (item != null && !username.equals(item.optString("user"))) merged.put(item);
+                    if (item == null) continue;
+                    String kind = item.optString("kind");
+                    if ("tombstone".equals(kind)) {
+                        if (username.equals(item.optString("user"))) {
+                            String n = item.optString("name", "");
+                            long t = item.optLong("time", 0);
+                            allTombs.put(n, Math.max(allTombs.getOrDefault(n, 0L), t));
+                        }
+                        if (now - item.optLong("time", 0) <= TOMBSTONE_TTL_MS) merged.put(item);
+                        continue;
+                    }
+                    // history
+                    String u = item.optString("user");
+                    String n = nameFromHistory(item.optJSONObject("history"));
+                    if (n.isEmpty()) continue;
+                    if (allTombs.containsKey(n)) continue; // 已被墓碑删除
+                    if (username.equals(u)) {
+                        // 本机用户历史：本机当前已有则用本机版本(下方 local 追加)，跳过远端防重复；
+                        // 本机还没有(如甲设备刚加、本机未拉到)则保留远端，防止乙设备 push 误删甲新记录
+                        if (localNames.contains(n)) continue;
+                    }
+                    // 其他用户 / 本机尚未拥有的历史：原样保留
+                    if (!seenHistory.contains(u + "\u0000" + n)) {
+                        merged.put(item);
+                        seenHistory.add(u + "\u0000" + n);
+                    }
                 }
             } catch (Throwable t) {
                 Logger.log("WatchSync > merge: 远端解析失败，按空仓处理: " + t);
             }
         }
+
+        // 本机历史（未被墓碑删除的）
         for (Object o : local) {
+            String n = vodNameOf(o);
+            if (n.isEmpty() || allTombs.containsKey(n)) continue;
             JSONObject wrap = new JSONObject();
+            wrap.put("kind", "history");
             wrap.put("user", username);
             wrap.put("history", new JSONObject(o.toString()));
-            merged.put(wrap);
+            if (!seenHistory.contains(username + "\u0000" + n)) {
+                merged.put(wrap);
+                seenHistory.add(username + "\u0000" + n);
+            }
         }
+
+        // 本机墓碑
+        for (Map.Entry<String, Long> e : localTombs.entrySet()) {
+            if (now - e.getValue() > TOMBSTONE_TTL_MS) continue;
+            JSONObject tb = new JSONObject();
+            tb.put("kind", "tombstone");
+            tb.put("user", username);
+            tb.put("name", e.getKey());
+            tb.put("time", e.getValue());
+            merged.put(tb);
+        }
+
         return merged.toString();
+    }
+
+    private String nameFromHistory(JSONObject h) {
+        try {
+            return h == null ? "" : h.optString("vodName", h.optString("vod_name", ""));
+        } catch (Throwable t) {
+            return "";
+        }
     }
 
     // ---------------- 拉取 ----------------
 
     private void pull() {
         try {
-            String raw = readRemote();           // 读一次远端，透传给 syncMine/reconcile（避免重复读）
+            String raw = readRemote();
             if (raw == null || raw.trim().isEmpty()) { Logger.log("WatchSync > pull: 远端为空或读取失败"); return; }
-            syncMine(raw);                        // 过滤出本机组记录并 History.sync 合并本地
-            reconcile(raw);                       // 对账：合并后拉取预期内容 vs 远端，不一致才写
-        } catch (Throwable t) {
-            Logger.log("WatchSync > pull err: " + t);
-        }
-    }
+            Map<String, Long> remoteTombs = parseTombstones(raw);
+            if (!remoteTombs.isEmpty()) applyRemoteTombstones(remoteTombs);
 
-    /** 从远端 raw 过滤出 user==本机 的记录，经 canSave 保护后 History.sync 合并进本地 DB。 */
-    private void syncMine(String raw) {
-        try {
+            // 收集本用户未被墓碑删除的历史，历史里已删除的不拉回
             List<Object> mine = new ArrayList<>();
             JSONArray arr = new JSONArray(raw);
             for (int i = 0; i < arr.length(); i++) {
                 JSONObject wrap = arr.optJSONObject(i);
                 if (wrap == null) continue;
-                if (!username.equals(wrap.optString("user"))) continue; // 只合并自己的
+                if (!"history".equals(wrap.optString("kind"))) continue;
+                if (!username.equals(wrap.optString("user"))) continue;
                 JSONObject rec = wrap.optJSONObject("history");
                 if (rec == null) continue;
-                if (!canSafeMerge(rec)) continue; // canSave 进度保护
+                String n = nameFromHistory(rec);
+                if (remoteTombs.containsKey(n)) continue; // 墓碑：不拉回
+                if (!canSafeMerge(rec)) continue;
                 mine.add(historyObjectFrom.invoke(null, rec.toString()));
             }
             Logger.log("WatchSync > pull 完成，远端总数=" + arr.length() + " 属于本用户=" + mine.size());
-            if (!mine.isEmpty()) syncMerge(mine);
+            if (!mine.isEmpty()) {
+                historySync.invoke(null, mine);
+                lastPushed.addAll(lastPushedOf(mine));
+            }
+            reconcile(raw);
         } catch (Throwable t) {
-            Logger.log("WatchSync > syncMine err: " + t);
+            Logger.log("WatchSync > pull err: " + t);
         }
     }
 
-    /**
-     * 对账：用已经读到的远端 raw + 本地当前记录生成预期 merge 内容，
-     * 与远端 raw 比较，不一致才 merge-write（防漏推，也避免无意义写入）。
-     */
+    private Set<String> lastPushedOf(List<Object> mine) {
+        Set<String> s = new HashSet<>();
+        for (Object o : mine) s.add(vodNameOf(o));
+        return s;
+    }
+
+    /** 对账：以本机当前状态生成预期内容 vs 远端，不一致才写（并触发删除墓碑传播）。 */
     private void reconcile(String raw) {
         try {
             List<?> local = localHistory();
-            String merged = merge(local, raw);
+            Set<String> names = new HashSet<>();
+            for (Object o : local) names.add(vodNameOf(o));
+            String merged = merge(local, names, raw);
             if (merged.equals(raw)) {
                 Logger.log("WatchSync > 对账：服务器与本地一致，无需 push");
             } else {
-                Logger.log("WatchSync > 对账：服务器与本地不一致，补一次 merge-write push（本机=" + local.size() + "条）");
+                Logger.log("WatchSync > 对账：服务器与本地不一致，补一次 merge-write push");
                 writeRemote(merged);
+                saveState();
             }
         } catch (Throwable t) {
             Logger.log("WatchSync > 对账 err: " + t);
         }
     }
 
-    /** canSave 进度保护：远端若是"纯访问无进度"(!canSave)，且本地存在有进度的记录，则跳过不合并。 */
     private boolean canSafeMerge(JSONObject rec) {
         try {
             Object hist = historyObjectFrom.invoke(null, rec.toString());
@@ -288,7 +483,7 @@ public class WatchSync {
             boolean remoteCanSave = (Boolean) histCanSave.invoke(hist);
             if (remoteCanSave) return true;
             String vodName = (String) histGetVodName.invoke(hist);
-            Object locals = historyFindByName.invoke(null, vodName); // History.findByName(name)
+            Object locals = historyFindByName.invoke(null, vodName);
             if (locals == null) return true;
             for (Object it : (List<?>) locals) {
                 if ((Boolean) histCanSave.invoke(it)) {
@@ -302,17 +497,7 @@ public class WatchSync {
         }
     }
 
-    /** 复用蜂蜜影视 History.sync(List)：LWW(findByName + createTime) + mergeFrom + cid(当前).save()。 */
-    private void syncMerge(List<Object> mine) {
-        try {
-            historySync.invoke(null, mine);
-            Logger.log("WatchSync > 已调用 History.sync() 合并 " + mine.size() + " 条");
-        } catch (Throwable t) {
-            Logger.log("WatchSync > syncMerge err: " + t);
-        }
-    }
-
-    // ---------------- 服务器文件读写（走 exec，base64 避免转义问题） ----------------
+    // ---------------- 服务器文件读写（走 exec，base64 避免转义） ----------------
 
     private String readRemote() {
         try {
