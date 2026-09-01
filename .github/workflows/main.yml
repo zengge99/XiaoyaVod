@@ -21,9 +21,14 @@ jobs:
           $utcTime = [System.DateTime]::UtcNow
           $beijingTime = $utcTime.AddHours(8)
           $timestamp = $beijingTime.ToString("yyyy.MMdd.HHmm")
-          $filePath = "./app/src/main/java/com/github/catvod/spider/AList.java"
-          (Get-Content $filePath) -replace 'protected String jarVer = "%JARVER%";', "protected String jarVer = `"v.$timestamp(JAR)`";" | Set-Content $filePath
-          Write-Host "Replaced %JARVER% with v.$timestamp(JAR) (Beijing Time)"
+          $files = @(
+            "./app/src/main/java/com/github/catvod/spider/AList.java",
+            "./app/src/main/java/com/github/catvod/spider/AListSh.java"
+          )
+          foreach ($filePath in $files) {
+            (Get-Content $filePath) -replace '(protected|private) String jarVer = "%JARVER%";', "`$1 String jarVer = `"v.$timestamp(JAR)`";" | Set-Content $filePath
+            Write-Host "Replaced %JARVER% in $filePath with v.$timestamp(JAR) (Beijing Time)"
+          }
 
       - name: Build with Gradle
         run: ./build.bat ec
