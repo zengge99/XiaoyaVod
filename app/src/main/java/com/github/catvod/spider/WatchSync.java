@@ -76,17 +76,21 @@ public class WatchSync {
     /** 从 AListSh.init 调用。defaultDrive 即数组中被选中的元素。未启用 / 反射失败时返回 null（静默关闭）。 */
     public static WatchSync start(Context context, Drive drive) {
         try {
-            if (drive == null || !drive.syncWatch() || drive.getSyncPath().isEmpty()) return null;
+            if (drive == null) { Logger.log("WatchSync > 未启用：defaultDrive 为空"); return null; }
+            Logger.log("WatchSync > defaultDrive=" + drive.getName() + " syncWatch=" + drive.syncWatch() + " username=[" + drive.getUsername() + "] syncPath=[" + drive.getSyncPath() + "]");
+            if (!drive.syncWatch() || drive.getSyncPath().isEmpty()) { Logger.log("WatchSync > 未启用：syncWatch=false 或 syncPath 为空"); return null; }
             int cid = readCid();
+            Logger.log("WatchSync > 圈定小雅源 cid=" + cid);
             WatchSync ws = new WatchSync(context, drive, drive.getUsername(), drive.getSyncPath(), cid);
             ws.initReflection();
             ws.startWatching();
             ws.schedule();
             ws.pull();       // 启动兜底：立即拉一次
             ws.push();       // 启动时先把现有记录推上去
+            Logger.log("WatchSync > 启动完成");
             return ws;
         } catch (Throwable t) {
-            Logger.log("WatchSync start failed: " + t);
+            Logger.log("WatchSync > start failed: " + t);
             return null;
         }
     }
@@ -94,12 +98,20 @@ public class WatchSync {
     // ---------------- 配置 ----------------
 
     private static int readCid() throws Exception {
-        Class<?> vc = Class.forName(VODCFG_CLS);
-        Method getCid = vc.getMethod("getCid");
-        return ((Number) getCid.invoke(null)).intValue();
+        try {
+            Class<?> vc = Class.forName(VODCFG_CLS);
+            Method getCid = vc.getMethod("getCid");
+            int cid = ((Number) getCid.invoke(null)).intValue();
+            Logger.log("WatchSync > readCid -> " + cid);
+            return cid;
+        } catch (Throwable t) {
+            Logger.log("WatchSync > readCid 失败: " + t);
+            throw t;
+        }
     }
 
     private void initReflection() throws Exception {
+        Logger.log("WatchSync > initReflection: 加载 " + DBD_CLS + ", " + HISTORY_CLS);
         Class<?> appDb = Class.forName(DBD_CLS);
         Method dbGet = appDb.getMethod("get");
         Object db = dbGet.invoke(null);
@@ -110,7 +122,8 @@ public class WatchSync {
                 break;
             }
         }
-        if (getHistoryDao != null) dao = getHistoryDao.invoke(db);
+        if (getHistoryDao != null) dao = getHistoryDao.invoke(db); else Logger.log("WatchSync > WARN: 未找到 getHistoryDao");
+        Logger.log("WatchSync > dao=" + (dao==null?"null":dao.getClass().getName()));
         Class<?> hist = Class.forName(HISTORY_CLS);
         historyGet = hist.getMethod("get", int.class);
         historyObjectFrom = hist.getMethod("objectFrom", String.class);
@@ -130,6 +143,8 @@ public class WatchSync {
                 break;
             }
         }
+        if (findByNameDao == null) Logger.log("WatchSync > WARN: 未找到 HistoryDao.findByName(int,String)");
+        Logger.log("WatchSync > 反射初始化完成: get=" + historyGet.getName() + " objectFrom=" + historyObjectFrom.getName() + " save=" + histSave.getName());
     }
 
     // ---------------- 触发 ----------------
@@ -137,6 +152,7 @@ public class WatchSync {
     private void startWatching() {
         try {
             String dir = context.getDatabasePath("tv").getParent(); // .../databases
+            Logger.log("WatchSync > 开始监视数据库目录: " + dir);
             watchThread = new HandlerThread("watch-sync");
             watchThread.start();
             new Handler(watchThread.getLooper()).post(() -> {
@@ -144,16 +160,18 @@ public class WatchSync {
                     observerMain = new FileObserver(dir, FileObserver.MODIFY | FileObserver.CLOSE_WRITE | FileObserver.CREATE) {
                         @Override public void onEvent(int event, String path) {
                             // 只关心 tv / tv-wal 两个文件的变化（覆盖首次创建和 WAL 写入）
+                            Logger.log("WatchSync > 文件事件 event=" + event + " path=" + path);
                             if (path != null && (path.equals("tv") || path.equals("tv-wal"))) onDbChanged();
                         }
                     };
                     observerMain.startWatching();
+                    Logger.log("WatchSync > FileObserver 开始监视");
                 } catch (Throwable t) {
-                    Logger.log("WatchSync observer err: " + t);
+                    Logger.log("WatchSync > observer err: " + t);
                 }
             });
         } catch (Throwable t) {
-            Logger.log("WatchSync watch err: " + t);
+            Logger.log("WatchSync > watch err: " + t);
         }
     }
 
@@ -161,12 +179,14 @@ public class WatchSync {
     private void onDbChanged() {
         long now = System.currentTimeMillis();
         long last = lastPushEvent.get();
-        if (now - last < PUSH_DEBOUNCE_MS) return;
+        if (now - last < PUSH_DEBOUNCE_MS) { Logger.log("WatchSync > DB变化，5s防抖中，跳过"); return; }
         lastPushEvent.set(now);
+        Logger.log("WatchSync > DB变化 -> 调度 push");
         scheduler.execute(this::push);
     }
 
     private void schedule() {
+        Logger.log("WatchSync > 启动定时拉取，周期 " + PULL_PERIOD_SEC + "s");
         scheduler.scheduleWithFixedDelay(this::pull, PULL_PERIOD_SEC, PULL_PERIOD_SEC, TimeUnit.SECONDS);
     }
 
@@ -178,16 +198,18 @@ public class WatchSync {
             List<?> local = localHistory();
             String json = pack(local);
             writeRemote(json);
-            Logger.log("WatchSync pushed " + local.size() + " records");
+            Logger.log("WatchSync > push 完成，共 " + local.size() + " 条记录，json长度=" + json.length());
         } catch (Throwable t) {
-            Logger.log("WatchSync push err: " + t);
+            Logger.log("WatchSync > push err: " + t);
         }
     }
 
     @SuppressWarnings("unchecked")
     private List<?> localHistory() throws Exception {
         Object list = historyGet.invoke(null, xiaoyaCid);
-        return list == null ? new ArrayList<>() : (List<?>) list;
+        List<?> r = list == null ? new ArrayList<>() : (List<?>) list;
+        Logger.log("WatchSync > 本地读取 cid=" + xiaoyaCid + " 条数=" + r.size());
+        return r;
     }
 
     /** 包装成 [{user, history}]，history 为蜂蜜影视 History 的 toString() JSON。 */
@@ -207,37 +229,44 @@ public class WatchSync {
     private void pull() {
         try {
             String raw = readRemote();
-            if (raw == null || raw.trim().isEmpty()) return;
+            if (raw == null || raw.trim().isEmpty()) { Logger.log("WatchSync > pull: 远端为空或读取失败"); return; }
             JSONArray arr = new JSONArray(raw);
+            int mine = 0;
             for (int i = 0; i < arr.length(); i++) {
                 JSONObject wrap = arr.optJSONObject(i);
                 if (wrap == null) continue;
                 if (!username.equals(wrap.optString("user"))) continue; // 只合并自己的
+                mine++;
                 JSONObject rec = wrap.optJSONObject("history");
                 if (rec == null) continue;
                 merge(rec.toString());
             }
+            Logger.log("WatchSync > pull 完成，远端总数=" + arr.length() + " 属于本用户=" + mine);
         } catch (Throwable t) {
-            Logger.log("WatchSync pull err: " + t);
+            Logger.log("WatchSync > pull err: " + t);
         }
     }
 
     /** 按 (user, vodName) + createTime LWW + canSave 进度保护合并入库。 */
     private void merge(String historyJson) throws Exception {
         Object hist = historyObjectFrom.invoke(null, historyJson);
-        if (hist == null) return;
+        if (hist == null) { Logger.log("WatchSync > merge: 记录反序列化失败"); return; }
         String vodName = (String) histGetVodName.invoke(hist);
         Object local = findExisting(vodName);
         long remoteTime = ((Number) histGetCreateTime.invoke(hist)).longValue();
         if (local != null) {
             long localTime = ((Number) histGetCreateTime.invoke(local)).longValue();
-            if (remoteTime <= localTime) return;            // LWW：本地不旧，保留本地
+            Logger.log("WatchSync > merge: " + vodName + " 远端time=" + remoteTime + " 本地time=" + localTime);
+            if (remoteTime <= localTime) { Logger.log("WatchSync > merge: 本地不旧(LWW)，保留本地"); return; }
             boolean localCanSave = ((Boolean) histCanSave.invoke(local));
             boolean remoteCanSave = ((Boolean) histCanSave.invoke(hist));
-            if (localCanSave && !remoteCanSave) return;     // 进度保护：勿用无进度记录覆盖有进度的
+            if (localCanSave && !remoteCanSave) { Logger.log("WatchSync > merge: 进度保护，无进度记录不覆盖有进度记录"); return; }
+        } else {
+            Logger.log("WatchSync > merge: " + vodName + " 本地无记录，新增");
         }
         histCid.invoke(hist, xiaoyaCid);                    // 定向写回小雅源
         histSave.invoke(hist);
+        Logger.log("WatchSync > merge: " + vodName + " 已合并入库(cid=" + xiaoyaCid + ")");
     }
 
     private Object findExisting(String vodName) throws Exception {
@@ -259,8 +288,11 @@ public class WatchSync {
     private String readRemote() {
         try {
             String out = drive.exec("cat " + syncPath);
-            return out == null ? "" : out.trim();
+            if (out == null) { Logger.log("WatchSync > readRemote: 远端返回 null"); return ""; }
+            Logger.log("WatchSync > readRemote: 返回长度=" + out.trim().length());
+            return out.trim();
         } catch (Throwable t) {
+            Logger.log("WatchSync > readRemote err: " + t);
             return null;
         }
     }
@@ -268,9 +300,11 @@ public class WatchSync {
     private void writeRemote(String json) {
         try {
             String b64 = android.util.Base64.encodeToString(json.getBytes("UTF-8"), android.util.Base64.NO_WRAP);
-            drive.exec("printf '%s' '" + b64 + "' | base64 -d > " + syncPath + ".tmp && mv " + syncPath + ".tmp " + syncPath);
+            String cmd = "printf '%s' '" + b64 + "' | base64 -d > " + syncPath + ".tmp && mv " + syncPath + ".tmp " + syncPath;
+            String res = drive.exec(cmd);
+            Logger.log("WatchSync > writeRemote: 已写入 " + syncPath + "（json长度=" + json.length() + "，exec返回=[" + res + "]）");
         } catch (Throwable t) {
-            Logger.log("WatchSync write err: " + t);
+            Logger.log("WatchSync > write err: " + t);
         }
     }
 }
