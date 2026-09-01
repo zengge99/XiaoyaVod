@@ -22,10 +22,7 @@ import com.github.catvod.net.OkHttp;
 import com.github.catvod.utils.Util;
 import com.github.catvod.utils.Notify;
 import com.github.catvod.utils.Image;
-import com.github.catvod.bean.alist.FileBasedList;
-import com.github.catvod.bean.alist.LocalIndexService;
 import com.github.catvod.bean.alist.Pager;
-import com.github.catvod.bean.alist.IndexDownloader;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -42,7 +39,6 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutionException;
@@ -857,31 +853,6 @@ public class AListSh extends Spider {
     }
 
 
-
-public static List<String> doFilter(LocalIndexService service, HashMap<String, String> fl) {
-        LinkedHashMap<String, String> queryParams = new LinkedHashMap<>();
-
-        if (fl == null) {
-            fl = new HashMap<>();
-        }
-        String subpath = fl.get("subpath");
-        if (subpath != null && !subpath.endsWith("~all")) {
-            queryParams.put("subpath", subpath);
-        }
-
-        String douban = fl.get("douban");
-        if (douban != null && !douban.equals("0")) {
-            queryParams.put("douban", douban);
-        }
-
-        String doubansort = fl.get("doubansort");
-        if (doubansort != null && !doubansort.equals("0")) {
-            queryParams.put("doubansort", doubansort);
-        }
-
-        return service.query(queryParams);
-    }
-
     protected String alistCategoryContent(String tid, String pg, boolean filter, HashMap<String, String> extend)
             throws Exception {
         Logger.log(tid);
@@ -1451,42 +1422,5 @@ public static List<String> doFilter(LocalIndexService service, HashMap<String, S
             path = path.substring(0, path.length() - 1);
         }
         return path;
-    }
-
-    class Job implements Callable<List<String>> {
-
-        protected final Drive drive;
-        protected final String keyword;
-
-        public Job(Drive drive, String keyword) {
-            this.drive = drive;
-            this.keyword = keyword;
-        }
-
-        @Override
-        public List<String> call() {
-            return xiaoya();
-        }
-
-        protected List<String> xiaoya() {
-            Logger.log("xiaoya:" + keyword + "drive:" + drive.getName());
-            String shortKeyword = keyword;
-            if (keyword.contains(":")) {
-                shortKeyword = keyword.split(":")[1];
-            }
-            shortKeyword = shortKeyword.length() < 30 ? shortKeyword : shortKeyword.substring(0, 30);
-            if (keyword.startsWith("~daily:")) {
-                LocalIndexService service = LocalIndexService.get(drive.getName() + "/"+ drive.dailySearchApi(shortKeyword), drive.getPath());
-                return doFilter(service, drive.fl);
-            } else if (keyword.startsWith("~search:")) {
-                LocalIndexService service = LocalIndexService.get(drive.getName() + "/"+ drive.searchApi(shortKeyword), drive.getPath());
-                return service.query(new LinkedHashMap<String, String>());
-            } else if (keyword.startsWith("~quick:")) {
-                return LocalIndexService.get(drive).quickSearch(shortKeyword);
-            } else {
-                LocalIndexService service = LocalIndexService.get(drive);
-                return doFilter(service, drive.fl);
-            }
-        }
     }
 }
