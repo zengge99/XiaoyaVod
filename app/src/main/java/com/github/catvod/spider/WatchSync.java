@@ -21,21 +21,19 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * 观看记录多端同步（方向 A：复用 alist 服务器文件作为共享记录仓）。
  *
- * - 反射访问蜂蜜影视(com.fongmi.android.tv.*)的本地观看记录，编译期无依赖，失败静默降级。
- * - 单文件 watch.txt 存放所有用户的记录，用 user 字段区分（各设备通过 extend 配置 username）。
- * - 只同步"当前小雅源(cid)"的记录；其它源的记录不出本机。
+ * - 只反射访问蜂蜜影视(com.fongmi.android.tv)中被 R8 keep 的 bean.History 类，
+ *   编译期无依赖，失败静默降级（不影响播放）。
+ * - 单文件 watch.txt 存放所有用户的记录，用 user 字段区分（各设备通过 defaultDrive 配置 username）。
  * - 触发：
  *     1) FileObserver 监视 tv / tv-wal 数据库文件变化 -> 事件驱动推送(5s 防抖)
  *     2) 每 30s 定时拉取合并
- *     3) init() 后立即 pull 一次（首屏拿历史）
- * - 合并：按 (user, vodName) 匹配，createTime 大者胜(LWW)，canSave 进度保护，定向写回小雅源 cid。
+ *     3) start() 后立即 pull 一次
+ * - 合并：复用蜂蜜影视 History.sync()（{@link #syncMerge}）的 LWW / mergeFrom / 定向当前源语义；
+ *         并在喂给 sync 前用 History.findByName 做 canSave 进度保护（无进度记录不覆盖有进度的本地）。
  */
 public class WatchSync {
 
     private static final String HISTORY_CLS = "com.fongmi.android.tv.bean.History";
-    private static final String DBD_CLS = "com.fongmi.android.tv.db.AppDatabase";
-    private static final String DAO_CLS = "com.fongmi.android.tv.db.dao.HistoryDao";
-    private static final String VODCFG_CLS = "com.fongmi.android.tv.api.config.VodConfig";
 
     private static final long PUSH_DEBOUNCE_MS = 5000;
     private static final long PULL_PERIOD_SEC = 30;
@@ -44,7 +42,6 @@ public class WatchSync {
     private final Drive drive;
     private final String username;
     private final String syncPath;
-    private final int xiaoyaCid;
 
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
     private final AtomicLong lastPushEvent = new AtomicLong(0);
@@ -52,25 +49,19 @@ public class WatchSync {
     private HandlerThread watchThread;
     private FileObserver observerMain;
 
-    // 反射缓存
-    private Object dao;
-    private Method historyGet;        // History.get(int) -> List
+    // 反射缓存（全部来自被 keep 的 bean.History）
+    private Method historyGet;        // History.get() -> List（当前源记录）
+    private Method historyFindByName; // History.findByName(String) -> List
     private Method historyObjectFrom; // History.objectFrom(String) -> History
-    private Method histCid;           // History.cid(int) -> rebuild key
+    private Method historySync;       // History.sync(List) -> void
     private Method histGetVodName;
-    private Method histGetCreateTime;
-    private Method histGetPosition;
-    private Method histGetDuration;
     private Method histCanSave;
-    private Method histSave;
-    private Method findByNameDao;     // HistoryDao.findByName(int,String) -> List
 
-    private WatchSync(Context context, Drive drive, String username, String syncPath, int xiaoyaCid) {
+    private WatchSync(Context context, Drive drive, String username, String syncPath) {
         this.context = context;
         this.drive = drive;
         this.username = username == null ? "" : username;
         this.syncPath = syncPath;
-        this.xiaoyaCid = xiaoyaCid;
     }
 
     /** 从 AListSh.init 调用。defaultDrive 即数组中被选中的元素。未启用 / 反射失败时返回 null（静默关闭）。 */
@@ -79,9 +70,7 @@ public class WatchSync {
             if (drive == null) { Logger.log("WatchSync > 未启用：defaultDrive 为空"); return null; }
             Logger.log("WatchSync > defaultDrive=" + drive.getName() + " syncWatch=" + drive.syncWatch() + " username=[" + drive.getUsername() + "] syncPath=[" + drive.getSyncPath() + "]");
             if (!drive.syncWatch() || drive.getSyncPath().isEmpty()) { Logger.log("WatchSync > 未启用：syncWatch=false 或 syncPath 为空"); return null; }
-            int cid = readCid();
-            Logger.log("WatchSync > 圈定小雅源 cid=" + cid);
-            WatchSync ws = new WatchSync(context, drive, drive.getUsername(), drive.getSyncPath(), cid);
+            WatchSync ws = new WatchSync(context, drive, drive.getUsername(), drive.getSyncPath());
             ws.initReflection();
             ws.startWatching();
             ws.schedule();
@@ -95,56 +84,16 @@ public class WatchSync {
         }
     }
 
-    // ---------------- 配置 ----------------
-
-    private static int readCid() throws Exception {
-        try {
-            Class<?> vc = Class.forName(VODCFG_CLS);
-            Method getCid = vc.getMethod("getCid");
-            int cid = ((Number) getCid.invoke(null)).intValue();
-            Logger.log("WatchSync > readCid -> " + cid);
-            return cid;
-        } catch (Throwable t) {
-            Logger.log("WatchSync > readCid 失败: " + t);
-            throw t;
-        }
-    }
-
     private void initReflection() throws Exception {
-        Logger.log("WatchSync > initReflection: 加载 " + DBD_CLS + ", " + HISTORY_CLS);
-        Class<?> appDb = Class.forName(DBD_CLS);
-        Method dbGet = appDb.getMethod("get");
-        Object db = dbGet.invoke(null);
-        Method getHistoryDao = null;
-        for (Method m : appDb.getMethods()) {
-            if (m.getName().equals("getHistoryDao") && m.getParameterCount() == 0) {
-                getHistoryDao = m;
-                break;
-            }
-        }
-        if (getHistoryDao != null) dao = getHistoryDao.invoke(db); else Logger.log("WatchSync > WARN: 未找到 getHistoryDao");
-        Logger.log("WatchSync > dao=" + (dao==null?"null":dao.getClass().getName()));
+        Logger.log("WatchSync > initReflection: 加载 " + HISTORY_CLS);
         Class<?> hist = Class.forName(HISTORY_CLS);
-        historyGet = hist.getMethod("get", int.class);
+        historyGet = hist.getMethod("get");
+        historyFindByName = hist.getMethod("findByName", String.class);
         historyObjectFrom = hist.getMethod("objectFrom", String.class);
-        histCid = hist.getMethod("cid", int.class);
+        historySync = hist.getMethod("sync", List.class);
         histGetVodName = hist.getMethod("getVodName");
-        histGetCreateTime = hist.getMethod("getCreateTime");
-        histGetPosition = hist.getMethod("getPosition");
-        histGetDuration = hist.getMethod("getDuration");
         histCanSave = hist.getMethod("canSave");
-        histSave = hist.getMethod("save");
-        for (Method m : dao.getClass().getMethods()) {
-            if (m.getName().equals("findByName")
-                && m.getParameterCount() == 2
-                && m.getParameterTypes()[0] == int.class
-                && m.getParameterTypes()[1] == String.class) {
-                findByNameDao = m;
-                break;
-            }
-        }
-        if (findByNameDao == null) Logger.log("WatchSync > WARN: 未找到 HistoryDao.findByName(int,String)");
-        Logger.log("WatchSync > 反射初始化完成: get=" + historyGet.getName() + " objectFrom=" + historyObjectFrom.getName() + " save=" + histSave.getName());
+        Logger.log("WatchSync > 反射初始化完成: get/sync/findByName 均可调用");
     }
 
     // ---------------- 触发 ----------------
@@ -192,7 +141,7 @@ public class WatchSync {
 
     // ---------------- 推送 ----------------
 
-    /** 读取小雅源记录 -> 覆盖写服务器 watch.txt。 */
+    /** 读取当前源(小雅)记录 -> 覆盖写服务器 watch.txt。 */
     private void push() {
         try {
             List<?> local = localHistory();
@@ -206,9 +155,9 @@ public class WatchSync {
 
     @SuppressWarnings("unchecked")
     private List<?> localHistory() throws Exception {
-        Object list = historyGet.invoke(null, xiaoyaCid);
+        Object list = historyGet.invoke(null); // History.get() = 当前源(cid)记录
         List<?> r = list == null ? new ArrayList<>() : (List<?>) list;
-        Logger.log("WatchSync > 本地读取 cid=" + xiaoyaCid + " 条数=" + r.size());
+        Logger.log("WatchSync > 本地读取(History.get) 条数=" + r.size());
         return r;
     }
 
@@ -231,56 +180,53 @@ public class WatchSync {
             String raw = readRemote();
             if (raw == null || raw.trim().isEmpty()) { Logger.log("WatchSync > pull: 远端为空或读取失败"); return; }
             JSONArray arr = new JSONArray(raw);
-            int mine = 0;
+            List<Object> mine = new ArrayList<>();
             for (int i = 0; i < arr.length(); i++) {
                 JSONObject wrap = arr.optJSONObject(i);
                 if (wrap == null) continue;
                 if (!username.equals(wrap.optString("user"))) continue; // 只合并自己的
-                mine++;
                 JSONObject rec = wrap.optJSONObject("history");
                 if (rec == null) continue;
-                merge(rec.toString());
+                if (!canSafeMerge(rec)) continue; // canSave 进度保护
+                mine.add(historyObjectFrom.invoke(null, rec.toString()));
             }
-            Logger.log("WatchSync > pull 完成，远端总数=" + arr.length() + " 属于本用户=" + mine);
+            Logger.log("WatchSync > pull 完成，远端总数=" + arr.length() + " 属于本用户=" + mine.size() + " 可合并=" + mine.size());
+            if (!mine.isEmpty()) syncMerge(mine);
         } catch (Throwable t) {
             Logger.log("WatchSync > pull err: " + t);
         }
     }
 
-    /** 按 (user, vodName) + createTime LWW + canSave 进度保护合并入库。 */
-    private void merge(String historyJson) throws Exception {
-        Object hist = historyObjectFrom.invoke(null, historyJson);
-        if (hist == null) { Logger.log("WatchSync > merge: 记录反序列化失败"); return; }
-        String vodName = (String) histGetVodName.invoke(hist);
-        Object local = findExisting(vodName);
-        long remoteTime = ((Number) histGetCreateTime.invoke(hist)).longValue();
-        if (local != null) {
-            long localTime = ((Number) histGetCreateTime.invoke(local)).longValue();
-            Logger.log("WatchSync > merge: " + vodName + " 远端time=" + remoteTime + " 本地time=" + localTime);
-            if (remoteTime <= localTime) { Logger.log("WatchSync > merge: 本地不旧(LWW)，保留本地"); return; }
-            boolean localCanSave = ((Boolean) histCanSave.invoke(local));
-            boolean remoteCanSave = ((Boolean) histCanSave.invoke(hist));
-            if (localCanSave && !remoteCanSave) { Logger.log("WatchSync > merge: 进度保护，无进度记录不覆盖有进度记录"); return; }
-        } else {
-            Logger.log("WatchSync > merge: " + vodName + " 本地无记录，新增");
+    /** canSave 进度保护：远端若是"纯访问无进度"(!canSave)，且本地存在有进度的记录，则跳过不合并。 */
+    private boolean canSafeMerge(JSONObject rec) {
+        try {
+            Object hist = historyObjectFrom.invoke(null, rec.toString());
+            if (hist == null) return true;
+            boolean remoteCanSave = (Boolean) histCanSave.invoke(hist);
+            if (remoteCanSave) return true;
+            String vodName = (String) histGetVodName.invoke(hist);
+            Object locals = historyFindByName.invoke(null, vodName); // History.findByName(name)
+            if (locals == null) return true;
+            for (Object it : (List<?>) locals) {
+                if ((Boolean) histCanSave.invoke(it)) {
+                    Logger.log("WatchSync > 进度保护：无进度记录不覆盖本地有进度记录 name=" + vodName);
+                    return false;
+                }
+            }
+            return true;
+        } catch (Throwable t) {
+            return true;
         }
-        histCid.invoke(hist, xiaoyaCid);                    // 定向写回小雅源
-        histSave.invoke(hist);
-        Logger.log("WatchSync > merge: " + vodName + " 已合并入库(cid=" + xiaoyaCid + ")");
     }
 
-    private Object findExisting(String vodName) throws Exception {
-        if (findByNameDao == null) return null;
-        Object list = findByNameDao.invoke(dao, xiaoyaCid, vodName);
-        if (list == null) return null;
-        List<?> items = (List<?>) list;
-        Object best = null;
-        long max = -1;
-        for (Object it : items) {
-            long t = ((Number) histGetCreateTime.invoke(it)).longValue();
-            if (t > max) { max = t; best = it; }
+    /** 复用蜂蜜影视 History.sync(List)：LWW(findByName + createTime) + mergeFrom + cid(当前).save()。 */
+    private void syncMerge(List<Object> mine) {
+        try {
+            historySync.invoke(null, mine);
+            Logger.log("WatchSync > 已调用 History.sync() 合并 " + mine.size() + " 条");
+        } catch (Throwable t) {
+            Logger.log("WatchSync > syncMerge err: " + t);
         }
-        return best;
     }
 
     // ---------------- 服务器文件读写（走 exec，base64 避免转义问题） ----------------
