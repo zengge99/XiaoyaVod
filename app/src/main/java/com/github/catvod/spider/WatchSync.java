@@ -85,8 +85,8 @@ public class WatchSync {
     }
 
     private void initReflection() throws Exception {
-        Logger.log("WatchSync > initReflection: 加载 " + HISTORY_CLS);
-        Class<?> hist = Class.forName(HISTORY_CLS);
+        Class<?> hist = resolveHistoryClass();
+        Logger.log("WatchSync > 解析到 History 类: " + hist.getName());
         historyGet = hist.getMethod("get");
         historyFindByName = hist.getMethod("findByName", String.class);
         historyObjectFrom = hist.getMethod("objectFrom", String.class);
@@ -94,6 +94,45 @@ public class WatchSync {
         histGetVodName = hist.getMethod("getVodName");
         histCanSave = hist.getMethod("canSave");
         Logger.log("WatchSync > 反射初始化完成: get/sync/findByName 均可调用");
+    }
+
+    /**
+     * 解析蜂蜜影视宿主真实的 History 类。
+     * 宿主类可能被二次开发改了包名，故按下列顺序探测：
+     * 1) 从宿主的 Application 类名推导包名前缀 + bean.History
+     * 2) 从 context.getPackageName() 推导 + .bean.History
+     * 3) 兜底原始包名 com.fongmi.android.tv.bean.History
+     * 全部失败则抛出，由调用方静默降级。
+     */
+    private Class<?> resolveHistoryClass() throws Exception {
+        List<String> candidates = new ArrayList<>();
+        String suffix = "bean.History";
+        try {
+            // 宿主 Application 类（如 com.fongmi.android.tv.App / <换皮包>.App），取包前缀
+            String appCls = context.getApplicationInfo().className;
+            if (appCls != null && appCls.lastIndexOf('.') > 0)
+                candidates.add(appCls.substring(0, appCls.lastIndexOf('.') + 1) + suffix);
+        } catch (Throwable t) {
+            Logger.log("WatchSync > 解析候选1(Application类)失败: " + t);
+        }
+        try {
+            String pkg = context.getPackageName();
+            if (pkg != null && !pkg.isEmpty())
+                candidates.add(pkg + "." + suffix);
+        } catch (Throwable t) {
+            Logger.log("WatchSync > 解析候选2(packageName)失败: " + t);
+        }
+        candidates.add(HISTORY_CLS); // 兜底原始包名
+        for (String cand : candidates) {
+            try {
+                Class<?> cls = Class.forName(cand);
+                Logger.log("WatchSync > 候选命中: " + cand);
+                return cls;
+            } catch (Throwable t) {
+                Logger.log("WatchSync > 候选未命中: " + cand);
+            }
+        }
+        throw new ClassNotFoundException("History 类解析失败，候选: " + candidates);
     }
 
     // ---------------- 触发 ----------------
