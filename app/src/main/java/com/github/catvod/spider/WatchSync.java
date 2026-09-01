@@ -73,7 +73,29 @@ public class WatchSync {
         this.context = context;
         this.drive = drive;
         this.username = username == null ? "" : username;
-        this.syncPath = syncPath;
+        // 每用户一个远端文件：避免多用户共享单文件互相干扰（如 watch.txt -> watch.alice.txt）
+        this.syncPath = isolatedPath(syncPath, this.username);
+    }
+
+    /** 把远端同步文件按用户名隔离：watch.txt -> watch.<username>.txt（已隔离则不重复注入）。 */
+    private static String isolatedPath(String syncPath, String username) {
+        if (syncPath == null || syncPath.isEmpty() || username == null || username.isEmpty()) {
+            return syncPath;
+        }
+        // 已隔离过（形如 xxx.<user>.yyy）则不再重复
+        if (syncPath.matches(".*\\." + java.util.regex.Pattern.quote(username) + "\\.[A-Za-z0-9]+$")) {
+            return syncPath;
+        }
+        int slash = syncPath.lastIndexOf('/');
+        String dir = slash >= 0 ? syncPath.substring(0, slash + 1) : "";
+        String name = slash >= 0 ? syncPath.substring(slash + 1) : syncPath;
+        int dot = name.lastIndexOf('.');
+        if (dot > 0) {
+            String base = name.substring(0, dot);
+            String ext = name.substring(dot);
+            return dir + base + "." + username + ext;
+        }
+        return dir + name + "." + username;
     }
 
     public static WatchSync start(Context context, Drive drive) {
