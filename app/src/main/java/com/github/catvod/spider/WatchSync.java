@@ -37,8 +37,6 @@ public class WatchSync {
 
     private static final long PUSH_DEBOUNCE_MS = 5000;
     private static final long PULL_PERIOD_SEC = 30;
-    private static final long LOCK_TIMEOUT_MS = 5000;
-    private static final long LOCK_RETRY_MS = 100;
 
     private final Context context;
     private final Drive drive;
@@ -181,19 +179,17 @@ public class WatchSync {
 
     // ---------------- 推送 ----------------
 
-    /** 读取当前源(小雅)记录 -> 持锁 merge-write 写服务器 watch.txt（事件驱动）。锁内重新读远端，避免并发覆盖。 */
+    /** 读取当前源(小雅)记录 -> merge-write 写服务器 watch.txt（事件驱动）。 */
     private void push() {
-        withLock(() -> {
-            try {
-                List<?> local = localHistory();
-                String raw = readRemote();          // 锁内读最新远端，用于合并
-                String json = merge(local, raw);    // merge-write：保留远端别人记录，只刷新自己的部分
-                writeRemote(json);
-                Logger.log("WatchSync > push 完成（merge-write，保留他人记录），本机=" + local.size() + " 条，json长度=" + json.length());
-            } catch (Throwable t) {
-                Logger.log("WatchSync > push err: " + t);
-            }
-        });
+        try {
+            List<?> local = localHistory();
+            String raw = readRemote();          // 只读一次远端，用于合并
+            String json = merge(local, raw);    // merge-write：保留远端别人记录，只刷新自己的部分
+            writeRemote(json);
+            Logger.log("WatchSync > push 完成（merge-write，保留他人记录），本机=" + local.size() + " 条，json长度=" + json.length());
+        } catch (Throwable t) {
+            Logger.log("WatchSync > push err: " + t);
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -266,8 +262,8 @@ public class WatchSync {
     }
 
     /**
-     * 对账：用已读到的远端 raw + 本地当前记录生成预期 merge 内容，与远端 raw 比较，
-     * 不一致则持锁重新读-合并-写（防漏推 + 并发安全）。
+     * 对账：用已经读到的远端 raw + 本地当前记录生成预期 merge 内容，
+     * 与远端 raw 比较，不一致才 merge-write（防漏推，也避免无意义写入）。
      */
     private void reconcile(String raw) {
         try {
@@ -276,56 +272,11 @@ public class WatchSync {
             if (merged.equals(raw)) {
                 Logger.log("WatchSync > 对账：服务器与本地一致，无需 push");
             } else {
-                Logger.log("WatchSync > 对账：服务器与本地不一致，补一次 merge-write push");
-                withLock(() -> {
-                    try {
-                        List<?> l2 = localHistory();
-                        String raw2 = readRemote();          // 锁内读最新远端，避免并发覆盖
-                        String m2 = merge(l2, raw2);
-                        if (!m2.equals(raw2)) writeRemote(m2);
-                    } catch (Throwable t) {
-                        Logger.log("WatchSync > 对账写入 err: " + t);
-                    }
-                });
+                Logger.log("WatchSync > 对账：服务器与本地不一致，补一次 merge-write push（本机=" + local.size() + "条）");
+                writeRemote(merged);
             }
         } catch (Throwable t) {
             Logger.log("WatchSync > 对账 err: " + t);
-        }
-    }
-
-    /** 用 mkdir 锁目录在服务器端互斥，串行化 push 的读-改-写；超时自动放弃。 */
-    private void withLock(Runnable r) {
-        if (!acquireLock()) {
-            Logger.log("WatchSync > 获取锁超时，本次跳过（不写，防并发覆盖）");
-            return;
-        }
-        try {
-            r.run();
-        } finally {
-            releaseLock();
-        }
-    }
-
-    private boolean acquireLock() {
-        String lock = syncPath + ".lock";
-        long deadline = System.currentTimeMillis() + LOCK_TIMEOUT_MS;
-        while (System.currentTimeMillis() < deadline) {
-            String res = drive.exec("mkdir " + lock + " 2>/dev/null && echo LOCKED");
-            if (res != null && res.contains("LOCKED")) return true;
-            try {
-                Thread.sleep(LOCK_RETRY_MS);
-            } catch (InterruptedException e) {
-                return false;
-            }
-        }
-        return false;
-    }
-
-    private void releaseLock() {
-        try {
-            drive.exec("rmdir " + syncPath + ".lock 2>/dev/null");
-        } catch (Throwable t) {
-            Logger.log("WatchSync > releaseLock err: " + t);
         }
     }
 
