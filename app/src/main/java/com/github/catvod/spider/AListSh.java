@@ -67,6 +67,8 @@ public class AListSh extends Spider {
 
     private String jarVer = "%JARVER%";
 
+    private WatchSync watchSync;
+
     private String getRootCmd(Drive drive) {
         return drive.getCombinedMode() ? "{ cat index.combined.txt;echo ''; }" : "{ cat index.video.txt;echo ''; }";
     }
@@ -80,6 +82,8 @@ public class AListSh extends Spider {
             if (check.split("\n")[0].equals("ok")) {
                 thisYear = Integer.parseInt(check.split("\n")[1]);
             }
+            // 观看记录多端同步：FileObserver 监视本地 DB + 30s 拉取 + 启动立即拉一次
+            watchSync = WatchSync.start(context, defaultDrive, extend);
         } catch (Exception e) {
         }
     }
