@@ -314,11 +314,19 @@ public class WatchSync {
         if (histDelete == null) return;
         for (Map.Entry<String, Long> e : remoteTombs.entrySet()) {
             String name = e.getKey();
-            localTombs.put(name, Math.max(localTombs.getOrDefault(name, 0L), e.getValue()));
+            long tombTime = e.getValue();
             try {
                 Object locals = historyFindByName.invoke(null, name);
-                if (locals == null) continue;
-                for (Object it : (List<?>) locals) {
+                List<?> list = locals == null ? new ArrayList<>() : (List<?>) locals;
+                // 复活判定：本机已重新观看了该记录（其 createTime 晚于墓碑删除时间）→ 撤销墓碑，不再删除
+                if (!list.isEmpty() && hasRecordNewerThan(list, tombTime)) {
+                    localTombs.remove(name);
+                    Logger.log("WatchSync > 本机已重新观看，复活记录（跳过墓碑删除）: " + name);
+                    continue;
+                }
+                // 正常删除：写入本地墓碑表 + 删本地同名记录
+                localTombs.put(name, Math.max(localTombs.getOrDefault(name, 0L), tombTime));
+                for (Object it : list) {
                     histDelete.invoke(it);
                     Logger.log("WatchSync > 远端墓碑，删除本地记录: " + name);
                 }
@@ -326,6 +334,30 @@ public class WatchSync {
                 Logger.log("WatchSync > applyRemoteTombstones err (" + name + "): " + t);
             }
         }
+    }
+
+    /** 本机记录列表里是否有观看时间晚于墓碑删除时间的记录（即删除后又看了 → 复活）。 */
+    private boolean hasRecordNewerThan(List<?> list, long tombTime) {
+        try {
+            for (Object it : list) {
+                long t = historyCreateTime(it);
+                if (t > tombTime) return true;
+            }
+        } catch (Throwable ignored) {
+        }
+        return false;
+    }
+
+    /** 读取 History 对象的观看创建时间（createTime）；空用户名/异常返回 -1。 */
+    private long historyCreateTime(Object o) {
+        try {
+            JSONObject j = historyToJson(o);
+            if (j != null && j.has("createTime")) {
+                return j.optLong("createTime", 0);
+            }
+        } catch (Throwable ignored) {
+        }
+        return -1;
     }
 
     // ---------------- 推送 ----------------
