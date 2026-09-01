@@ -473,6 +473,9 @@ public class WatchSync {
                 if (rec == null) continue;
                 String n = nameFromHistory(rec);
                 if (remoteTombs.containsKey(n)) continue;
+                // 本用户未被墓碑删除的 history 一律收进“本机已知全集”，
+                // 保证任何本机见过的记录被删时都能命中墓碑判定（不受 canSafeMerge 过滤影响）
+                if (!n.isEmpty()) lastPushed.add(n);
                 if (!canSafeMerge(rec)) continue;
                 Object obj = historyObjectFrom.invoke(null, rec.toString());
                 if (obj != null) mine.add(obj);
@@ -506,9 +509,20 @@ public class WatchSync {
                 String n = vodNameOf(o);
                 if (!n.isEmpty()) names.add(n);
             }
+            // 定时对账兜底墓碑判定：本机已知全集里、当前已无、且无墓碑的记录 → 补生成墓碑，
+            // 确保 FileObserver 漏触发时也能在 30s 周期内把删除传播成墓碑，杜绝复活。
+            long now = System.currentTimeMillis();
+            if (!lastPushed.isEmpty() && !names.isEmpty()) {
+                for (String name : lastPushed) {
+                    if (!names.contains(name) && !localTombs.containsKey(name)) {
+                        localTombs.put(name, now);
+                        Logger.log("WatchSync > 对账检测到本机删除，补生成墓碑: " + name);
+                    }
+                }
+            }
             String merged = merge(local, names, raw);
-            // 简单比较长度及结构，避免 JSON key 顺序不一致导致的无意义重写
-            if (merged.length() != raw.length() || !names.isEmpty()) {
+            // 语义比较：只有内容真变了才写，避免 JSON 顺序/空列表导致的无意义重写
+            if (!merged.equals(raw)) {
                 writeRemote(merged);
                 saveState();
             }
