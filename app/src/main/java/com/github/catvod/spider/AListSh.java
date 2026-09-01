@@ -50,18 +50,18 @@ public class AListSh extends Spider {
         return drive.getCombinedMode() ? "{ cat index.combined.txt;echo ''; }" : "{ cat index.video.txt;echo ''; }";
     }
 
-    protected List<Drive> drives;
-    protected Drive defaultDrive;
-    protected String vodPic;
-    protected String ext;
-    protected String xiaoyaAlistToken;
-    protected Map<String, Vod> vodMap = new HashMap<>();
-    protected Map<String, List<String>> driveLinesMap = new HashMap<>();
-    protected Map<String, Pager> drivePagerMap = new HashMap<>();
-    protected ExecutorService executor = Executors.newCachedThreadPool();
-    protected String jarVer = "%JARVER%";
+    private  List<Drive> drives;
+    private  Drive defaultDrive;
+    private  String vodPic;
+    private  String ext;
+    private  String xiaoyaAlistToken;
+    private  Map<String, Vod> vodMap = new HashMap<>();
+    private  Map<String, List<String>> driveLinesMap = new HashMap<>();
+    private  Map<String, Pager> drivePagerMap = new HashMap<>();
+    private  ExecutorService executor = Executors.newCachedThreadPool();
+    private  String jarVer = "%JARVER%";
 
-    protected List<Filter> getFilter(String tid) {
+    private  List<Filter> getFilter(String tid) {
         List<Filter> items = new ArrayList<>();
         Drive drive = getDrive(tid);
 
@@ -255,7 +255,7 @@ public class AListSh extends Spider {
             return result;
         }
     }
-    protected synchronized String xiaoyaCategoryContent(String tid, String pg, boolean filter, HashMap<String, String> extend)
+    private  synchronized String xiaoyaCategoryContent(String tid, String pg, boolean filter, HashMap<String, String> extend)
             throws Exception {
         Logger.log("xiaoyaCategoryContent: " + tid);
         String result = "";
@@ -384,7 +384,7 @@ public class AListSh extends Spider {
         result = Result.get().vod(list).page(Integer.parseInt(pg), pager.total, pager.limit, pager.count).string();
         return result;
     }
-    protected Vod findVodByPath(Drive drive, String path) {
+    private  Vod findVodByPath(Drive drive, String path) {
         String cmd = getRootCmd(defaultDrive) + String.format(" | grep -F '%s' | sed 's|^[.]/||'", path.replace("'", "'\\''"));
         List<String> lines = Arrays.asList(defaultDrive.exec(cmd).split("\n"));
         List<String> match = new ArrayList<>();
@@ -421,7 +421,7 @@ public class AListSh extends Spider {
         return vod;
     }
 
-    protected void fetchRule() {
+    private  void fetchRule() {
         if (drives != null && !drives.isEmpty())
             return;
         if (ext.startsWith("http"))
@@ -509,15 +509,15 @@ public class AListSh extends Spider {
         }        
     }
 
-    protected Drive getDrive(String name) {
+    private  Drive getDrive(String name) {
         return drives.get(drives.indexOf(new Drive(name))).check();
     }
 
-    protected String post(Drive drive, String url, String param) {
+    private  String post(Drive drive, String url, String param) {
         return post(drive, url, param, true);
     }
 
-    protected String post(Drive drive, String url, String param, boolean retry) {
+    private  String post(Drive drive, String url, String param, boolean retry) {
         String response = OkHttp.post(url, param, drive.getHeader()).getBody();
         int code = 200;
         try {
@@ -604,7 +604,7 @@ public class AListSh extends Spider {
         return result;
     }
 
-    protected String defaultDetailContent(List<String> ids) throws Exception {
+    private  String defaultDetailContent(List<String> ids) throws Exception {
         Logger.log(ids);
         fetchRule();
         String id = ids.get(0);
@@ -632,7 +632,7 @@ public class AListSh extends Spider {
         }
     }
 
-    protected String listDetailContent(List<String> ids) throws Exception {
+    private  String listDetailContent(List<String> ids) throws Exception {
         fetchRule();
         String id = ids.get(0);
         String key = id.contains("/") ? id.substring(0, id.indexOf("/")) : id;
@@ -684,7 +684,7 @@ public class AListSh extends Spider {
         return result;
     }
 
-    protected String fileDetailContent(List<String> ids) throws Exception {
+    private  String fileDetailContent(List<String> ids) throws Exception {
         fetchRule();
         String id = ids.get(0);
         String key = id.contains("/") ? id.substring(0, id.indexOf("/")) : id;
@@ -771,7 +771,7 @@ public class AListSh extends Spider {
         return result;
     }
 
-    protected void walkFolder(Drive drive, String path, StringBuilder from, StringBuilder url, Boolean recursive)
+    private  void walkFolder(Drive drive, String path, StringBuilder from, StringBuilder url, Boolean recursive)
             throws Exception {
         List<Item> items = getList(path, false);
         String name = path.substring(path.lastIndexOf("/") + 1);
@@ -813,7 +813,7 @@ public class AListSh extends Spider {
         }
     }
 
-    protected String alistCategoryContent(String tid, String pg, boolean filter, HashMap<String, String> extend)
+    private  String alistCategoryContent(String tid, String pg, boolean filter, HashMap<String, String> extend)
             throws Exception {
         Logger.log(tid);
         fetchRule();
@@ -871,7 +871,7 @@ public class AListSh extends Spider {
         return result;
     }
 
-    protected synchronized boolean login(Drive drive) {
+    private  synchronized boolean login(Drive drive) {
         boolean result = loginByConfig(drive) || loginByFile(drive) || loginByUser(drive);
         if (!result) {
             return false;
@@ -904,7 +904,7 @@ public class AListSh extends Spider {
         return true;
     }
 
-    protected boolean loginByConfig(Drive drive) {
+    private  boolean loginByConfig(Drive drive) {
         try {
             if (drive.getLogin() == null) {
                 return false;
@@ -930,7 +930,7 @@ public class AListSh extends Spider {
         }
     }
 
-    protected boolean loginByUser(Drive drive) {
+    private  boolean loginByUser(Drive drive) {
         try {
             JSONObject params = new JSONObject();
             String userName = LoginDlg.showLoginDlg("用户名(留空默认dav)");
@@ -956,7 +956,7 @@ public class AListSh extends Spider {
         }
     }
 
-    protected boolean loginByFile(Drive drive) {
+    private  boolean loginByFile(Drive drive) {
         try {
             JSONObject params = new JSONObject();
             String loginPath = Path.files() + "/" + drive.getServer().replace("://", "_").replace(":", "_") + ".login";
@@ -988,7 +988,7 @@ public class AListSh extends Spider {
         }
     }
 
-    protected String getSign(Drive drive) {
+    private  String getSign(Drive drive) {
         try {
             String loginPath = Path.files() + "/" + drive.getServer().replace("://", "_").replace(":", "_") + ".login";
             File loginFile = new File(loginPath);
@@ -1010,7 +1010,7 @@ public class AListSh extends Spider {
         }
     }
 
-    protected String getSize(long sz) {
+    private  String getSize(long sz) {
         if (sz <= 0) {
             return "";
         }
@@ -1038,7 +1038,7 @@ public class AListSh extends Spider {
         return String.format("%.2f %s", size, filesize);
     }
 
-    protected Item getDetail(String id) {
+    private  Item getDetail(String id) {
         String key = id.contains("/") ? id.substring(0, id.indexOf("/")) : id;
         Drive drive = getDrive(key);
         Item item;
@@ -1051,7 +1051,7 @@ public class AListSh extends Spider {
         return item;
     }
 
-    protected Item getDetailBy302(String id) {
+    private  Item getDetailBy302(String id) {
         try {
             String key = id.contains("/") ? id.substring(0, id.indexOf("/")) : id;
             String path = id.contains("/") ? id.substring(id.indexOf("/")) : "";
@@ -1073,7 +1073,7 @@ public class AListSh extends Spider {
         }
     }
 
-    protected Item getDetailByApi(String id) {
+    private  Item getDetailByApi(String id) {
         try {
             String key = id.contains("/") ? id.substring(0, id.indexOf("/")) : id;
             String path = id.contains("/") ? id.substring(id.indexOf("/")) : "";
@@ -1088,7 +1088,7 @@ public class AListSh extends Spider {
         }
     }
 
-    protected List<Item> getList(String id, boolean filter) {
+    private  List<Item> getList(String id, boolean filter) {
         try {
             String key = id.contains("/") ? id.substring(0, id.indexOf("/")) : id;
             String path = id.contains("/") ? id.substring(id.indexOf("/")) : "";
@@ -1109,7 +1109,7 @@ public class AListSh extends Spider {
         }
     }
 
-    protected String getListJson(boolean isNew, String response) throws Exception {
+    private  String getListJson(boolean isNew, String response) throws Exception {
         if (isNew) {
             return new JSONObject(response).getJSONObject("data").getJSONArray("content").toString();
         } else {
@@ -1117,7 +1117,7 @@ public class AListSh extends Spider {
         }
     }
 
-    protected String getDetailJson(boolean isNew, String response) throws Exception {
+    private  String getDetailJson(boolean isNew, String response) throws Exception {
         if (isNew) {
             return new JSONObject(response).getJSONObject("data").toString();
         } else {
@@ -1125,7 +1125,7 @@ public class AListSh extends Spider {
         }
     }
 
-    protected String findSubs(String path, List<Item> items) {
+    private  String findSubs(String path, List<Item> items) {
         StringBuilder sb = new StringBuilder();
         for (Item item : items)
             if (Util.isSub(item.getExt()))
@@ -1134,7 +1134,7 @@ public class AListSh extends Spider {
         return sb.toString();
     }
 
-    protected List<Sub> getSubs(String[] ids) {
+    private  List<Sub> getSubs(String[] ids) {
         List<Sub> allSubs = new ArrayList<>();
         if (ids == null || ids.length == 0) return allSubs;
 
@@ -1201,7 +1201,7 @@ public class AListSh extends Spider {
         return result;
     }
 
-    protected double similarity(String sourceStr, String targetStr) {
+    private  double similarity(String sourceStr, String targetStr) {
         // 空指针检查
         if (sourceStr == null || targetStr == null) {
             return 0.0;
@@ -1252,11 +1252,11 @@ public class AListSh extends Spider {
         return 1.0 - (double) arr[sourceLen][targetLen] / Math.max(sourceLen, targetLen);
     }
 
-    protected boolean isCombinedList(String path) {
+    private  boolean isCombinedList(String path) {
         return path.contains("~~~") && !path.toLowerCase().contains(".iso");
     }
 
-    protected List<Vod> toVods(Drive drive, List<String> lines) {
+    private  List<Vod> toVods(Drive drive, List<String> lines) {
         Logger.log("toVods() converting " + lines.size() + " lines");
         long startTime = System.currentTimeMillis();
         try {
@@ -1312,7 +1312,7 @@ public class AListSh extends Spider {
         }
     }
 
-    protected String calcFlag(String line) {
+    private  String calcFlag(String line) {
         if (line == null || line.isEmpty()) {
             return "";
         }
@@ -1348,3 +1348,4 @@ public class AListSh extends Spider {
     }
 
 }
+
