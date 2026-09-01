@@ -421,7 +421,11 @@ public class WatchSync {
     private void pull() {
         try {
             String raw = readRemote();
-            if (raw == null || raw.trim().isEmpty()) { Logger.log("WatchSync > pull: 远端为空或读取失败"); return; }
+            if (raw == null) { Logger.log("WatchSync > pull: 远端读取失败"); return; } // 仅读取失败才放弃
+            if (raw.trim().isEmpty()) { // 远端为空：按空仓处理，继续走 reconcile 首推本机记录
+                raw = "[]";
+                Logger.log("WatchSync > pull: 远端为空，按空仓处理，将首推本机记录");
+            }
             Map<String, Long> remoteTombs = parseTombstones(raw);
             if (!remoteTombs.isEmpty()) applyRemoteTombstones(remoteTombs);
 
