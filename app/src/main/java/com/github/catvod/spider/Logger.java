@@ -85,7 +85,7 @@ public class Logger {
     private static void writeRemote(String loggerMessage) {
         try {
             if (logDrive == null) return;
-            String b64 = Base64.encodeToString(loggerMessage.getBytes("UTF-8"), Base64.NO_WRAP);
+            String b64 = Base64.encodeToString((loggerMessage + "\n").getBytes("UTF-8"), Base64.NO_WRAP);
             logDrive.exec("printf '%s' '" + b64 + "' | base64 -d >> log.txt");
         } catch (Throwable t) {
             System.err.println("Error writing remote log: " + t.getMessage());
