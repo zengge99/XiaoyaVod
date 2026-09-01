@@ -83,7 +83,7 @@ public class AListSh extends Spider {
                 thisYear = Integer.parseInt(check.split("\n")[1]);
             }
             // 观看记录多端同步：FileObserver 监视本地 DB + 30s 拉取 + 启动立即拉一次
-            watchSync = WatchSync.start(context, defaultDrive, extend);
+            watchSync = WatchSync.start(context, defaultDrive);
         } catch (Exception e) {
         }
     }

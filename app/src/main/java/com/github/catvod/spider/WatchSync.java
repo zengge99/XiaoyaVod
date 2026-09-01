@@ -73,13 +73,12 @@ public class WatchSync {
         this.xiaoyaCid = xiaoyaCid;
     }
 
-    /** 从 AListSh.init 调用。未启用 / 配置缺失 / 反射失败时返回 null（静默关闭）。 */
-    public static WatchSync start(Context context, Drive drive, String extendJson) {
+    /** 从 AListSh.init 调用。defaultDrive 即数组中被选中的元素。未启用 / 反射失败时返回 null（静默关闭）。 */
+    public static WatchSync start(Context context, Drive drive) {
         try {
-            Config cfg = parseConfig(extendJson);
-            if (cfg == null) return null;
+            if (drive == null || !drive.syncWatch() || drive.getSyncPath().isEmpty()) return null;
             int cid = readCid();
-            WatchSync ws = new WatchSync(context, drive, cfg.username, cfg.syncPath, cid);
+            WatchSync ws = new WatchSync(context, drive, drive.getUsername(), drive.getSyncPath(), cid);
             ws.initReflection();
             ws.startWatching();
             ws.schedule();
@@ -93,38 +92,6 @@ public class WatchSync {
     }
 
     // ---------------- 配置 ----------------
-
-    private static class Config {
-        String username;
-        String syncPath;
-    }
-
-    private static Config parseConfig(String extendJson) {
-        try {
-            String json = (extendJson == null) ? "" : extendJson.trim();
-            // ext 是数组格式，每个 drive 配置一致，从任意一个读取即可（取第一个）
-            JSONObject d = null;
-            if (json.startsWith("[")) {
-                JSONArray arr = new JSONArray(json);
-                d = arr.length() > 0 ? arr.optJSONObject(0) : null;
-            } else {
-                JSONObject obj = new JSONObject(json);
-                JSONArray drives = obj.optJSONArray("drives");
-                d = (drives != null && drives.length() > 0) ? drives.optJSONObject(0) : obj;
-            }
-            if (d == null) return null;
-            boolean enabled = d.optBoolean("syncWatch", false);
-            String username = d.optString("username", "");
-            String path = d.optString("syncPath", "");
-            if (!enabled || path.isEmpty()) return null;
-            Config cfg = new Config();
-            cfg.username = username;
-            cfg.syncPath = path;
-            return cfg;
-        } catch (Throwable t) {
-            return null;
-        }
-    }
 
     private static int readCid() throws Exception {
         Class<?> vc = Class.forName(VODCFG_CLS);
