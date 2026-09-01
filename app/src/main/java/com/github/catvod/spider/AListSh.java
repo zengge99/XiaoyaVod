@@ -1,7 +1,6 @@
 package com.github.catvod.spider;
 
 import android.content.Context;
-import android.net.Uri;
 import android.text.TextUtils;
 import java.net.URLEncoder;
 import java.net.URLDecoder;
@@ -17,37 +16,23 @@ import com.github.catvod.bean.alist.Drive;
 import com.github.catvod.bean.alist.Item;
 import com.github.catvod.bean.alist.Sorter;
 import com.github.catvod.crawler.Spider;
-import com.github.catvod.crawler.SpiderDebug;
 import com.github.catvod.net.OkHttp;
 import com.github.catvod.utils.Util;
-import com.github.catvod.utils.Notify;
 import com.github.catvod.utils.Image;
 import com.github.catvod.bean.alist.Pager;
 import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.WeakHashMap;
-import static java.util.AbstractMap.SimpleEntry;
-import java.util.AbstractMap;
-import java.util.concurrent.TimeoutException;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import com.github.catvod.bean.alist.LoginDlg;
-import android.widget.Toast;
 import com.github.catvod.utils.Path;
 import java.io.File;
 import com.github.catvod.bean.DanmuFetcher;
@@ -838,19 +823,7 @@ public class AListSh extends Spider {
         }
     }
 
-    protected static Map<String, String> getPlayHeader(String url) {
-        try {
-            Uri uri = Uri.parse(url);
-            Map<String, String> header = new HashMap<>();
-            if (uri.getHost().contains("115.com"))
-                header.put("User-Agent", Util.CHROME);
-            else if (uri.getHost().contains("baidupcs.com"))
-                header.put("User-Agent", "pan.baidu.com");
-            return header;
-        } catch (Exception e) {
-            return new HashMap<>();
-        }
-    }
+
 
 
     protected String alistCategoryContent(String tid, String pg, boolean filter, HashMap<String, String> extend)
@@ -1165,13 +1138,7 @@ public class AListSh extends Spider {
         }
     }
 
-    protected String getSearchJson(boolean isNew, String response) throws Exception {
-        if (isNew) {
-            return new JSONObject(response).getJSONObject("data").getJSONArray("content").toString();
-        } else {
-            return new JSONObject(response).getJSONArray("data").toString();
-        }
-    }
+
 
     protected String findSubs(String path, List<Item> items) {
         StringBuilder sb = new StringBuilder();
@@ -1182,19 +1149,7 @@ public class AListSh extends Spider {
         return sb.toString();
     }
 
-    protected List<Sub> _getSubs(String[] ids) {
-        List<Sub> sub = new ArrayList<>();
-        for (String text : ids) {
-            if (!text.contains("@@@"))
-                continue;
-            String[] split = text.split("@@@");
-            String name = split[0];
-            String ext = split[1];
-            String url = getDetail(split[2]).getUrl();
-            sub.add(Sub.create().name(name).ext(ext).url(url));
-        }
-        return sub;
-    }
+
 
     protected List<Sub> getSubs(String[] ids) {
         List<Sub> allSubs = new ArrayList<>();
@@ -1411,16 +1366,5 @@ public class AListSh extends Spider {
 
 
 
-    protected String normalizePath(String path) {
-        if (path == null || path.isEmpty()) {
-            return path;
-        }
-        if (path.startsWith("/")) {
-            path = path.substring(1);
-        }
-        if (path.endsWith("/")) {
-            path = path.substring(0, path.length() - 1);
-        }
-        return path;
-    }
+
 }
