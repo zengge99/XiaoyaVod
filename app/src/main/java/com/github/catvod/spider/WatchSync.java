@@ -353,12 +353,16 @@ public class WatchSync {
     private String merge(List<?> local, Set<String> localNames, String raw) throws Exception {
         long now = System.currentTimeMillis();
         JSONArray merged = new JSONArray();
+        // 墓碑：key = user + "\u0000" + name，value = time(取最新)，只输出每个墓碑最新一条，防无限复制
+        Map<String, Long> tombMap = new LinkedHashMap<>();
+        // 删除判断用：name -> time（仅本机用户相关）
         Map<String, Long> allTombs = new LinkedHashMap<>();
         allTombs.putAll(localTombs);
-        allTombs.putAll(parseTombstones(raw));
+        for (Map.Entry<String, Long> e : localTombs.entrySet())
+            tombMap.put(username + "\u0000" + e.getKey(), Math.max(tombMap.getOrDefault(username + "\u0000" + e.getKey(), 0L), e.getValue()));
         Set<String> seenHistory = new HashSet<>();
 
-        // 先收远端：历史保留除非被墓碑删除；墓碑去重保留（含过期清理）
+        // 先收远端：历史保留除非被墓碑删除；墓碑收进 tombMap 去重（含过期清理）
         if (raw != null && !raw.trim().isEmpty()) {
             try {
                 JSONArray remote = new JSONArray(raw);
@@ -367,13 +371,15 @@ public class WatchSync {
                     if (item == null) continue;
                     String kind = item.optString("kind");
                     if ("tombstone".equals(kind)) {
-                        if (username.equals(item.optString("user"))) {
-                            String n = item.optString("name", "");
-                            long t = item.optLong("time", 0);
-                            allTombs.put(n, Math.max(allTombs.getOrDefault(n, 0L), t));
+                        String tu = item.optString("user");
+                        String tn = item.optString("name", "");
+                        long tt = item.optLong("time", 0);
+                        if (username.equals(tu)) {
+                            allTombs.put(tn, Math.max(allTombs.getOrDefault(tn, 0L), tt));
                         }
-                        if (now - item.optLong("time", 0) <= TOMBSTONE_TTL_MS) merged.put(item);
-                        continue;
+                        String tk = tu + "\u0000" + tn;
+                        tombMap.put(tk, Math.max(tombMap.getOrDefault(tk, 0L), tt));
+                        continue; // 不直接原样输出，统一在末尾去重输出
                     }
                     // history
                     String u = item.optString("user");
@@ -410,13 +416,16 @@ public class WatchSync {
             }
         }
 
-        // 本机墓碑
-        for (Map.Entry<String, Long> e : localTombs.entrySet()) {
+        // 输出墓碑：每个 (user,name) 只保留最新一条（含过期清理）
+        for (Map.Entry<String, Long> e : tombMap.entrySet()) {
             if (now - e.getValue() > TOMBSTONE_TTL_MS) continue;
+            String tk = e.getKey();
+            int sep = tk.indexOf("\u0000");
+            if (sep <= 0) continue;
             JSONObject tb = new JSONObject();
             tb.put("kind", "tombstone");
-            tb.put("user", username);
-            tb.put("name", e.getKey());
+            tb.put("user", tk.substring(0, sep));
+            tb.put("name", tk.substring(sep + 1));
             tb.put("time", e.getValue());
             merged.put(tb);
         }
