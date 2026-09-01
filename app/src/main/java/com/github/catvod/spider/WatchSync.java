@@ -24,6 +24,7 @@ import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -45,6 +46,8 @@ public class WatchSync {
 
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
     private final AtomicLong lastPushEvent = new AtomicLong(0);
+    // 增加防抖积压标志，防止高频删除吞事件
+    private final AtomicBoolean pushPending = new AtomicBoolean(false);
 
     private HandlerThread watchThread;
     private FileObserver observerMain;
@@ -234,7 +237,17 @@ public class WatchSync {
     private void onDbChanged() {
         long now = System.currentTimeMillis();
         long last = lastPushEvent.get();
-        if (now - last < PUSH_DEBOUNCE_MS) return;
+        if (now - last < PUSH_DEBOUNCE_MS) {
+            // 如果 5 秒内频繁变动，不要直接丢弃，而是延迟调度一次兜底推送
+            if (pushPending.compareAndSet(false, true)) {
+                scheduler.schedule(() -> {
+                    pushPending.set(false);
+                    lastPushEvent.set(System.currentTimeMillis());
+                    push();
+                }, PUSH_DEBOUNCE_MS, TimeUnit.MILLISECONDS);
+            }
+            return;
+        }
         lastPushEvent.set(now);
         scheduler.execute(this::push);
     }
@@ -378,16 +391,16 @@ public class WatchSync {
                 }
             }
 
-            // 保护机制：如果当前本地列表为空，可能是尚未初始化或正在加载，跳过删除判定
-            if (!local.isEmpty()) {
-                long now = System.currentTimeMillis();
-                for (String name : lastPushed) {
-                    if (!current.contains(name) && !localTombs.containsKey(name)) {
-                        localTombs.put(name, now);
-                        Logger.log("WatchSync > 检测到本机删除，生成墓碑: " + name);
-                    }
+            // 检测删除生成墓碑（只要是在 lastPushed 里存在过，但现在 local 没有了，就是被删除了）
+            long now = System.currentTimeMillis();
+            for (String name : lastPushed) {
+                if (!current.contains(name) && !localTombs.containsKey(name)) {
+                    localTombs.put(name, now);
+                    Logger.log("WatchSync > 检测到本机删除，生成墓碑: " + name);
                 }
             }
+            
+            lastPushed.clear();
             lastPushed.addAll(current);
 
             String raw = readRemote();
@@ -494,6 +507,21 @@ public class WatchSync {
 
     private void pull() {
         try {
+            // 在拉取远端之前，主动比对一次本地删除状态，防止 fileObserver 没来得及 push 产生复活
+            List<?> localBeforeSync = localHistory();
+            Set<String> currentLocalNames = new HashSet<>();
+            for (Object o : localBeforeSync) {
+                String n = vodNameOf(o);
+                if (!n.isEmpty()) currentLocalNames.add(n);
+            }
+            long now = System.currentTimeMillis();
+            for (String name : lastPushed) {
+                if (!currentLocalNames.contains(name) && !localTombs.containsKey(name)) {
+                    localTombs.put(name, now);
+                    Logger.log("WatchSync > pull前防复活对账，检测到本机删除，生成墓碑: " + name);
+                }
+            }
+
             String raw = readRemote();
             if (raw == null) {
                 Logger.log("WatchSync > pull: 远端读取失败");
@@ -516,6 +544,10 @@ public class WatchSync {
                 if (rec == null) continue;
                 String n = nameFromHistory(rec);
                 if (remoteTombs.containsKey(n)) continue;
+                
+                // 远端有这条记录，但本地刚刚把它删了（localTombs包含它），坚决不拉取，防止复活！
+                if (localTombs.containsKey(n)) continue;
+
                 // 本用户未被墓碑删除的 history 一律收进“本机已知全集”，
                 // 保证任何本机见过的记录被删时都能命中墓碑判定（不受 canSafeMerge 过滤影响）
                 if (!n.isEmpty()) lastPushed.add(n);
@@ -555,7 +587,7 @@ public class WatchSync {
             // 定时对账兜底墓碑判定：本机已知全集里、当前已无、且无墓碑的记录 → 补生成墓碑，
             // 确保 FileObserver 漏触发时也能在 30s 周期内把删除传播成墓碑，杜绝复活。
             long now = System.currentTimeMillis();
-            if (!lastPushed.isEmpty() && !names.isEmpty()) {
+            if (!lastPushed.isEmpty()) {
                 for (String name : lastPushed) {
                     if (!names.contains(name) && !localTombs.containsKey(name)) {
                         localTombs.put(name, now);
