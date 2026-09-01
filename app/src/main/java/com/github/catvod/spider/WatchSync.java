@@ -102,43 +102,20 @@ public class WatchSync {
     private static Config parseConfig(String extendJson) {
         try {
             String json = (extendJson == null) ? "" : extendJson.trim();
-            JSONArray items = null;
-            JSONObject obj = null;
-            if (json.startsWith("[")) items = new JSONArray(json);
-            else obj = new JSONObject(json);
-
-            boolean enabled = false;
-            String username = "";
-            String path = "";
-
-            // 从 drives 数组或单一个体里收集配置字段
-            List<JSONObject> scan = new ArrayList<>();
-            if (items != null) {
-                for (int i = 0; i < items.length(); i++) {
-                    JSONObject d = items.optJSONObject(i);
-                    if (d != null) scan.add(d);
-                }
-            } else if (obj != null) {
+            // ext 是数组格式，每个 drive 配置一致，从任意一个读取即可（取第一个）
+            JSONObject d = null;
+            if (json.startsWith("[")) {
+                JSONArray arr = new JSONArray(json);
+                d = arr.length() > 0 ? arr.optJSONObject(0) : null;
+            } else {
+                JSONObject obj = new JSONObject(json);
                 JSONArray drives = obj.optJSONArray("drives");
-                if (drives != null) {
-                    for (int i = 0; i < drives.length(); i++) {
-                        JSONObject d = drives.optJSONObject(i);
-                        if (d != null) scan.add(d);
-                    }
-                } else {
-                    scan.add(obj);
-                }
+                d = (drives != null && drives.length() > 0) ? drives.optJSONObject(0) : obj;
             }
-            for (JSONObject d : scan) {
-                if (d.optBoolean("syncWatch", false)) enabled = true;
-                if (!d.optString("username", "").isEmpty()) username = d.optString("username");
-                if (!d.optString("syncPath", "").isEmpty()) path = d.optString("syncPath");
-            }
-            // 顶层也接受 syncWatch/syncPath（对象形式）
-            if (obj != null) {
-                if (obj.optBoolean("syncWatch", false)) enabled = true;
-                if (!obj.optString("syncPath", "").isEmpty()) path = obj.optString("syncPath");
-            }
+            if (d == null) return null;
+            boolean enabled = d.optBoolean("syncWatch", false);
+            String username = d.optString("username", "");
+            String path = d.optString("syncPath", "");
             if (!enabled || path.isEmpty()) return null;
             Config cfg = new Config();
             cfg.username = username;
