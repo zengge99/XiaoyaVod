@@ -339,6 +339,13 @@ public class WatchSync {
                 if (!n.isEmpty()) current.add(n);
             }
 
+            // 复活：本机当前拥有的记录（重新观看/保留），撤销其墓碑，让其正常全网同步
+            for (String name : current) {
+                if (localTombs.remove(name) != null) {
+                    Logger.log("WatchSync > 本机重新观看，复活记录（撤销墓碑）: " + name);
+                }
+            }
+
             // 保护机制：如果当前本地列表为空，可能是尚未初始化或正在加载，跳过删除判定
             if (!local.isEmpty()) {
                 long now = System.currentTimeMillis();
@@ -382,6 +389,10 @@ public class WatchSync {
                         String tu = item.optString("user");
                         String tn = item.optString("name", "");
                         long tt = item.optLong("time", 0);
+                        // 复活：本用户墓碑对应的记录本机正拥有（重新观看）→ 丢弃该墓碑，使其作为 history 正常同步
+                        if (tu.equals(username) && localNames.contains(tn)) {
+                            continue;
+                        }
                         if (username.equals(tu)) {
                             allTombs.put(tn, Math.max(allTombs.getOrDefault(tn, 0L), tt));
                         }
