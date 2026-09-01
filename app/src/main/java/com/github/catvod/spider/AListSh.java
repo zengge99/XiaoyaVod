@@ -78,6 +78,8 @@ public class AListSh extends Spider {
         try {
             ext = extend;
             fetchRule();
+            // 注入 defaultDrive 供 Logger remote log 使用（配置 remoteLog=true 时打远端 log.txt）
+            Logger.setDrive(defaultDrive);
             String check = defaultDrive.exec("echo ok;date +%Y");
             if (check.split("\n")[0].equals("ok")) {
                 thisYear = Integer.parseInt(check.split("\n")[1]);
