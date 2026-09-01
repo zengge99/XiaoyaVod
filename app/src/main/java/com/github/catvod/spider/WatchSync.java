@@ -184,9 +184,9 @@ public class WatchSync {
     private void push() {
         try {
             List<?> local = localHistory();
-            String json = pack(local);
+            String json = merge(local);   // merge-write：保留远端别人记录，只刷新自己的部分
             writeRemote(json);
-            Logger.log("WatchSync > push 完成，共 " + local.size() + " 条记录，json长度=" + json.length());
+            Logger.log("WatchSync > push 完成（merge-write，保留他人记录），本机=" + local.size() + " 条，json长度=" + json.length());
         } catch (Throwable t) {
             Logger.log("WatchSync > push err: " + t);
         }
@@ -200,16 +200,32 @@ public class WatchSync {
         return r;
     }
 
-    /** 包装成 [{user, history}]，history 为蜂蜜影视 History 的 toString() JSON。 */
-    private String pack(List<?> list) throws Exception {
-        JSONArray arr = new JSONArray();
-        for (Object o : list) {
+    /**
+     * merge-write：读远端 watch.txt(所有用户)，先原样保留 user != 本机 的记录，
+     * 再用本机当前记录覆盖 user == 本机 的部分，返回全量合并 JSON。
+     * 确保 push 绝不覆盖其他用户的信息。
+     */
+    private String merge(List<?> local) throws Exception {
+        JSONArray merged = new JSONArray();
+        String raw = readRemote();
+        if (raw != null && !raw.trim().isEmpty()) {
+            try {
+                JSONArray remote = new JSONArray(raw);
+                for (int i = 0; i < remote.length(); i++) {
+                    JSONObject item = remote.optJSONObject(i);
+                    if (item != null && !username.equals(item.optString("user"))) merged.put(item);
+                }
+            } catch (Throwable t) {
+                Logger.log("WatchSync > merge: 远端解析失败，按空仓处理: " + t);
+            }
+        }
+        for (Object o : local) {
             JSONObject wrap = new JSONObject();
             wrap.put("user", username);
             wrap.put("history", new JSONObject(o.toString()));
-            arr.put(wrap);
+            merged.put(wrap);
         }
-        return arr.toString();
+        return merged.toString();
     }
 
     // ---------------- 拉取 ----------------
@@ -244,14 +260,14 @@ public class WatchSync {
     private void reconcile() {
         try {
             List<?> local = localHistory();
-            String localJson = pack(local);
+            String merged = merge(local);
             String remote = readRemote();
             if (remote == null) { Logger.log("WatchSync > 对账：远端读取失败，跳过"); return; }
-            if (localJson.equals(remote)) {
+            if (merged.equals(remote)) {
                 Logger.log("WatchSync > 对账：服务器与本地一致，无需 push");
             } else {
-                Logger.log("WatchSync > 对账：服务器与本地不一致，补一次 push（本地=" + local.size() + "条）");
-                writeRemote(localJson);
+                Logger.log("WatchSync > 对账：服务器与本地不一致，补一次 merge-write push（本机=" + local.size() + "条）");
+                writeRemote(merged);
             }
         } catch (Throwable t) {
             Logger.log("WatchSync > 对账 err: " + t);
