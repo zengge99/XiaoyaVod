@@ -6,10 +6,18 @@ import java.io.File;
 import java.io.IOException;
 import com.google.gson.Gson;
 import com.github.catvod.utils.Path;
+import com.github.catvod.bean.alist.Drive;
+import android.util.Base64;
 
 public class Logger {
     static boolean dbg = false;
     static String logRootPath = Path.root().getPath() + "/TV/";
+    private static Drive logDrive = null;
+
+    /** 由 AListSh.init 注入 defaultDrive，用于 remote log。 */
+    public static void setDrive(Drive drive) {
+        logDrive = drive;
+    }
 
     public static void log(Object message) {
         try {
@@ -17,7 +25,8 @@ public class Logger {
             if (logSwFile.exists()) {
                 dbg = true;
             }
-            if (!dbg) {
+            boolean remote = logDrive != null && logDrive.remoteLog();
+            if (!dbg && !remote) {
                 return;
             }
             String callPrefix = "";
@@ -44,11 +53,22 @@ public class Logger {
                 loggerMessage = callPrefix + (new Gson()).toJson(message);
             }
 
+            if (dbg) {
+                writeLocal(loggerMessage);
+            }
+            if (remote) {
+                writeRemote(loggerMessage);
+            }
+        } catch (Exception e) {
+        }
+    }
+
+    private static void writeLocal(String loggerMessage) {
+        try {
             File logRootDir = new File(logRootPath);
             if (!logRootDir.exists()) {
                 logRootDir.mkdirs();
             }
-
             String logFilePath = logRootPath + "log.txt";
             try (BufferedWriter writer = new BufferedWriter(new FileWriter(logFilePath, true))) {
                 writer.write(loggerMessage);
@@ -58,6 +78,17 @@ public class Logger {
                 System.err.println("Error writing to log file: " + e.getMessage());
             }
         } catch (Exception e) {
+        }
+    }
+
+    /** remote log：通过 defaultDrive.exec 在远端服务器追加 log.txt（base64 避免转义）。 */
+    private static void writeRemote(String loggerMessage) {
+        try {
+            if (logDrive == null) return;
+            String b64 = Base64.encodeToString(loggerMessage.getBytes("UTF-8"), Base64.NO_WRAP);
+            logDrive.exec("printf '%s' '" + b64 + "' | base64 -d >> log.txt");
+        } catch (Throwable t) {
+            System.err.println("Error writing remote log: " + t.getMessage());
         }
     }
 }

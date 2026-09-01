@@ -73,6 +73,8 @@ public class Drive {
     private String username;
     @SerializedName("syncPath")
     private String syncPath;
+    @SerializedName("remoteLog")
+    private Boolean remoteLog;
     public HashMap<String, String> fl;
 
     private static class SignCache {
@@ -224,6 +226,10 @@ public class Drive {
 
     public boolean syncWatch() {
         return syncWatch != null && syncWatch;
+    }
+
+    public boolean remoteLog() {
+        return remoteLog != null && remoteLog;
     }
 
     public String getUsername() {
