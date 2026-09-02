@@ -105,8 +105,8 @@ public class WatchSync {
         this.drive = drive;
         this.username = username == null ? "" : username;
         // 每用户一个远端文件：避免多用户共享单文件互相干扰（如 watch.txt -> watch.<username>.txt）
-        // 远端目录可能不存在：写入前由 ensureRemoteDir() 递归创建（见 writeRemote）
         this.syncPath = isolatedPath(syncPath, this.username);
+        ensureRemoteDir();
     }
 
     /** 把远端同步文件按用户名隔离：watch.txt -> watch.&lt;username&gt;.txt（已隔离则不重复注入）。 */
@@ -793,7 +793,6 @@ public class WatchSync {
      */
     private void writeRemote(String json) {
         try {
-            ensureRemoteDir();
             String b64 = android.util.Base64.encodeToString(json.getBytes(StandardCharsets.UTF_8), android.util.Base64.NO_WRAP);
             String cmd = "printf '%s' '" + b64 + "' | base64 -d > \"" + syncPath + ".tmp\" && mv \"" + syncPath + ".tmp\" \"" + syncPath + "\"";
             String res = drive.exec(cmd);
