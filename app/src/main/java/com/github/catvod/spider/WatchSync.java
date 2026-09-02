@@ -154,8 +154,9 @@ public class WatchSync {
             ws.schedule();
             // 启动先同步一次，让远端已有记录尽快并入本机
             ws.scheduler.execute(ws::pullAndPush);
-            // 首次同步后，初始化 localSnap 基线（记录随后用于生成删除墓碑的本地历史）
-            ws.scheduler.execute(ws::initLocalSnap);
+            // 首次同步后初始化 localSnap 基线（记录后续用于生成删除墓碑的本地历史）
+            // 用与“每次同步后更新”同一个函数 refreshLocalSnap()，保证初始与更新一致
+            ws.scheduler.execute(ws::refreshLocalSnap);
             Logger.log("WatchSync > 启动完成");
             return ws;
         } catch (Throwable t) {
@@ -401,7 +402,7 @@ public class WatchSync {
             }
 
             // ===== 5. 合并结果本地入库：墓碑命中删除 + records 增/改 =====
-            applyLocal(merged, currentLocal);
+            applyLocal(merged);
 
             // 更新基线
             lastSnapshot = snapshotOf(localHistoryFull());           // 同步后的本地状态作为轮询基线
@@ -411,20 +412,23 @@ public class WatchSync {
         }
     }
 
-    /** 初始化 localSnap 基线：以当前本地历史片名为基准（首次同步后调用，用于后续生成删除墓碑）。 */
-    private void initLocalSnap() {
+    /**
+     * 刷新 localSnap 基线：重读本机全集并重建“本地历史片名集合”。
+     * <b>初始化和每次同步后都用这一个函数</b>，保证两者语义一致（都是以当前库为准）。
+     */
+    private void refreshLocalSnap() {
         try {
             Set<String> s = namesOf(localHistoryFull());
             localSnap.clear();
             localSnap.addAll(s);
-            Logger.log("WatchSync > 初始化 localSnap 基线：本地 " + s.size() + " 条");
+            Logger.log("WatchSync > localSnap 快照已刷新：本地 " + s.size() + " 条");
         } catch (Throwable t) {
-            Logger.log("WatchSync > initLocalSnap err: " + t);
+            Logger.log("WatchSync > refreshLocalSnap err: " + t);
         }
     }
 
-    /** 把合并结果应用到本地：墓碑命中的删除，records 的用 historySync 增/改。 */
-    private void applyLocal(RemoteData merged, Set<String> currentLocal) {
+    /** 把合并结果应用到本地：墓碑命中的删除，records 的用 historySync 增/改。结束后刷新 localSnap 基线。 */
+    private void applyLocal(RemoteData merged) {
         // 5a. 墓碑命中 → 删除本地同名记录（historyDel）
         if (histDel != null && !merged.tombstones.isEmpty()) {
             for (String n : merged.tombstones.keySet()) {
@@ -436,7 +440,6 @@ public class WatchSync {
                     }
                     if (!list.isEmpty()) {
                         Logger.log("WatchSync > 墓碑删除本地记录: " + n);
-                        currentLocal.remove(n);
                     }
                 } catch (Throwable t) {
                     Logger.log("WatchSync > 墓碑删除本地 err (" + n + "): " + t);
@@ -454,16 +457,13 @@ public class WatchSync {
             Object obj = historyObjectFrom.invoke(null, rec.toString());
             if (obj != null) {
                 mine.add(obj);
-                String nn = vodNameOf(obj);
-                if (!nn.isEmpty()) currentLocal.add(nn);
             }
         }
         if (!mine.isEmpty()) {
             historySync.invoke(null, mine);
         }
-        // 把应用后的本地片名同步回 localSnap，作为下次墓碑生成基线
-        localSnap.clear();
-        localSnap.addAll(currentLocal);
+        // 应用完之后的本地库才是真基线 → 统一走 refreshLocalSnap()（与初始化同一函数）
+        refreshLocalSnap();
     }
 
     /**
