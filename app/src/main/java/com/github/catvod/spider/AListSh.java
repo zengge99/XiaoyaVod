@@ -84,8 +84,6 @@ public class AListSh extends Spider {
             if (check.split("\n")[0].equals("ok")) {
                 thisYear = Integer.parseInt(check.split("\n")[1]);
             }
-            // 观看记录多端同步：FileObserver 监视本地 DB + 30s 拉取 + 启动立即拉一次
-            watchSync = WatchSync.start(context, defaultDrive);
         } catch (Exception e) {
         }
     }
@@ -433,7 +431,10 @@ public class AListSh extends Spider {
             if (!cUserName.equals(fUserName) || !cPassword.equals(fPassword)) {
                 Path.write(wLoginFile, (cUserName + "\n" + cPassword).getBytes());
             }
-        }        
+        }
+        
+        // 观看记录多端同步：FileObserver 监视本地 DB + 30s 拉取 + 启动立即拉一次
+        watchSync = WatchSync.start(context, defaultDrive);        
     }
 
     private Drive getDrive(String name) {
