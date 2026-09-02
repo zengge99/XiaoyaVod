@@ -452,13 +452,21 @@ public class WatchSync {
             JSONObject rec = wrap.optJSONObject("history");
             if (rec == null) continue;
             if (!canSafeMerge(rec)) continue;                        // 进度保护：无进度记录不覆盖本地有进度记录
-            Object obj = historyObjectFrom.invoke(null, rec.toString());
-            if (obj != null) {
-                mine.add(obj);
+            try {
+                Object obj = historyObjectFrom.invoke(null, rec.toString());
+                if (obj != null) {
+                    mine.add(obj);
+                }
+            } catch (Throwable t) {
+                Logger.log("WatchSync > historyObjectFrom err: " + t);
             }
         }
         if (!mine.isEmpty()) {
-            historySync.invoke(null, mine);
+            try {
+                historySync.invoke(null, mine);
+            } catch (Throwable t) {
+                Logger.log("WatchSync > historySync err: " + t);
+            }
         }
         // 应用完之后的本地库才是真基线 → 统一走 refreshLocalSnap()（与初始化同一函数）
         refreshLocalSnap();
