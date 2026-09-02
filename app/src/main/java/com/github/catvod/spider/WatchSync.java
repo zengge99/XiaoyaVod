@@ -75,6 +75,9 @@ public class WatchSync {
     /** 本机上次同步后的历史片名集合（仅内存、不持久化），用于与当前本地对比生成删除墓碑。 */
     private final Set<String> localSnap = new HashSet<>();
 
+    /** 用于记录AList配置的真实cid。 */
+    private int alistCid;
+
     // ---------------- 反射缓存 ----------------
     // 由于 WatchSync 是 spider 插件，运行在宿主播放器内，History 等类是宿主应用的，
     // 因此一律通过反射调用，避免直接编译期依赖。
@@ -273,6 +276,9 @@ public class WatchSync {
         } catch (Throwable t) {
             vodGetCid = null;
         }
+        // 锁定本机播放源 cid：必须放在 initReflection 最末尾、vodGetCid 就绪之后取，
+        // 否则 currentCid() 因 vodGetCid 为 null 返回 -1，导致下面的 guard 永远拦截、同步被关死。
+        this.alistCid = currentCid();
     }
 
     /** 由已解析 History 类反推宿主应用包名（截掉 ".bean.History" 后缀）。 */
@@ -318,6 +324,11 @@ public class WatchSync {
      */
     private void pollLocal() {
         try {
+            //如果配置切走了，不执行同步。
+            if (this.alistCid != currentCid()) {
+                return;
+            }
+
             List<?> local = localHistoryFull();
             List<String> sig = snapshotOf(local);
             if (!sig.equals(lastSnapshot)) {
@@ -367,6 +378,10 @@ public class WatchSync {
      */
     private void pullAndPush() {
         try {
+            //如果配置切走了，不执行同步。
+            if (this.alistCid != currentCid()) {
+                return;
+            }
             // ===== 1. 读本地记录，与 localSnap 对比，生成墓碑 =====
             List<?> local = localHistoryFull();                    // 本机全量
             Set<String> currentLocal = new HashSet<>();            // 当前本机片名
