@@ -146,8 +146,9 @@ public class WatchSync {
             ws.initReflection();
             ws.startWatching();
             ws.schedule();
-            // 启动先拉一次，让远端已有记录尽快并入本机
-            ws.scheduler.execute(ws::pull);
+            // 启动先拉一次（PULL 触发来源之一：启动立即拉取），让远端已有记录尽快并入本机
+            Logger.log("WatchSync > [触发] 启动立即 PULL");
+            ws.scheduler.execute(() -> ws.pull("启动立即"));
             Logger.log("WatchSync > 启动完成");
             return ws;
         } catch (Throwable t) {
@@ -264,14 +265,17 @@ public class WatchSync {
                     observerMain = new FileObserver(dirPath, FileObserver.MODIFY | FileObserver.CLOSE_WRITE | FileObserver.CREATE) {
                         @Override
                         public void onEvent(int event, String path) {
-                            Logger.log("WatchSync > 文件事件 event=" + event + " path=" + path);
-                            // 只关心主库与 WAL 文件，避免无关文件触发
+                            Logger.log("WatchSync > FileObserver事件 event=" + event + " path=" + path);
+                            // 只关心主库与 WAL 文件，避免无关文件触发（这是 PUSH 的唯一触发来源）
                             if (path != null && (path.equals("tv") || path.equals("tv-wal"))) {
-                                onDbChanged();
+                                onDbChanged(path, event);
+                            } else {
+                                Logger.log("WatchSync > FileObserver事件忽略(非tv/tv-wal文件): " + path);
                             }
                         }
                     };
                     observerMain.startWatching();
+                    Logger.log("WatchSync > FileObserver 已启动并开始监听 [tv/tv-wal] → 本地库变更将触发 PUSH");
                 } catch (Throwable t) {
                     Logger.log("WatchSync > observer err: " + t);
                 }
@@ -281,28 +285,42 @@ public class WatchSync {
         }
     }
 
-    /** 数据库变动回调：带防抖；防抖窗口内再来事件则补一次延迟兜底推送，避免高频操作丢事件。 */
-    private void onDbChanged() {
+    /**
+     * 数据库变动回调（PUSH 的唯一触发来源，由 FileObserver 驱动）。
+     * 带防抖：5 秒窗口内再来事件则补一次延迟兜底推送，避免高频操作丢事件。
+     *
+     * @param path  触发事件的文件名（tv / tv-wal）
+     * @param event FileObserver 事件掩码
+     */
+    private void onDbChanged(String path, int event) {
         long now = System.currentTimeMillis();
         long last = lastPushEvent.get();
+        Logger.log("WatchSync > [触发] onDbChanged: 文件=" + path + " event=" + event
+                + " 距上次推送=" + (now - last) + "ms (窗口=" + PUSH_DEBOUNCE_MS + "ms)");
         if (now - last < PUSH_DEBOUNCE_MS) {
             // 5 秒内频繁变动：不要直接丢弃，而是延迟调度一次兜底推送
             if (pushPending.compareAndSet(false, true)) {
+                Logger.log("WatchSync > [触发] 防抖窗口内再变更 → 延迟" + PUSH_DEBOUNCE_MS + "ms 兜底推送");
                 scheduler.schedule(() -> {
                     pushPending.set(false);
                     lastPushEvent.set(System.currentTimeMillis());
-                    push();
+                    push("FileObserver防抖兜底(延迟" + PUSH_DEBOUNCE_MS + "ms)");
                 }, PUSH_DEBOUNCE_MS, TimeUnit.MILLISECONDS);
             }
             return;
         }
         lastPushEvent.set(now);
-        scheduler.execute(this::push);
+        Logger.log("WatchSync > [触发] 立即推送");
+        scheduler.execute(() -> push("FileObserver事件(" + path + ",event=" + event + ")"));
     }
 
-    /** 周期性拉取远端并合并回本地。 */
+    /**
+     * 注册周期拉取（PULL 触发来源之一）：每 30 秒从远端拉一次。
+     * 另一个 PULL 来源是 {@link #start(Context, Drive)} 里的启动立即拉取。
+     */
     private void schedule() {
-        scheduler.scheduleWithFixedDelay(this::pull, PULL_PERIOD_SEC, PULL_PERIOD_SEC, TimeUnit.SECONDS);
+        Logger.log("WatchSync > 已注册周期 PULL：每 " + PULL_PERIOD_SEC + " 秒从远端拉取一次");
+        scheduler.scheduleWithFixedDelay(() -> pull("定时(" + PULL_PERIOD_SEC + "s)"), PULL_PERIOD_SEC, PULL_PERIOD_SEC, TimeUnit.SECONDS);
     }
 
     // ---------------- 工具 ----------------
@@ -411,19 +429,27 @@ public class WatchSync {
     // ---------------- 推送 ----------------
 
     /**
-     * 把本机当前记录合并进远端文件。
+     * 把本机当前记录合并进远端文件（PUSH —— 仅由 FileObserver 本地库变更触发）。
      * 因删除同步已移除，这里只做「记录并集」（远端 + 本机，同名取 createTime 较新），不再生成任何墓碑。
+     *
+     * @param source 触发来源描述（用于日志追溯是被哪条链路触发的）
      */
-    private void push() {
+    private void push(String source) {
+        long t0 = System.currentTimeMillis();
+        Logger.log("WatchSync >>> [PUSH 触发] source=" + source);
         try {
             List<?> local = localHistoryFull();   // 本机全量（findAll，非 60 条）
             String raw = readRemote();
             String json = merge(local, raw);
             // 内容未变化则不重写远端，避免 30s 周期与 FileObserver 互相放大的写抖动
-            if (json.equals(raw)) return;
+            if (json.equals(raw)) {
+                Logger.log("WatchSync <<< [PUSH 结束] source=" + source + " 内容未变化→未写远端 本地条数=" + local.size() + " 耗时=" + (System.currentTimeMillis() - t0) + "ms");
+                return;
+            }
             writeRemote(json);
+            Logger.log("WatchSync <<< [PUSH 结束] source=" + source + " 已写远端 json长度=" + json.length() + " 耗时=" + (System.currentTimeMillis() - t0) + "ms");
         } catch (Throwable t) {
-            Logger.log("WatchSync > push err: " + t);
+            Logger.log("WatchSync <<< [PUSH 异常] source=" + source + " err=" + t);
         }
     }
 
@@ -492,15 +518,19 @@ public class WatchSync {
     // ---------------- 拉取 ----------------
 
     /**
-     * 周期拉取远端记录并应用到本机：
+     * 周期拉取远端记录并应用到本机（PULL —— 触发来源：启动立即拉取 + 每 30 秒定时拉取）。
      * 读远端 → 进度保护过滤 → 用 History.sync() 并入本机 → 收敛对账（把本机新增记录也并回远端）。
      * 不再解析/应用任何墓碑。
+     *
+     * @param source 触发来源描述（"启动立即" / "定时(30s)"），用于日志追溯
      */
-    private void pull() {
+    private void pull(String source) {
+        long t0 = System.currentTimeMillis();
+        Logger.log("WatchSync >>> [PULL 触发] source=" + source);
         try {
             String raw = readRemote();
             if (raw == null) {
-                Logger.log("WatchSync > pull: 远端读取失败");
+                Logger.log("WatchSync <<< [PULL 结束] source=" + source + " 远端读取失败，跳过");
                 return;
             }
             if (raw.trim().isEmpty()) {
@@ -521,13 +551,13 @@ public class WatchSync {
                 if (obj != null) mine.add(obj);
             }
 
-            Logger.log("WatchSync > pull 完成，远端总数=" + arr.length() + " 属于本用户=" + mine.size());
+            Logger.log("WatchSync <<< [PULL 结束] source=" + source + " 远端总数=" + arr.length() + " 待入库=" + mine.size() + " 耗时=" + (System.currentTimeMillis() - t0) + "ms");
             if (!mine.isEmpty()) {
                 historySync.invoke(null, mine);
             }
             reconcile(raw);
         } catch (Throwable t) {
-            Logger.log("WatchSync > pull err: " + t);
+            Logger.log("WatchSync <<< [PULL 异常] source=" + source + " err=" + t);
         }
     }
 
