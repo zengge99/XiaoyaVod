@@ -66,6 +66,8 @@ public class WatchSync {
     /** 本机记录快照（片名|createTime|position|duration），用于轮询比对是否变化。 */
     private List<String> lastSnapshot = Collections.emptyList();
 
+    //todo 这里增加一个变量(localSnap)记录本地历史记录，用于生成墓碑记录，不用持久化到文件。
+
     // ---------------- 反射缓存 ----------------
     // 由于 WatchSync 是 spider 插件，运行在宿主播放器内，History 等类是宿主应用的，
     // 因此一律通过反射调用，避免直接编译期依赖。
@@ -74,6 +76,7 @@ public class WatchSync {
     private Method historyFindByName;       // History.findByName(String) -> List
     private Method historyObjectFrom;       // History.objectFrom(String) -> History
     private Method historySync;             // History.sync(List) -> void
+    //todo 这里需要反射实现historyDel删除操作
     private Method histGetVodName;          // History.getVodName()
     private Method histCanSave;             // History.canSave()（可为 null）
     private Method histGetPosition;         // History.getPosition()（可为 null）
@@ -136,6 +139,8 @@ public class WatchSync {
             ws.schedule();
             // 启动先拉一次，让远端已有记录尽快并入本机
             ws.scheduler.execute(ws::pull);
+
+            //todo 这里初始化localSnap，记录首次同步后的历史记录。
             Logger.log("WatchSync > 启动完成");
             return ws;
         } catch (Throwable t) {
@@ -410,6 +415,7 @@ public class WatchSync {
      * 把本机当前记录合并进远端文件。
      * 因删除同步已移除，这里只做「记录并集」（远端 + 本机，同名取 createTime 较新），不再生成任何墓碑。
      */
+    //todo pull和push两个方法归一成统一流程pullAndPush：1、读取本地记录，与localSnap对比，生成本地墓碑记录。2、读取远端记录。3、合并本地和远端记录，不管是墓碑还是历史记录，都按照新者胜规则合并。4、推送合并结果到远端（含墓碑）。5、合并结果本地入库，使用historySync和HistroryDel。
     private void push() {
         try {
             List<?> local = localHistoryFull();   // 本机全量（findAll，非 60 条）
@@ -422,6 +428,7 @@ public class WatchSync {
             Logger.log("WatchSync > push err: " + t);
         }
     }
+
 
     /**
      * 合并本机与远端，生成待写入远端的 JSON 数组。
@@ -537,6 +544,7 @@ public class WatchSync {
             for (int i = 0; i < arr.length(); i++) {
                 JSONObject wrap = arr.optJSONObject(i);
                 if (wrap == null) continue;
+                // todo 这里也要记录墓碑记录
                 JSONObject rec = wrap.optJSONObject("history");
                 if (rec == null) continue;
                 String n = nameFromHistory(rec);
@@ -560,6 +568,7 @@ public class WatchSync {
      * 收敛对账：把本机记录也并回远端（保证本机新增/更新能及时同步到其他设备），
      * 仅在远端内容真正变化时写回。
      */
+    //todo 按照新的pushAndPull流程，这个应该不需要了。
     private void reconcile(String raw) {
         try {
             List<?> local = localHistoryFull();
