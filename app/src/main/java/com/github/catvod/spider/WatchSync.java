@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit;
  *   <li>每个用户一个远端文件（如 watch.&lt;username&gt;.txt），用户之间物理隔离。</li>
  *   <li>远端文件是 JSON 对象：{@code {"records":[...], "tombstones":{片名:时间戳}}}。
  *       <ul>
- *         <li>{@code records}：观看记录数组，每项 {@code {"history":{...}}}（History 完整 JSON），最多 {@link #REMOTE_MAX} 条。</li>
+ *         <li>{@code records}：观看记录数组，每项 {@code {"history":{...}}}（History 完整 JSON），保存完整观看历史（不设上限）。</li>
  *         <li>{@code tombstones}：删除墓碑（片名 → 删除时间戳），用于把删除传播到其它设备并防止复活。</li>
  *       </ul>
  *       兼容旧格式：若读到的是裸 JSON 数组，则当作 records 处理。</li>
@@ -59,8 +59,6 @@ public class WatchSync {
     private static final long PUSH_POLL_MS = 3000;
     /** 定期同步远端文件的周期（秒）。 */
     private static final long PULL_PERIOD_SEC = 30;
-    /** 远端最多保留的记录条数；超出时按 createTime 冲掉最旧的。 */
-    private static final int REMOTE_MAX = 60;
     /** 墓碑有效期（毫秒）：超过该时长不再写回远端，避免墓碑无限累积。 */
     private static final long TOMBSTONE_TTL_MS = 60L * 24 * 60 * 60 * 1000; // 60 天
 
@@ -362,7 +360,7 @@ public class WatchSync {
      *   <li>读取本地记录，与 {@code localSnap} 对比，对"上次有、现在没有"的片名生成本地墓碑；</li>
      *   <li>读取远端记录（records + tombstones）；</li>
      *   <li>合并本地与远端（墓碑与记录都按「新者胜」比时间戳）；</li>
-     *   <li>把合并结果写回远端（含墓碑，records 上限 {@link #REMOTE_MAX}，墓碑按 {@link #TOMBSTONE_TTL_MS} 裁剪）；</li>
+     *   <li>把合并结果写回远端（含墓碑，墓碑按 {@link #TOMBSTONE_TTL_MS} 裁剪）；</li>
      *   <li>合并结果落到本地：墓碑命中的用 historyDel 删除，记录用 historySync 增/改。</li>
      * </ol>
      */
@@ -540,22 +538,9 @@ public class WatchSync {
                 out.tombstones.put(n, tt);
             }
         }
-        return capRecords(out);
+        return out;
     }
 
-    /** 远端 records 上限 {@link #REMOTE_MAX}：按 createTime 新→旧只保留最新 {@link #REMOTE_MAX} 条。 */
-    private RemoteData capRecords(RemoteData rd) {
-        if (rd.records.length() <= REMOTE_MAX) return rd;
-        List<Integer> order = new ArrayList<>();
-        for (int i = 0; i < rd.records.length(); i++) order.add(i);
-        order.sort((a, b) -> Long.compare(createTimeOf(rd.records.optJSONObject(a)), createTimeOf(rd.records.optJSONObject(b))));
-        JSONArray cap = new JSONArray();
-        int start = Math.max(0, order.size() - REMOTE_MAX);
-        for (int i = start; i < order.size(); i++) cap.put(rd.records.optJSONObject(order.get(i)));
-        Logger.log("WatchSync > 远端记录超出" + REMOTE_MAX + "条，保留最新" + cap.length() + "条（冲掉" + (order.size() - cap.length()) + "条最旧）");
-        rd.records = cap;
-        return rd;
-    }
 
     /** 取一条 wrap（含 {"history":{...}}）里 history 的 createTime。 */
     private long createTimeOf(JSONObject wrap) {
