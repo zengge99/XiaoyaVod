@@ -1,20 +1,17 @@
 package com.github.catvod.spider;
 
 import android.content.Context;
-import android.os.FileObserver;
-import android.os.Handler;
-import android.os.HandlerThread;
 
 import com.github.catvod.bean.alist.Drive;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -22,8 +19,6 @@ import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * 观看记录多端同步（方向 A：复用 alist 服务器文件作为共享记录仓）。
@@ -43,7 +38,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *   <li><b>同名记录取新</b>：同一片名存在多个版本（createTime 不同）时，合并按 createTime 较新者胜出，
  *       避免旧记录把新记录（新剧集/新进度）打回。</li>
  *   <li><b>进度保护</b>：拉取时远端“无进度”记录不覆盖本机“有进度”同名记录，避免进度倒退。</li>
- *   <li><b>只在内容真正变化时才写远端</b>，减少 30 秒周期拉取与 FileObserver 之间的写放大抖动。</li>
+ *   <li><b>只在内容真正变化时才写远端</b>，减少 30 秒拉取与本地轮询之间的写放大抖动。</li>
  * </ol>
  *
  * <p><i>说明：因删除同步被移除，若远端某条记录被任一设备保留，则其它设备即便本地删除，也会在下次 pull 时被重新拉回。</i></p>
@@ -53,8 +48,8 @@ public class WatchSync {
     /** 目标主机应用里的 History bean 的默认类名（作为最后兜底候选）。 */
     private static final String HISTORY_CLS = "com.fongmi.android.tv.bean.History";
 
-    /** 本机数据库变动后的推送防抖窗口（毫秒）。 */
-    private static final long PUSH_DEBOUNCE_MS = 5000;
+    /** 本地轮询周期（毫秒）：本机记录变化即触发推送。 */
+    private static final long PUSH_POLL_MS = 3000;
     /** 定期拉取远端文件的周期（秒）。 */
     private static final long PULL_PERIOD_SEC = 30;
 
@@ -64,17 +59,10 @@ public class WatchSync {
     /** 远端同步文件路径（已按用户名隔离）。 */
     private final String syncPath;
 
-    /** 单线程调度器：push/pull/定时对账都在同一线程串行执行，避免并发竞争。 */
+    /** 单线程调度器：push/pull/本地轮询都在同一线程串行执行，避免并发竞争。 */
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
-    /** 最近一次触发推送的事件时间，用于防抖。 */
-    private final AtomicLong lastPushEvent = new AtomicLong(0);
-    /** 防抖积压标志：防抖窗口内再次变更时，延迟补一次兜底推送，避免高频操作吞掉事件。 */
-    private final AtomicBoolean pushPending = new AtomicBoolean(false);
-
-    /** 监视数据库目录的线程。 */
-    private HandlerThread watchThread;
-    /** 主数据库文件观察器（改库就触发 push）。 */
-    private FileObserver observerMain;
+    /** 本机记录快照（片名|createTime|position|duration），用于轮询比对是否变化。 */
+    private List<String> lastSnapshot = Collections.emptyList();
 
     // ---------------- 反射缓存 ----------------
     // 由于 WatchSync 是 spider 插件，运行在宿主播放器内，History 等类是宿主应用的，
@@ -89,10 +77,9 @@ public class WatchSync {
     private Method histGetPosition;         // History.getPosition()（可为 null）
     private Method histGetDuration;         // History.getDuration()（可为 null）
 
-    private Class<?> appDbClass;            // AppDatabase
-    private Method dbGet;                   // AppDatabase.get()
-    private Method dbGetHistoryDao;         // AppDatabase.get().getHistoryDao()
-    private Method daoFindAll;              // HistoryDao.findAll() -> 本机全量
+    private Object appDb;                   // AppDatabase 单例实例
+    private Method daoGetter;               // AppDatabase 上取 HistoryDao 的方法
+    private Method daoFindAll;              // HistoryDao 上取全量的方法（findAll/getAll）
     private Method vodGetCid;               // VodConfig.getCid() -> 当前播放源 id（可为 null）
 
     private WatchSync(Context context, Drive drive, String username, String syncPath) {
@@ -126,7 +113,7 @@ public class WatchSync {
 
     /**
      * 启动同步。满足条件（drive 非空、syncWatch 开启、syncPath 非空）才初始化：
-     * 解析宿主反射 → 启动数据库监视 → 定时拉取 → 立即拉一次。
+     * 解析宿主反射 → 启动本地轮询 + 定时拉取 → 立即拉一次。
      *
      * @return 启动成功的实例；条件不满足或初始化失败返回 null（静默降级，不影响播放器）。
      */
@@ -144,7 +131,6 @@ public class WatchSync {
             }
             WatchSync ws = new WatchSync(context, drive, drive.getUsername(), drive.getSyncPath());
             ws.initReflection();
-            ws.startWatching();
             ws.schedule();
             // 启动先拉一次，让远端已有记录尽快并入本机
             ws.scheduler.execute(ws::pull);
@@ -183,15 +169,44 @@ public class WatchSync {
         }
 
         // AppDatabase.get().getHistoryDao().findAll()：取本机全量历史（避开 get() 的 LIMIT 60 截断）。
-        // 反射失败不影响主流程，localHistoryFull() 会自动退化为 get()。
+        // 真机 AppDatabase.get() 可能因混淆/改签名找不到，故做多候选兼容：
+        //   单例方法逐个试 get/getInstance/getDatabase/getDb；DAO 方法在实例上按返回类型扫；
+        //   findAll 在 DAO 实现上找“无参返回 List”的方法（findAll/getAll/loadAll）。
+        // 任何一步失败都整体降级为 get() 兜底，不影响主流程。
+        appDb = null;
+        daoGetter = null;
+        daoFindAll = null;
         try {
-            appDbClass = Class.forName(appPkg + ".db.AppDatabase");
-            dbGet = appDbClass.getMethod("get");
-            dbGetHistoryDao = appDbClass.getMethod("getHistoryDao");
-            Object db = dbGet.invoke(null);
-            if (db != null) {
-                Object dao = dbGetHistoryDao.invoke(db);
-                if (dao != null) daoFindAll = dao.getClass().getMethod("findAll");
+            Class<?> dbCls = Class.forName(appPkg + ".db.AppDatabase");
+            for (String m : new String[]{"get", "getInstance", "getDatabase", "getDb"}) {
+                try {
+                    appDb = dbCls.getMethod(m).invoke(null);
+                    if (appDb != null) break;
+                } catch (Throwable ignored) {
+                }
+            }
+            if (appDb != null) {
+                for (Method me : appDb.getClass().getMethods()) {
+                    if (me.getParameterCount() != 0) continue;
+                    if (me.getName().toLowerCase().contains("historydao")) {
+                        daoGetter = me;
+                        break;
+                    }
+                }
+                if (daoGetter != null) {
+                    Object dao = daoGetter.invoke(appDb);
+                    if (dao != null) {
+                        for (Method me : dao.getClass().getMethods()) {
+                            if (me.getParameterCount() != 0) continue;
+                            if (!List.class.isAssignableFrom(me.getReturnType())) continue;
+                            String n = me.getName().toLowerCase();
+                            if (n.equals("findall") || n.equals("getall") || n.equals("loadall")) {
+                                daoFindAll = me;
+                                break;
+                            }
+                        }
+                    }
+                }
             }
             Logger.log("WatchSync > AppDatabase.findAll 反射就绪: " + (daoFindAll != null));
         } catch (Throwable t) {
@@ -243,66 +258,47 @@ public class WatchSync {
         throw new ClassNotFoundException("History 类解析失败，候选: " + candidates);
     }
 
-    // ---------------- 本机数据库监听 ----------------
+    // ---------------- 本地轮询（替代 FileObserver，更可靠） ----------------
 
-    /** 启动对本地 Room 数据库目录的监视：主库文件（tv）或 WAL（tv-wal）变动时触发推送。 */
-    private void startWatching() {
+    /**
+     * 本地轮询：每 3 秒比对一次本机记录快照，发生变化即触发 push。
+     * 取代 FileObserver 文件监听（真机上文件事件不可靠/不触发）。
+     */
+    private void pollLocal() {
         try {
-            File dbFile = context.getDatabasePath("tv");
-            File dbDir = dbFile.getParentFile();
-            if (dbDir != null && !dbDir.exists()) {
-                dbDir.mkdirs();
+            List<?> local = localHistoryFull();
+            List<String> sig = snapshotOf(local);
+            if (!sig.equals(lastSnapshot)) {
+                lastSnapshot = sig;
+                Logger.log("WatchSync > 本地记录变化(" + sig.size() + "条)，触发 push");
+                push();
             }
-            if (dbDir == null) return;
-
-            String dirPath = dbDir.getAbsolutePath();
-            Logger.log("WatchSync > 开始监视数据库目录: " + dirPath);
-            watchThread = new HandlerThread("watch-sync");
-            watchThread.start();
-            new Handler(watchThread.getLooper()).post(() -> {
-                try {
-                    observerMain = new FileObserver(dirPath, FileObserver.MODIFY | FileObserver.CLOSE_WRITE | FileObserver.CREATE) {
-                        @Override
-                        public void onEvent(int event, String path) {
-                            Logger.log("WatchSync > 文件事件 event=" + event + " path=" + path);
-                            // 只关心主库与 WAL 文件，避免无关文件触发
-                            if (path != null && (path.equals("tv") || path.equals("tv-wal"))) {
-                                onDbChanged();
-                            }
-                        }
-                    };
-                    observerMain.startWatching();
-                    Logger.log("WatchSync > FileObserver 监控已启动，正在监听数据库文件: tv / tv-wal（有事件即打印下方 文件事件 日志）");
-                } catch (Throwable t) {
-                    Logger.log("WatchSync > observer err: " + t);
-                }
-            });
         } catch (Throwable t) {
-            Logger.log("WatchSync > watch err: " + t);
+            Logger.log("WatchSync > pollLocal err: " + t);
         }
     }
 
-    /** 数据库变动回调：带防抖；防抖窗口内再来事件则补一次延迟兜底推送，避免高频操作丢事件。 */
-    private void onDbChanged() {
-        long now = System.currentTimeMillis();
-        long last = lastPushEvent.get();
-        if (now - last < PUSH_DEBOUNCE_MS) {
-            // 5 秒内频繁变动：不要直接丢弃，而是延迟调度一次兜底推送
-            if (pushPending.compareAndSet(false, true)) {
-                scheduler.schedule(() -> {
-                    pushPending.set(false);
-                    lastPushEvent.set(System.currentTimeMillis());
-                    push();
-                }, PUSH_DEBOUNCE_MS, TimeUnit.MILLISECONDS);
-            }
-            return;
+    /** 生成本机记录快照（片名|createTime|position|duration），排序以便稳定比对。 */
+    private List<String> snapshotOf(List<?> local) {
+        List<String> sigs = new ArrayList<>();
+        for (Object o : local) {
+            String n = vodNameOf(o);
+            if (n.isEmpty()) continue;
+            JSONObject j = historyToJson(o);
+            if (j == null) continue;
+            sigs.add(n + "|" + j.optLong("createTime", 0L) + "|" + j.optLong("position", 0L) + "|" + j.optLong("duration", 0L));
         }
-        lastPushEvent.set(now);
-        scheduler.execute(this::push);
+        Collections.sort(sigs);
+        return sigs;
     }
 
-    /** 周期性拉取远端并合并回本地。 */
+    /**
+     * 注册周期任务：
+     *   - 本地 3 秒轮询（push 触发）；
+     *   - 远端 30 秒拉取（pull）。
+     */
     private void schedule() {
+        scheduler.scheduleWithFixedDelay(this::pollLocal, PUSH_POLL_MS, PUSH_POLL_MS, TimeUnit.MILLISECONDS);
         scheduler.scheduleWithFixedDelay(this::pull, PULL_PERIOD_SEC, PULL_PERIOD_SEC, TimeUnit.SECONDS);
     }
 
@@ -327,30 +323,27 @@ public class WatchSync {
      */
     private List<Object> localHistoryFull() {
         int cid = currentCid();
-        if (daoFindAll != null) {
+        if (appDb != null && daoGetter != null && daoFindAll != null) {
             try {
-                Object db = dbGet.invoke(null);
-                if (db != null) {
-                    Object dao = dbGetHistoryDao.invoke(db);
-                    if (dao != null) {
-                        Object all = daoFindAll.invoke(dao);
-                        if (all instanceof List) {
-                            List<Object> out = new ArrayList<>();
-                            for (Object o : (List<?>) all) {
-                                if (o == null) continue;
-                                // 过滤到当前播放源，避免把其他源的记录误当作本源记录
-                                if (cid >= 0) {
-                                    try {
-                                        JSONObject j = historyToJson(o);
-                                        if (j == null || j.optInt("cid", -1) != cid) continue;
-                                    } catch (Throwable t) {
-                                        continue;
-                                    }
+                Object dao = daoGetter.invoke(appDb);
+                if (dao != null) {
+                    Object all = daoFindAll.invoke(dao);
+                    if (all instanceof List) {
+                        List<Object> out = new ArrayList<>();
+                        for (Object o : (List<?>) all) {
+                            if (o == null) continue;
+                            // 过滤到当前播放源，避免把其他源的记录误当作本源记录
+                            if (cid >= 0) {
+                                try {
+                                    JSONObject j = historyToJson(o);
+                                    if (j == null || j.optInt("cid", -1) != cid) continue;
+                                } catch (Throwable t) {
+                                    continue;
                                 }
-                                out.add(o);
                             }
-                            return out;
+                            out.add(o);
                         }
+                        return out;
                     }
                 }
             } catch (Throwable t) {
