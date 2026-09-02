@@ -52,6 +52,8 @@ public class WatchSync {
     private static final long PUSH_POLL_MS = 3000;
     /** 定期拉取远端文件的周期（秒）。 */
     private static final long PULL_PERIOD_SEC = 30;
+    /** 远端最多保留的记录条数；超出时按 createTime 冲掉最旧的。 */
+    private static final int REMOTE_MAX = 60;
 
     private final Context context;
     private final Drive drive;
@@ -472,7 +474,36 @@ public class WatchSync {
 
         JSONArray merged = new JSONArray();
         for (JSONObject w : chosen.values()) merged.put(w);
-        return merged.toString();
+        return capToLatest(merged).toString();
+    }
+
+    /**
+     * 远端最多保留 {@link #REMOTE_MAX} 条记录：按每条记录的 createTime 新→旧排序，
+     * 只保留最新的 {@link #REMOTE_MAX} 条，超出部分（最旧的）直接冲掉。
+     */
+    private JSONArray capToLatest(JSONArray merged) {
+        try {
+            if (merged.length() <= REMOTE_MAX) return merged;
+            // 索引按 createTime 升序（旧→新）排序，再取尾部（最新）REMOTE_MAX 条
+            List<Integer> order = new ArrayList<>();
+            for (int i = 0; i < merged.length(); i++) order.add(i);
+            order.sort((a, b) -> Long.compare(createTimeOf(merged.optJSONObject(a)), createTimeOf(merged.optJSONObject(b))));
+            JSONArray out = new JSONArray();
+            int start = Math.max(0, order.size() - REMOTE_MAX);
+            for (int i = start; i < order.size(); i++) out.put(merged.optJSONObject(order.get(i)));
+            Logger.log("WatchSync > 远端超出" + REMOTE_MAX + "条，保留最新" + out.length() + "条（冲掉" + (merged.length() - out.length()) + "条最旧）");
+            return out;
+        } catch (Throwable t) {
+            Logger.log("WatchSync > capToLatest err: " + t);
+            return merged;
+        }
+    }
+
+    /** 取一条 wrap 对象（含 {"history":{...}}）里 history 的 createTime。 */
+    private long createTimeOf(JSONObject wrap) {
+        if (wrap == null) return 0;
+        JSONObject h = wrap.optJSONObject("history");
+        return h == null ? 0 : h.optLong("createTime", 0L);
     }
 
     /** 从一条 history 记录里取片名（兼容 vodName / vod_name 两种字段名）。 */
