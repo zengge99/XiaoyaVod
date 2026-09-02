@@ -76,7 +76,7 @@ public class WatchSync {
     private final Set<String> localSnap = new HashSet<>();
 
     /** 用于记录AList配置的真实cid。 */
-    private final int alistCid;
+    private int alistCid;
 
     // ---------------- 反射缓存 ----------------
     // 由于 WatchSync 是 spider 插件，运行在宿主播放器内，History 等类是宿主应用的，
