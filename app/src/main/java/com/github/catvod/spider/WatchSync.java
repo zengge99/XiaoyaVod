@@ -158,8 +158,9 @@ public class WatchSync {
 
     /** 初始化全部反射缓存。失败的方法置空或抛出，由上层兜底。 */
     private void initReflection() throws Exception {
-        String appPkg = appPackage();
+        // 必须先解析 historyClass，再据此推导应用包名：appPackage() 内部会调用 historyClass.getName()
         historyClass = resolveHistoryClass();
+        String appPkg = appPackage();
         Logger.log("WatchSync > 解析到 History 类: " + historyClass.getName() + " 应用包: " + appPkg);
 
         // History 基础方法
