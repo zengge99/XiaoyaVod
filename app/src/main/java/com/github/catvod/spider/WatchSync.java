@@ -264,7 +264,6 @@ public class WatchSync {
                     }
                 }
             }
-            this.alistCid = currentCid();
             Logger.log("WatchSync > AppDatabase.findAll 反射就绪: " + (daoFindAll != null));
         } catch (Throwable t) {
             Logger.log("WatchSync > AppDatabase 反射失败，将退化为 get() 兜底: " + t);
@@ -277,6 +276,9 @@ public class WatchSync {
         } catch (Throwable t) {
             vodGetCid = null;
         }
+        // 锁定本机播放源 cid：必须放在 initReflection 最末尾、vodGetCid 就绪之后取，
+        // 否则 currentCid() 因 vodGetCid 为 null 返回 -1，导致下面的 guard 永远拦截、同步被关死。
+        this.alistCid = currentCid();
     }
 
     /** 由已解析 History 类反推宿主应用包名（截掉 ".bean.History" 后缀）。 */
