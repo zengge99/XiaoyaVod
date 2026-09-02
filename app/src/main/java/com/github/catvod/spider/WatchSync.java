@@ -322,6 +322,11 @@ public class WatchSync {
      */
     private void pollLocal() {
         try {
+            //如果配置切走了，不执行同步。
+            if (this.alistCid != currentCid()) {
+                return;
+            }
+            
             List<?> local = localHistoryFull();
             List<String> sig = snapshotOf(local);
             if (!sig.equals(lastSnapshot)) {
@@ -371,6 +376,7 @@ public class WatchSync {
      */
     private void pullAndPush() {
         try {
+            //如果配置切走了，不执行同步。
             if (this.alistCid != currentCid()) {
                 return;
             }
