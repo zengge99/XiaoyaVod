@@ -13,9 +13,13 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -23,37 +27,42 @@ import java.util.concurrent.TimeUnit;
 /**
  * 观看记录多端同步（方向 A：复用 alist 服务器文件作为共享记录仓）。
  *
- * <p><b>同步模型（简化版）</b></p>
+ * <p><b>同步模型</b></p>
  * <ul>
  *   <li>每个用户一个远端文件（如 watch.&lt;username&gt;.txt），用户之间物理隔离。</li>
- *   <li>远端文件是 JSON 数组，元素为一组观看记录：{@code {"history":{...}}}（History 对象的完整 JSON）。</li>
- *   <li><b>本版本只做「记录合并同步」，不做删除传播</b>（已移除墓碑与删除检测逻辑——此前该部分问题较多）。
- *       因此：本机单独删除一条记录只影响本机，不会被同步；push/pull 会以远端+本机合并结果为准把记录保留下来。</li>
+ *   <li>远端文件是 JSON 对象：{@code {"records":[...], "tombstones":{片名:时间戳}}}。
+ *       <ul>
+ *         <li>{@code records}：观看记录数组，每项 {@code {"history":{...}}}（History 完整 JSON），最多 {@link #REMOTE_MAX} 条。</li>
+ *         <li>{@code tombstones}：删除墓碑（片名 → 删除时间戳），用于把删除传播到其它设备并防止复活。</li>
+ *       </ul>
+ *       兼容旧格式：若读到的是裸 JSON 数组，则当作 records 处理。</li>
+ *   <li><b>统一流程 {@link #pullAndPush()}</b>：本地轮询（3 秒）检测到本机记录变化 / 定时（30 秒）都走它：
+ *       读本地 → 与 {@code localSnap} 对比生成墓碑 → 读远端 → 「新者胜」合并（墓碑与记录比时间戳）→ 写回远端（含墓碑）→ 本地入库（historySync 增/改 + historyDel 删墓碑命中的）。</li>
  *   <li>本机全集通过 {@code AppDatabase.get().getHistoryDao().findAll()} 反射获取并过滤当前播放源(cid)，
- *       避免 {@code History.get()} 的 LIMIT 60 截断导致把“自然淘汰”误判成删除。</li>
+ *       避免 {@code History.get()} 的 LIMIT 60 截断把"自然淘汰"误判成删除。</li>
  * </ul>
  *
- * <p><b>合并规则</b></p>
+ * <p><b>合并规则（LWW-register：新者胜）</b></p>
  * <ol>
- *   <li><b>同名记录取新</b>：同一片名存在多个版本（createTime 不同）时，合并按 createTime 较新者胜出，
- *       避免旧记录把新记录（新剧集/新进度）打回。</li>
- *   <li><b>进度保护</b>：拉取时远端“无进度”记录不覆盖本机“有进度”同名记录，避免进度倒退。</li>
- *   <li><b>只在内容真正变化时才写远端</b>，减少 30 秒拉取与本地轮询之间的写放大抖动。</li>
+ *   <li>每个片名同时可能有"记录(createTime)"与"墓碑(删除时间)"，取两者中<b>时间戳较大者</b>为胜者。</li>
+ *   <li>墓碑胜 → 该名字被删除（本地删 + 远端保留墓碑）；记录胜 → 该记录保留/复活（墓碑被丢弃）。</li>
+ *   <li>因此"本机仍持有旧副本"不会撤销删除，只有"重新看过（createTime 晚于删除时间）"才会复活。</li>
+ *   <li>墓碑带 {@link #TOMBSTONE_TTL_MS} 有效期，过期不再写回远端，避免无限累积。</li>
  * </ol>
- *
- * <p><i>说明：因删除同步被移除，若远端某条记录被任一设备保留，则其它设备即便本地删除，也会在下次 pull 时被重新拉回。</i></p>
  */
 public class WatchSync {
 
     /** 目标主机应用里的 History bean 的默认类名（作为最后兜底候选）。 */
     private static final String HISTORY_CLS = "com.fongmi.android.tv.bean.History";
 
-    /** 本地轮询周期（毫秒）：本机记录变化即触发推送。 */
+    /** 本地轮询周期（毫秒）：本机记录变化即触发同步。 */
     private static final long PUSH_POLL_MS = 3000;
-    /** 定期拉取远端文件的周期（秒）。 */
+    /** 定期同步远端文件的周期（秒）。 */
     private static final long PULL_PERIOD_SEC = 30;
     /** 远端最多保留的记录条数；超出时按 createTime 冲掉最旧的。 */
     private static final int REMOTE_MAX = 60;
+    /** 墓碑有效期（毫秒）：超过该时长不再写回远端，避免墓碑无限累积。 */
+    private static final long TOMBSTONE_TTL_MS = 60L * 24 * 60 * 60 * 1000; // 60 天
 
     private final Context context;
     private final Drive drive;
@@ -61,12 +70,12 @@ public class WatchSync {
     /** 远端同步文件路径（已按用户名隔离）。 */
     private final String syncPath;
 
-    /** 单线程调度器：push/pull/本地轮询都在同一线程串行执行，避免并发竞争。 */
+    /** 单线程调度器：轮询/同步都在同一线程串行执行，避免并发竞争。 */
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
-    /** 本机记录快照（片名|createTime|position|duration），用于轮询比对是否变化。 */
+    /** 本机记录快照（片名|createTime|position|duration），用于轮询比对是否发生变化。 */
     private List<String> lastSnapshot = Collections.emptyList();
-
-    //todo 这里增加一个变量(localSnap)记录本地历史记录，用于生成墓碑记录，不用持久化到文件。
+    /** 本机上次同步后的历史片名集合（仅内存、不持久化），用于与当前本地对比生成删除墓碑。 */
+    private final Set<String> localSnap = new HashSet<>();
 
     // ---------------- 反射缓存 ----------------
     // 由于 WatchSync 是 spider 插件，运行在宿主播放器内，History 等类是宿主应用的，
@@ -75,17 +84,23 @@ public class WatchSync {
     private Method historyGet;              // History.get() -> 最近 60 条（仅作兜底）
     private Method historyFindByName;       // History.findByName(String) -> List
     private Method historyObjectFrom;       // History.objectFrom(String) -> History
-    private Method historySync;             // History.sync(List) -> void
-    //todo 这里需要反射实现historyDel删除操作
+    private Method historySync;             // History.sync(List) -> void（只增/改，不删）
+    private Method histDel;                 // History.delete() -> History（删除单条本地记录）
     private Method histGetVodName;          // History.getVodName()
     private Method histCanSave;             // History.canSave()（可为 null）
     private Method histGetPosition;         // History.getPosition()（可为 null）
     private Method histGetDuration;         // History.getDuration()（可为 null）
 
-    private Object appDb;                   // AppDatabase 单例实例
+    private Object appDb;                   // AppDatabase（或 _Impl）单例实例
     private Method daoGetter;               // AppDatabase 上取 HistoryDao 的方法
-    private Method daoFindAll;              // HistoryDao 上取全量的方法（findAll/getAll）
+    private Method daoFindAll;              // HistoryDao 上取全量的方法（findAll/getAll/loadAll）
     private Method vodGetCid;               // VodConfig.getCid() -> 当前播放源 id（可为 null）
+
+    /** 远端解析结果。 */
+    private static class RemoteData {
+        JSONArray records = new JSONArray();
+        Map<String, Long> tombstones = new LinkedHashMap<>();
+    }
 
     private WatchSync(Context context, Drive drive, String username, String syncPath) {
         this.context = context;
@@ -118,7 +133,7 @@ public class WatchSync {
 
     /**
      * 启动同步。满足条件（drive 非空、syncWatch 开启、syncPath 非空）才初始化：
-     * 解析宿主反射 → 启动本地轮询 + 定时拉取 → 立即拉一次。
+     * 解析宿主反射 → 启动本地轮询 + 定时同步 → 首次同步 + 初始化 localSnap 基线。
      *
      * @return 启动成功的实例；条件不满足或初始化失败返回 null（静默降级，不影响播放器）。
      */
@@ -137,10 +152,10 @@ public class WatchSync {
             WatchSync ws = new WatchSync(context, drive, drive.getUsername(), drive.getSyncPath());
             ws.initReflection();
             ws.schedule();
-            // 启动先拉一次，让远端已有记录尽快并入本机
-            ws.scheduler.execute(ws::pull);
-
-            //todo 这里初始化localSnap，记录首次同步后的历史记录。
+            // 启动先同步一次，让远端已有记录尽快并入本机
+            ws.scheduler.execute(ws::pullAndPush);
+            // 首次同步后，初始化 localSnap 基线（记录随后用于生成删除墓碑的本地历史）
+            ws.scheduler.execute(ws::initLocalSnap);
             Logger.log("WatchSync > 启动完成");
             return ws;
         } catch (Throwable t) {
@@ -174,42 +189,73 @@ public class WatchSync {
             histGetPosition = null;
             histGetDuration = null;
         }
+        // 删除操作：History.delete()（实例方法，按 cid+key 删单条）——用于把墓碑命中的本地记录删掉
+        try {
+            histDel = historyClass.getMethod("delete");
+        } catch (Throwable t) {
+            histDel = null;
+            Logger.log("WatchSync > History.delete() 反射失败，将无法在本地执行墓碑删除: " + t);
+        }
 
         // AppDatabase.get().getHistoryDao().findAll()：取本机全量历史（避开 get() 的 LIMIT 60 截断）。
-        // 真机 AppDatabase.get() 可能因混淆/改签名找不到，故做多候选兼容：
-        //   单例方法逐个试 get/getInstance/getDatabase/getDb；DAO 方法在实例上按返回类型扫；
-        //   findAll 在 DAO 实现上找“无参返回 List”的方法（findAll/getAll/loadAll）。
+        // 真机 AppDatabase 可能因混淆/改签名找不到 get()，故做多候选兼容：
+        //   优先试 AppDatabase，再试 Room 生成的 AppDatabase_Impl；
+        //   单例方法先 getMethod 再回退 getDeclaredMethod（连私有/包级也能拿）；
+        //   DAO 方法在实例上按返回类型扫；findAll 在 DAO 实现上找“无参返回 List”的方法。
         // 任何一步失败都整体降级为 get() 兜底，不影响主流程。
         appDb = null;
         daoGetter = null;
         daoFindAll = null;
         try {
-            Class<?> dbCls = Class.forName(appPkg + ".db.AppDatabase");
-            for (String m : new String[]{"get", "getInstance", "getDatabase", "getDb"}) {
+            Class<?> dbCls = null;
+            for (String c : new String[]{appPkg + ".db.AppDatabase", appPkg + ".db.AppDatabase_Impl"}) {
                 try {
-                    appDb = dbCls.getMethod(m).invoke(null);
-                    if (appDb != null) break;
+                    dbCls = Class.forName(c);
+                    if (dbCls != null) break;
                 } catch (Throwable ignored) {
                 }
             }
-            if (appDb != null) {
-                for (Method me : appDb.getClass().getMethods()) {
-                    if (me.getParameterCount() != 0) continue;
-                    if (me.getName().toLowerCase().contains("historydao")) {
-                        daoGetter = me;
-                        break;
+            if (dbCls != null) {
+                for (String m : new String[]{"get", "getInstance", "getDatabase", "getDb"}) {
+                    Method mm = null;
+                    try {
+                        mm = dbCls.getMethod(m);
+                    } catch (Throwable ignored) {
+                    }
+                    if (mm == null) {
+                        try {
+                            mm = dbCls.getDeclaredMethod(m);
+                            if (mm != null) mm.setAccessible(true);
+                        } catch (Throwable ignored) {
+                        }
+                    }
+                    if (mm != null) {
+                        try {
+                            appDb = mm.invoke(null);
+                            if (appDb != null) break;
+                        } catch (Throwable ignored) {
+                        }
                     }
                 }
-                if (daoGetter != null) {
-                    Object dao = daoGetter.invoke(appDb);
-                    if (dao != null) {
-                        for (Method me : dao.getClass().getMethods()) {
-                            if (me.getParameterCount() != 0) continue;
-                            if (!List.class.isAssignableFrom(me.getReturnType())) continue;
-                            String n = me.getName().toLowerCase();
-                            if (n.equals("findall") || n.equals("getall") || n.equals("loadall")) {
-                                daoFindAll = me;
-                                break;
+                if (appDb != null) {
+                    for (Method me : appDb.getClass().getMethods()) {
+                        if (me.getParameterCount() != 0) continue;
+                        if (me.getName().toLowerCase().contains("historydao")) {
+                            daoGetter = me;
+                            break;
+                        }
+                    }
+                    if (daoGetter != null) {
+                        Object dao = daoGetter.invoke(appDb);
+                        if (dao != null) {
+                            for (Method me : dao.getClass().getMethods()) {
+                                if (me.getParameterCount() != 0) continue;
+                                if (!List.class.isAssignableFrom(me.getReturnType())) continue;
+                                String n = me.getName().toLowerCase();
+                                if (n.equals("findall") || n.equals("getall") || n.equals("loadall")) {
+                                    daoFindAll = me;
+                                    break;
+                                }
                             }
                         }
                     }
@@ -268,17 +314,15 @@ public class WatchSync {
     // ---------------- 本地轮询（替代 FileObserver，更可靠） ----------------
 
     /**
-     * 本地轮询：每 3 秒比对一次本机记录快照，发生变化即触发 push。
-     * 取代 FileObserver 文件监听（真机上文件事件不可靠/不触发）。
+     * 本地轮询：每 3 秒比对一次本机记录快照，发生变化即触发统一同步流程。
      */
     private void pollLocal() {
         try {
             List<?> local = localHistoryFull();
             List<String> sig = snapshotOf(local);
             if (!sig.equals(lastSnapshot)) {
-                lastSnapshot = sig;
-                Logger.log("WatchSync > 本地记录变化(" + sig.size() + "条)，触发 push");
-                push();
+                Logger.log("WatchSync > 本地记录变化(" + sig.size() + "条)，触发同步");
+                pullAndPush();
             }
         } catch (Throwable t) {
             Logger.log("WatchSync > pollLocal err: " + t);
@@ -301,15 +345,296 @@ public class WatchSync {
 
     /**
      * 注册周期任务：
-     *   - 本地 3 秒轮询（push 触发）；
-     *   - 远端 30 秒拉取（pull）。
+     *   - 本地 3 秒轮询（本机记录变化触发同步）；
+     *   - 定时 30 秒拉取远端（统一走 pullAndPush）。
      */
     private void schedule() {
         scheduler.scheduleWithFixedDelay(this::pollLocal, PUSH_POLL_MS, PUSH_POLL_MS, TimeUnit.MILLISECONDS);
-        scheduler.scheduleWithFixedDelay(this::pull, PULL_PERIOD_SEC, PULL_PERIOD_SEC, TimeUnit.SECONDS);
+        scheduler.scheduleWithFixedDelay(() -> pullAndPush(), PULL_PERIOD_SEC, PULL_PERIOD_SEC, TimeUnit.SECONDS);
     }
 
-    // ---------------- 工具 ----------------
+    // -------------------- 统一同步流程 pullAndPush --------------------
+
+    /**
+     * 统一同步（新增、更新、删除都走这里），替代旧的 push / pull / reconcile：
+     * <ol>
+     *   <li>读取本地记录，与 {@code localSnap} 对比，对"上次有、现在没有"的片名生成本地墓碑；</li>
+     *   <li>读取远端记录（records + tombstones）；</li>
+     *   <li>合并本地与远端（墓碑与记录都按「新者胜」比时间戳）；</li>
+     *   <li>把合并结果写回远端（含墓碑，records 上限 {@link #REMOTE_MAX}，墓碑按 {@link #TOMBSTONE_TTL_MS} 裁剪）；</li>
+     *   <li>合并结果落到本地：墓碑命中的用 historyDel 删除，记录用 historySync 增/改。</li>
+     * </ol>
+     */
+    private void pullAndPush() {
+        try {
+            // ===== 1. 读本地记录，与 localSnap 对比，生成墓碑 =====
+            List<?> local = localHistoryFull();                    // 本机全量
+            Set<String> currentLocal = new HashSet<>();            // 当前本机片名
+            for (Object o : local) {
+                String n = vodNameOf(o);
+                if (!n.isEmpty()) currentLocal.add(n);
+            }
+            long now = System.currentTimeMillis();
+            Map<String, Long> myTombs = new HashMap<>();
+            for (String n : localSnap) {                            // 上次同步时本机有、现在没了 → 本机删除
+                if (!currentLocal.contains(n)) {
+                    myTombs.put(n, now);
+                    Logger.log("WatchSync > 检测到本机删除，生成墓碑: " + n);
+                }
+            }
+
+            // ===== 2. 读远端记录 =====
+            String raw = readRemote();
+            if (raw == null) {
+                Logger.log("WatchSync > pullAndPush: 远端读取失败");
+                return;
+            }
+            RemoteData rd = parseRemote(raw);
+
+            // ===== 3. 合并（history 与 tombstone 都按新者胜）=====
+            RemoteData merged = mergeAll(local, myTombs, rd);
+
+            // ===== 4. 推送合并结果到远端（含墓碑）=====
+            String json = serialize(merged);
+            if (!json.equals(raw)) {                                 // 内容变了才写，减少写放大
+                writeRemote(json);
+            }
+
+            // ===== 5. 合并结果本地入库：墓碑命中删除 + records 增/改 =====
+            applyLocal(merged, currentLocal);
+
+            // 更新基线
+            lastSnapshot = snapshotOf(localHistoryFull());           // 同步后的本地状态作为轮询基线
+            Logger.log("WatchSync > pullAndPush 完成：records=" + merged.records.length() + " 墓碑=" + merged.tombstones.size());
+        } catch (Throwable t) {
+            Logger.log("WatchSync > pullAndPush err: " + t);
+        }
+    }
+
+    /** 初始化 localSnap 基线：以当前本地历史片名为基准（首次同步后调用，用于后续生成删除墓碑）。 */
+    private void initLocalSnap() {
+        try {
+            Set<String> s = namesOf(localHistoryFull());
+            localSnap.clear();
+            localSnap.addAll(s);
+            Logger.log("WatchSync > 初始化 localSnap 基线：本地 " + s.size() + " 条");
+        } catch (Throwable t) {
+            Logger.log("WatchSync > initLocalSnap err: " + t);
+        }
+    }
+
+    /** 把合并结果应用到本地：墓碑命中的删除，records 的用 historySync 增/改。 */
+    private void applyLocal(RemoteData merged, Set<String> currentLocal) {
+        // 5a. 墓碑命中 → 删除本地同名记录（historyDel）
+        if (histDel != null && !merged.tombstones.isEmpty()) {
+            for (String n : merged.tombstones.keySet()) {
+                try {
+                    Object locals = historyFindByName.invoke(null, n);
+                    List<?> list = locals == null ? new ArrayList<>() : (List<?>) locals;
+                    for (Object it : list) {
+                        histDel.invoke(it);
+                    }
+                    if (!list.isEmpty()) {
+                        Logger.log("WatchSync > 墓碑删除本地记录: " + n);
+                        currentLocal.remove(n);
+                    }
+                } catch (Throwable t) {
+                    Logger.log("WatchSync > 墓碑删除本地 err (" + n + "): " + t);
+                }
+            }
+        }
+        // 5b. records → 入库（historySync 自带 createTime 新者胜 + 进度保护）
+        List<Object> mine = new ArrayList<>();
+        for (int i = 0; i < merged.records.length(); i++) {
+            JSONObject wrap = merged.records.optJSONObject(i);
+            if (wrap == null) continue;
+            JSONObject rec = wrap.optJSONObject("history");
+            if (rec == null) continue;
+            if (!canSafeMerge(rec)) continue;                        // 进度保护：无进度记录不覆盖本地有进度记录
+            Object obj = historyObjectFrom.invoke(null, rec.toString());
+            if (obj != null) {
+                mine.add(obj);
+                String nn = vodNameOf(obj);
+                if (!nn.isEmpty()) currentLocal.add(nn);
+            }
+        }
+        if (!mine.isEmpty()) {
+            historySync.invoke(null, mine);
+        }
+        // 把应用后的本地片名同步回 localSnap，作为下次墓碑生成基线
+        localSnap.clear();
+        localSnap.addAll(currentLocal);
+    }
+
+    /**
+     * 合并：本地 + 远端（records 与 tombstones 都按「新者胜」比时间戳）。
+     * 对每个片名，比较记录 createTime 与墓碑删除时间，谁大谁赢：
+     * 记录胜 → 保留该记录（复活）；墓碑胜 → 标记删除（本地删 + 远端留墓碑）。
+     */
+    private RemoteData mergeAll(List<?> local, Map<String, Long> myTombs, RemoteData rd) {
+        // 片名 -> 新者 createTime / 对应 history JSON
+        Map<String, Long> histTime = new LinkedHashMap<>();
+        Map<String, JSONObject> histJson = new LinkedHashMap<>();
+        // 片名 -> 新者墓碑时间
+        Map<String, Long> tombTime = new LinkedHashMap<>();
+
+        // 本地 history（同名取 createTime 较新者）
+        for (Object o : local) {
+            String n = vodNameOf(o);
+            if (n.isEmpty()) continue;
+            JSONObject h = historyToJson(o);
+            if (h == null) continue;
+            long t = h.optLong("createTime", 0L);
+            if (!histTime.containsKey(n) || t > histTime.get(n)) {
+                histTime.put(n, t);
+                histJson.put(n, h);
+            }
+        }
+        // 远端 history（同名取 createTime 较新者）
+        for (int i = 0; i < rd.records.length(); i++) {
+            JSONObject wrap = rd.records.optJSONObject(i);
+            if (wrap == null) continue;
+            JSONObject h = wrap.optJSONObject("history");
+            if (h == null) continue;
+            String n = nameFromHistory(h);
+            if (n.isEmpty()) continue;
+            long t = h.optLong("createTime", 0L);
+            if (!histTime.containsKey(n) || t > histTime.get(n)) {
+                histTime.put(n, t);
+                histJson.put(n, h);
+            }
+        }
+        // 本机墓碑（本次生成）
+        for (Map.Entry<String, Long> e : myTombs.entrySet()) {
+            String n = e.getKey();
+            long t = e.getValue();
+            if (!tombTime.containsKey(n) || t > tombTime.get(n)) tombTime.put(n, t);
+        }
+        // 远端墓碑
+        for (Map.Entry<String, Long> e : rd.tombstones.entrySet()) {
+            String n = e.getKey();
+            long t = e.getValue();
+            if (!tombTime.containsKey(n) || t > tombTime.get(n)) tombTime.put(n, t);
+        }
+
+        // 新者胜
+        RemoteData out = new RemoteData();
+        Set<String> names = new LinkedHashSet<>();
+        names.addAll(histTime.keySet());
+        names.addAll(tombTime.keySet());
+        long now = System.currentTimeMillis();
+        for (String n : names) {
+            if (n.isEmpty()) continue;
+            Long ht = histTime.get(n);
+            Long tt = tombTime.get(n);
+            if (ht != null && (tt == null || ht >= tt)) {
+                // 记录胜（含平手取记录）→ 保留历史，丢弃墓碑
+                try {
+                    JSONObject wrap = new JSONObject();
+                    wrap.put("history", histJson.get(n));
+                    out.records.put(wrap);
+                } catch (Throwable ignored) {
+                }
+            } else if (tt != null && now - tt <= TOMBSTONE_TTL_MS) {
+                // 墓碑胜 → 删除；仅保留未过 TTL 的墓碑，避免无限累积
+                out.tombstones.put(n, tt);
+            }
+        }
+        return capRecords(out);
+    }
+
+    /** 远端 records 上限 {@link #REMOTE_MAX}：按 createTime 新→旧只保留最新 {@link #REMOTE_MAX} 条。 */
+    private RemoteData capRecords(RemoteData rd) {
+        if (rd.records.length() <= REMOTE_MAX) return rd;
+        List<Integer> order = new ArrayList<>();
+        for (int i = 0; i < rd.records.length(); i++) order.add(i);
+        order.sort((a, b) -> Long.compare(createTimeOf(rd.records.optJSONObject(a)), createTimeOf(rd.records.optJSONObject(b))));
+        JSONArray cap = new JSONArray();
+        int start = Math.max(0, order.size() - REMOTE_MAX);
+        for (int i = start; i < order.size(); i++) cap.put(rd.records.optJSONObject(order.get(i)));
+        Logger.log("WatchSync > 远端记录超出" + REMOTE_MAX + "条，保留最新" + cap.length() + "条（冲掉" + (order.size() - cap.length()) + "条最旧）");
+        rd.records = cap;
+        return rd;
+    }
+
+    /** 取一条 wrap（含 {"history":{...}}）里 history 的 createTime。 */
+    private long createTimeOf(JSONObject wrap) {
+        if (wrap == null) return 0;
+        JSONObject h = wrap.optJSONObject("history");
+        return h == null ? 0 : h.optLong("createTime", 0L);
+    }
+
+    /** 从一条 history 记录里取片名（兼容 vodName / vod_name 两种字段名）。 */
+    private String nameFromHistory(JSONObject h) {
+        if (h == null) return "";
+        String n = h.optString("vodName", "");
+        if (n.isEmpty()) n = h.optString("vod_name", "");
+        return n;
+    }
+
+    // ---------------- 远端文件解析 / 序列化 ----------------
+
+    /** 解析远端文件为 RemoteData（records + tombstones）。兼容旧格式（裸 JSON 数组当 records）。 */
+    private RemoteData parseRemote(String raw) {
+        RemoteData rd = new RemoteData();
+        if (raw == null || raw.trim().isEmpty()) return rd;
+        try {
+            String s = raw.trim();
+            if (s.startsWith("{")) {
+                JSONObject obj = new JSONObject(s);
+                JSONArray recs = obj.optJSONArray("records");
+                if (recs != null) rd.records = recs;
+                JSONObject tb = obj.optJSONObject("tombstones");
+                if (tb != null) {
+                    Iterator<String> it = tb.keys();
+                    while (it.hasNext()) {
+                        String k = it.next();
+                        rd.tombstones.put(k, tb.optLong(k, 0L));
+                    }
+                }
+            } else {
+                // 旧格式：裸数组 [{"history":...}]（也可能是旧墓碑数组，这里只取 history）
+                JSONArray arr = new JSONArray(s);
+                for (int i = 0; i < arr.length(); i++) {
+                    JSONObject item = arr.optJSONObject(i);
+                    if (item != null && item.optJSONObject("history") != null) {
+                        rd.records.put(item);
+                    }
+                }
+            }
+        } catch (Throwable t) {
+            Logger.log("WatchSync > parseRemote 失败，按空处理: " + t);
+        }
+        return rd;
+    }
+
+    /** 序列化 RemoteData 为远端 JSON 文本（{"records":[...],"tombstones":{...}}）。 */
+    private String serialize(RemoteData rd) {
+        try {
+            JSONObject obj = new JSONObject();
+            obj.put("records", rd.records);
+            JSONObject tb = new JSONObject();
+            for (Map.Entry<String, Long> e : rd.tombstones.entrySet()) tb.put(e.getKey(), e.getValue());
+            obj.put("tombstones", tb);
+            return obj.toString();
+        } catch (Throwable t) {
+            Logger.log("WatchSync > serialize err: " + t);
+            return "{\"records\":[],\"tombstones\":{}}";
+        }
+    }
+
+    // ---------------- 本机数据读取 ----------------
+
+    /** 取列表里所有非空片名集合。 */
+    private Set<String> namesOf(List<?> list) {
+        Set<String> set = new HashSet<>();
+        if (list == null) return set;
+        for (Object o : list) {
+            String n = vodNameOf(o);
+            if (!n.isEmpty()) set.add(n);
+        }
+        return set;
+    }
 
     /** 退化路径：History.get()（受 LIMIT 60 截断，仅当 findAll 反射不可用时使用）。 */
     private List<Object> localHistoryFallback() {
@@ -409,178 +734,7 @@ public class WatchSync {
         }
     }
 
-    // ---------------- 推送 ----------------
-
-    /**
-     * 把本机当前记录合并进远端文件。
-     * 因删除同步已移除，这里只做「记录并集」（远端 + 本机，同名取 createTime 较新），不再生成任何墓碑。
-     */
-    //todo pull和push两个方法归一成统一流程pullAndPush：1、读取本地记录，与localSnap对比，生成本地墓碑记录。2、读取远端记录。3、合并本地和远端记录，不管是墓碑还是历史记录，都按照新者胜规则合并。4、推送合并结果到远端（含墓碑）。5、合并结果本地入库，使用historySync和HistroryDel。
-    private void push() {
-        try {
-            List<?> local = localHistoryFull();   // 本机全量（findAll，非 60 条）
-            String raw = readRemote();
-            String json = merge(local, raw);
-            // 内容未变化则不重写远端，避免 30s 周期与 FileObserver 互相放大的写抖动
-            if (json.equals(raw)) return;
-            writeRemote(json);
-        } catch (Throwable t) {
-            Logger.log("WatchSync > push err: " + t);
-        }
-    }
-
-
-    /**
-     * 合并本机与远端，生成待写入远端的 JSON 数组。
-     * <ul>
-     *   <li>取两端记录的<b>并集</b>（远端 + 本机）。</li>
-     *   <li>同名记录按 createTime 取较新者：远端与本地谁新谁赢，杜绝旧记录把新记录打回。</li>
-     * </ul>
-     */
-    private String merge(List<?> local, String raw) throws Exception {
-        // 片名 -> 最佳 wrap；同片名时用 createTime 决定谁胜出
-        Map<String, JSONObject> chosen = new LinkedHashMap<>();
-        Map<String, Long> chosenTime = new HashMap<>();
-
-        // 远端 history
-        if (raw != null && !raw.trim().isEmpty()) {
-            try {
-                JSONArray remote = new JSONArray(raw);
-                for (int i = 0; i < remote.length(); i++) {
-                    JSONObject item = remote.optJSONObject(i);
-                    if (item == null) continue;
-                    JSONObject rec = item.optJSONObject("history");
-                    if (rec == null) continue;
-                    String n = nameFromHistory(rec);
-                    if (n.isEmpty()) continue;
-                    long t = rec.optLong("createTime", 0L);
-                    if (!chosen.containsKey(n) || t > chosenTime.get(n)) {
-                        chosen.put(n, item);
-                        chosenTime.put(n, t);
-                    }
-                }
-            } catch (Throwable t) {
-                Logger.log("WatchSync > merge: 远端解析失败，按空处理: " + t);
-            }
-        }
-
-        // 本机 history（同名时仅当 createTime 更晚才替换远端那条）
-        for (Object o : local) {
-            String n = vodNameOf(o);
-            if (n.isEmpty()) continue;
-            JSONObject histJson = historyToJson(o);
-            if (histJson == null) continue;
-            long t = histJson.optLong("createTime", 0L);
-            if (!chosen.containsKey(n) || t > chosenTime.get(n)) {
-                JSONObject wrap = new JSONObject();
-                wrap.put("history", histJson);
-                chosen.put(n, wrap);
-                chosenTime.put(n, t);
-            }
-        }
-
-        JSONArray merged = new JSONArray();
-        for (JSONObject w : chosen.values()) merged.put(w);
-        return capToLatest(merged).toString();
-    }
-
-    /**
-     * 远端最多保留 {@link #REMOTE_MAX} 条记录：按每条记录的 createTime 新→旧排序，
-     * 只保留最新的 {@link #REMOTE_MAX} 条，超出部分（最旧的）直接冲掉。
-     */
-    private JSONArray capToLatest(JSONArray merged) {
-        try {
-            if (merged.length() <= REMOTE_MAX) return merged;
-            // 索引按 createTime 升序（旧→新）排序，再取尾部（最新）REMOTE_MAX 条
-            List<Integer> order = new ArrayList<>();
-            for (int i = 0; i < merged.length(); i++) order.add(i);
-            order.sort((a, b) -> Long.compare(createTimeOf(merged.optJSONObject(a)), createTimeOf(merged.optJSONObject(b))));
-            JSONArray out = new JSONArray();
-            int start = Math.max(0, order.size() - REMOTE_MAX);
-            for (int i = start; i < order.size(); i++) out.put(merged.optJSONObject(order.get(i)));
-            Logger.log("WatchSync > 远端超出" + REMOTE_MAX + "条，保留最新" + out.length() + "条（冲掉" + (merged.length() - out.length()) + "条最旧）");
-            return out;
-        } catch (Throwable t) {
-            Logger.log("WatchSync > capToLatest err: " + t);
-            return merged;
-        }
-    }
-
-    /** 取一条 wrap 对象（含 {"history":{...}}）里 history 的 createTime。 */
-    private long createTimeOf(JSONObject wrap) {
-        if (wrap == null) return 0;
-        JSONObject h = wrap.optJSONObject("history");
-        return h == null ? 0 : h.optLong("createTime", 0L);
-    }
-
-    /** 从一条 history 记录里取片名（兼容 vodName / vod_name 两种字段名）。 */
-    private String nameFromHistory(JSONObject h) {
-        if (h == null) return "";
-        String n = h.optString("vodName", "");
-        if (n.isEmpty()) n = h.optString("vod_name", "");
-        return n;
-    }
-
-    // ---------------- 拉取 ----------------
-
-    /**
-     * 周期拉取远端记录并应用到本机：
-     * 读远端 → 进度保护过滤 → 用 History.sync() 并入本机 → 收敛对账（把本机新增记录也并回远端）。
-     * 不再解析/应用任何墓碑。
-     */
-    private void pull() {
-        try {
-            String raw = readRemote();
-            if (raw == null) {
-                Logger.log("WatchSync > pull: 远端读取失败");
-                return;
-            }
-            if (raw.trim().isEmpty()) {
-                raw = "[]";
-            }
-
-            List<Object> mine = new ArrayList<>();
-            JSONArray arr = new JSONArray(raw);
-            for (int i = 0; i < arr.length(); i++) {
-                JSONObject wrap = arr.optJSONObject(i);
-                if (wrap == null) continue;
-                // todo 这里也要记录墓碑记录
-                JSONObject rec = wrap.optJSONObject("history");
-                if (rec == null) continue;
-                String n = nameFromHistory(rec);
-                if (n.isEmpty()) continue;
-                if (!canSafeMerge(rec)) continue;           // 进度保护：无进度记录不覆盖本地有进度记录
-                Object obj = historyObjectFrom.invoke(null, rec.toString());
-                if (obj != null) mine.add(obj);
-            }
-
-            Logger.log("WatchSync > pull 完成，远端总数=" + arr.length() + " 属于本用户=" + mine.size());
-            if (!mine.isEmpty()) {
-                historySync.invoke(null, mine);
-            }
-            reconcile(raw);
-        } catch (Throwable t) {
-            Logger.log("WatchSync > pull err: " + t);
-        }
-    }
-
-    /**
-     * 收敛对账：把本机记录也并回远端（保证本机新增/更新能及时同步到其他设备），
-     * 仅在远端内容真正变化时写回。
-     */
-    //todo 按照新的pushAndPull流程，这个应该不需要了。
-    private void reconcile(String raw) {
-        try {
-            List<?> local = localHistoryFull();
-            String merged = merge(local, raw);
-            // 语义比较：只有内容真变了才写，避免 JSON 顺序/空列表导致的无意义重写
-            if (!merged.equals(raw)) {
-                writeRemote(merged);
-            }
-        } catch (Throwable t) {
-            Logger.log("WatchSync > 对账 err: " + t);
-        }
-    }
+    // ---------------- 进度保护 ----------------
 
     /** 判断远端记录是否“有进度可保存”，用于进度保护。 */
     private boolean hasProgress(Object hist) {
@@ -598,7 +752,7 @@ public class WatchSync {
     }
 
     /**
-     * 拉取前的安全合并判断：
+     * 入库前的安全合并判断：
      * 远端记录无进度（如仅点开未播放）时，不允许覆盖本机“已有进度”的同名记录，避免进度倒退。
      */
     private boolean canSafeMerge(JSONObject rec) {
