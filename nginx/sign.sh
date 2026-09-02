@@ -631,6 +631,8 @@ config_danmu_api() {
                 proxy_pass '"$(cat "$CONFIG_FILE" | grep -o "http://([0-9]{1,3}\.){3}[0-9]{1,3}(:[0-9]{1,5})?/tvbox" | head -n1)"';
                 proxy_set_header Accept-Encoding "";
                 sub_filter "DOCKER_ADDRESS" $client_scheme://$http_host;
+                # 用户名占位符替换：从 URL 的 ?user=alice 取 alice，替换配置里的 WATCH_HIST_USER
+                sub_filter "WATCH_HIST_USER" $arg_user;
                 sub_filter "DANMU_API" '"$DANMU_API"';
                 sub_filter_once off;
                 sub_filter_types *;
