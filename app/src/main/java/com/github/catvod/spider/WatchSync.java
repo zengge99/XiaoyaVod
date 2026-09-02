@@ -105,6 +105,7 @@ public class WatchSync {
         this.drive = drive;
         this.username = username == null ? "" : username;
         // 每用户一个远端文件：避免多用户共享单文件互相干扰（如 watch.txt -> watch.<username>.txt）
+        //todo syncPath要考虑目录不存在的情况，需要递归创建目录。
         this.syncPath = isolatedPath(syncPath, this.username);
     }
 
