@@ -109,7 +109,6 @@ public class WatchSync {
         this.username = username == null ? "" : username;
         // 每用户一个远端文件：避免多用户共享单文件互相干扰（如 watch.txt -> watch.<username>.txt）
         this.syncPath = isolatedPath(syncPath, this.username);
-        this.alistCid = currentCid();
         ensureRemoteDir();
     }
 
@@ -265,6 +264,7 @@ public class WatchSync {
                     }
                 }
             }
+            this.alistCid = currentCid();
             Logger.log("WatchSync > AppDatabase.findAll 反射就绪: " + (daoFindAll != null));
         } catch (Throwable t) {
             Logger.log("WatchSync > AppDatabase 反射失败，将退化为 get() 兜底: " + t);
@@ -326,7 +326,7 @@ public class WatchSync {
             if (this.alistCid != currentCid()) {
                 return;
             }
-            
+
             List<?> local = localHistoryFull();
             List<String> sig = snapshotOf(local);
             if (!sig.equals(lastSnapshot)) {
