@@ -105,7 +105,7 @@ public class WatchSync {
         this.drive = drive;
         this.username = username == null ? "" : username;
         // 每用户一个远端文件：避免多用户共享单文件互相干扰（如 watch.txt -> watch.<username>.txt）
-        //todo syncPath要考虑目录不存在的情况，需要递归创建目录。
+        // 远端目录可能不存在：写入前由 ensureRemoteDir() 递归创建（见 writeRemote）
         this.syncPath = isolatedPath(syncPath, this.username);
     }
 
@@ -793,12 +793,30 @@ public class WatchSync {
      */
     private void writeRemote(String json) {
         try {
+            ensureRemoteDir();
             String b64 = android.util.Base64.encodeToString(json.getBytes(StandardCharsets.UTF_8), android.util.Base64.NO_WRAP);
             String cmd = "printf '%s' '" + b64 + "' | base64 -d > \"" + syncPath + ".tmp\" && mv \"" + syncPath + ".tmp\" \"" + syncPath + "\"";
             String res = drive.exec(cmd);
             Logger.log("WatchSync > writeRemote: 已写入 " + syncPath + "（json长度=" + json.length() + "，exec返回=[" + res + "]）");
         } catch (Throwable t) {
             Logger.log("WatchSync > write err: " + t);
+        }
+    }
+
+    /**
+     * 确保远端 syncPath 所在目录存在（递归创建）。
+     * 目录不存在时 mkdir -p 会连同父目录一并创建；已存在则直接成功（幂等）。
+     */
+    private void ensureRemoteDir() {
+        try {
+            int slash = syncPath.lastIndexOf('/');
+            if (slash < 0) return;                     // 无目录层级（如 watch.alice.txt 直接在根下）
+            String dir = syncPath.substring(0, slash);
+            if (dir.isEmpty()) return;
+            String res = drive.exec("mkdir -p \"" + dir + "\"");
+            Logger.log("WatchSync > ensureRemoteDir: " + dir + " res=[" + res + "]");
+        } catch (Throwable t) {
+            Logger.log("WatchSync > ensureRemoteDir err: " + t);
         }
     }
 }
