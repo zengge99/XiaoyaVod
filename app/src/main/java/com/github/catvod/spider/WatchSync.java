@@ -107,6 +107,7 @@ public class WatchSync {
     private Method histGetVodName;          // History.getVodName()
     private Method historySave;             // History.save() —— 单条写入（与宿主一致）
     private Method histSetCid;              // History.setCid(int) —— 锚定 cid
+    private Method historySync;             // History.sync(List) —— 仅用于末尾借"空列表"触发界面刷新（不写数据）
 
     private Method vodConfigVod;            // 候选2: Config.vod() -> 当前 vod 配置实例（OK影视等魔改壳）
     private Method configGetId;             // 候选2: Config.getId() -> 当前配置 id（即锚定的 cid）
@@ -196,6 +197,7 @@ public class WatchSync {
         // histSetCid 用于锚定 cid；墓碑删除仍保留 SQL 直删。
         historySave = historyClass.getMethod("save");
         histSetCid = historyClass.getMethod("setCid", int.class);
+        historySync = historyClass.getMethod("sync", List.class);
 
         // 本机全量历史改为 SQLite 直读（见 localHistoryFull()），不再走 AppDatabase/DAO 反射：
         // 反编译确认宿主 AppDatabase/DAO 被 R8 彻底混淆（get()→n()、findAll 改名、DAO→q3/*），
@@ -510,6 +512,13 @@ public class WatchSync {
             if (saveHistory(rec)) saved++;
         }
         if (saved > 0) Logger.log("WatchSync > 本地入库 " + saved + " 条（History.save() + 手工去重）");
+        // 借 OK影视 sync(空列表) 末尾的刷新广播，触发界面自动刷新（空列表不写任何数据）
+        try {
+            historySync.invoke(null, java.util.Collections.emptyList());
+            Logger.log("WatchSync > 已借 sync(空列表) 触发界面刷新");
+        } catch (Throwable t) {
+            Logger.log("WatchSync > 触发刷新失败: " + t);
+        }
         // 应用完之后的本地库才是真基线 → 统一走 refreshLocalSnap()（与初始化同一函数）
         refreshLocalSnap();
     }
