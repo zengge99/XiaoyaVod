@@ -105,7 +105,8 @@ public class WatchSync {
     private Method historyGet;              // History.get() -> 最近 60 条（仅兜底，读路径用）
     private Method historyObjectFrom;       // History.objectFrom(String) -> History（读路径构造用）
     private Method histGetVodName;          // History.getVodName()
-    private Method historySync;             // History.sync(List) —— 与原版一致：同名可合并记录mergeFrom+删除+save，天然清理重复
+    private Method historySave;             // History.save() —— 单条写入（与宿主一致）
+    private Method histSetCid;              // History.setCid(int) —— 锚定 cid
 
     private Method vodConfigVod;            // 候选2: Config.vod() -> 当前 vod 配置实例（OK影视等魔改壳）
     private Method configGetId;             // 候选2: Config.getId() -> 当前配置 id（即锚定的 cid）
@@ -190,10 +191,11 @@ public class WatchSync {
         historyGet = historyClass.getMethod("get");
         historyObjectFrom = historyClass.getMethod("objectFrom", String.class);
         histGetVodName = historyClass.getMethod("getVodName");
-        // 本地写入使用 History.sync(List)：走宿主自身的"同名合并清理"逻辑（mergeFrom + delete 旧同名 + save），
-        // 与宿主原版行为完全一致，天然避免"同名不同 key"重复（时长差10分钟内判定为同一条）。
-        // 墓碑删除仍保留 SQL 直删。sync() 内部会把 cid 置为当前配置 cid，与本实例锚定分区读取口径一致（守卫已保证当前==锚定）。
-        historySync = historyClass.getMethod("sync", List.class);
+        // 本地写入用 History.save()（单条）；复制的去重逻辑在 applyLocal 里手工做（与 sync() 的 shouldMerge 判定一致：
+        // 同名 + 双方 duration>0 + 时长差<=10分钟 → 视为同一条，写前先删旧再 save 新），避免同名不同 key 重复。
+        // histSetCid 用于锚定 cid；墓碑删除仍保留 SQL 直删。
+        historySave = historyClass.getMethod("save");
+        histSetCid = historyClass.getMethod("setCid", int.class);
 
         // 本机全量历史改为 SQLite 直读（见 localHistoryFull()），不再走 AppDatabase/DAO 反射：
         // 反编译确认宿主 AppDatabase/DAO 被 R8 彻底混淆（get()→n()、findAll 改名、DAO→q3/*），
@@ -497,35 +499,71 @@ public class WatchSync {
                 if (db != null && db.isOpen()) try { db.close(); } catch (Throwable ignored) {}
             }
         }
-        // 5b. records → 用 History.sync(List) 写（宿主自身逻辑：同名合并清理 + 删除旧同名 + save，天然去重）
-        List<Object> mine = new ArrayList<>();
+        // 5b. records → 用 History.save() 单条写；写前手工去重（逻辑与 sync() 的 shouldMerge 判定一致）
+        int saved = 0;
         for (int i = 0; i < merged.records.length(); i++) {
             JSONObject wrap = merged.records.optJSONObject(i);
             if (wrap == null) continue;
             JSONObject rec = wrap.optJSONObject("history");
             if (rec == null) continue;
             if (!canSafeMerge(rec)) continue;                        // 进度保护：无进度记录不覆盖本地有进度记录
-            try {
-                Object hist = historyObjectFrom.invoke(null, rec.toString());
-                if (hist != null) mine.add(hist);
-            } catch (Throwable t) {
-                Throwable c = t;
-                while (c instanceof java.lang.reflect.InvocationTargetException && c.getCause() != null) c = c.getCause();
-                Logger.log("WatchSync > historyObjectFrom err: " + c);
-            }
+            if (saveHistory(rec)) saved++;
         }
-        if (!mine.isEmpty()) {
-            try {
-                historySync.invoke(null, mine);
-                Logger.log("WatchSync > 本地入库 " + mine.size() + " 条（History.sync() 走宿主同名合并清理）");
-            } catch (Throwable t) {
-                Throwable c = t;
-                while (c instanceof java.lang.reflect.InvocationTargetException && c.getCause() != null) c = c.getCause();
-                Logger.log("WatchSync > historySync err: " + c);
-            }
-        }
+        if (saved > 0) Logger.log("WatchSync > 本地入库 " + saved + " 条（History.save() + 手工去重）");
         // 应用完之后的本地库才是真基线 → 统一走 refreshLocalSnap()（与初始化同一函数）
         refreshLocalSnap();
+    }
+
+    /**
+     * 写入一条并手工去重：逻辑与 History.sync() 的 shouldMerge 判定一致——
+     * 先查找本地（锚定 cid）同名记录，凡是「双方 duration>0 且时长差<=10分钟」的都视为同一条（不同 key 的旧版本）删除，
+     * 再 setCid(anchorCid).save() 写入当前这条。这样避免同名不同 key 记录并存导致的重复显示。
+     */
+    private boolean saveHistory(JSONObject rec) {
+        String name = rec.optString("vodName", "");
+        long dur = rec.optLong("duration", 0L);
+        dedupLocal(name, dur);                                       // 手工去重（抄 sync 判定）
+        try {
+            Object hist = historyObjectFrom.invoke(null, rec.toString());
+            if (hist == null) return false;
+            histSetCid.invoke(hist, anchorCid);                      // 锚定 cid
+            historySave.invoke(hist);                                // 单条保存
+            return true;
+        } catch (Throwable t) {
+            Throwable c = t;
+            while (c instanceof java.lang.reflect.InvocationTargetException && c.getCause() != null) c = c.getCause();
+            Logger.log("WatchSync > saveHistory err: " + c);
+            return false;
+        }
+    }
+
+    /** 手工去重：删除本地（锚定 cid）与指定片名/时长同一条的旧记录（判定与 sync 的 shouldMerge 一致）。 */
+    private void dedupLocal(String name, long dur) {
+        if (name.isEmpty()) return;
+        SQLiteDatabase db = null;
+        Cursor cur = null;
+        try {
+            File dbf = context.getDatabasePath("tv");
+            if (dbf == null || !dbf.exists()) return;
+            db = SQLiteDatabase.openDatabase(dbf.getPath(), null, SQLiteDatabase.OPEN_READWRITE);
+            cur = db.rawQuery("SELECT \"key\", duration FROM History WHERE cid = ? AND vodName = ?",
+                    new String[]{String.valueOf(anchorCid), name});
+            while (cur.moveToNext()) {
+                String k = cur.getString(0);
+                long ldur = cur.getLong(1);
+                if (k == null) continue;
+                // sync 的 mergeFrom 判定：force=true 忽略 key 是否相同；仅要求双方 duration>0 且时长差<=10分钟
+                if (dur > 0 && ldur > 0 && Math.abs(dur - ldur) <= TimeUnit.MINUTES.toMillis(10)) {
+                    int del = db.delete("History", "cid = ? AND \"key\" = ?", new String[]{String.valueOf(anchorCid), k});
+                    if (del > 0) Logger.log("WatchSync > 去重删除旧同名记录: " + name);
+                }
+            }
+        } catch (Throwable t) {
+            Logger.log("WatchSync > dedupLocal err: " + t);
+        } finally {
+            if (cur != null) try { cur.close(); } catch (Throwable ignored) {}
+            if (db != null && db.isOpen()) try { db.close(); } catch (Throwable ignored) {}
+        }
     }
 
     /**
