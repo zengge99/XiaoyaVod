@@ -105,8 +105,7 @@ public class WatchSync {
     private Method historyGet;              // History.get() -> 最近 60 条（仅兜底，读路径用）
     private Method historyObjectFrom;       // History.objectFrom(String) -> History（读路径构造用）
     private Method histGetVodName;          // History.getVodName()
-    private Method histSetCid;              // History.setCid(int) —— 方案2：锚定 cid
-    private Method historySave;             // History.save() —— 方案2：走Room连接写，触发UI自动刷新
+    private Method historySync;             // History.sync(List) —— 与原版一致：同名可合并记录mergeFrom+删除+save，天然清理重复
 
     private Method vodConfigVod;            // 候选2: Config.vod() -> 当前 vod 配置实例（OK影视等魔改壳）
     private Method configGetId;             // 候选2: Config.getId() -> 当前配置 id（即锚定的 cid）
@@ -191,10 +190,10 @@ public class WatchSync {
         historyGet = historyClass.getMethod("get");
         historyObjectFrom = historyClass.getMethod("objectFrom", String.class);
         histGetVodName = historyClass.getMethod("getVodName");
-        // 方案2：本地写入改回走 Room 连接（History.save()），以触发 UI 自动刷新；setCid 用于锚定 cid。
-        // 不用 History.sync()（会强制把 cid 改成当前配置的 cid，破坏锚定）；墓碑删除保留 SQL 直删。
-        histSetCid = historyClass.getMethod("setCid", int.class);
-        historySave = historyClass.getMethod("save");
+        // 本地写入使用 History.sync(List)：走宿主自身的"同名合并清理"逻辑（mergeFrom + delete 旧同名 + save），
+        // 与宿主原版行为完全一致，天然避免"同名不同 key"重复（时长差10分钟内判定为同一条）。
+        // 墓碑删除仍保留 SQL 直删。sync() 内部会把 cid 置为当前配置 cid，与本实例锚定分区读取口径一致（守卫已保证当前==锚定）。
+        historySync = historyClass.getMethod("sync", List.class);
 
         // 本机全量历史改为 SQLite 直读（见 localHistoryFull()），不再走 AppDatabase/DAO 反射：
         // 反编译确认宿主 AppDatabase/DAO 被 R8 彻底混淆（get()→n()、findAll 改名、DAO→q3/*），
@@ -498,39 +497,35 @@ public class WatchSync {
                 if (db != null && db.isOpen()) try { db.close(); } catch (Throwable ignored) {}
             }
         }
-        // 5b. records → 用应用自身 History.save() 写（走 Room 连接，触发 UI 自动刷新）
-        int saved = 0;
+        // 5b. records → 用 History.sync(List) 写（宿主自身逻辑：同名合并清理 + 删除旧同名 + save，天然去重）
+        List<Object> mine = new ArrayList<>();
         for (int i = 0; i < merged.records.length(); i++) {
             JSONObject wrap = merged.records.optJSONObject(i);
             if (wrap == null) continue;
             JSONObject rec = wrap.optJSONObject("history");
             if (rec == null) continue;
             if (!canSafeMerge(rec)) continue;                        // 进度保护：无进度记录不覆盖本地有进度记录
-            if (saveHistory(rec)) saved++;
+            try {
+                Object hist = historyObjectFrom.invoke(null, rec.toString());
+                if (hist != null) mine.add(hist);
+            } catch (Throwable t) {
+                Throwable c = t;
+                while (c instanceof java.lang.reflect.InvocationTargetException && c.getCause() != null) c = c.getCause();
+                Logger.log("WatchSync > historyObjectFrom err: " + c);
+            }
         }
-        if (saved > 0) Logger.log("WatchSync > 本地入库 " + saved + " 条（History.save() 走 Room）");
+        if (!mine.isEmpty()) {
+            try {
+                historySync.invoke(null, mine);
+                Logger.log("WatchSync > 本地入库 " + mine.size() + " 条（History.sync() 走宿主同名合并清理）");
+            } catch (Throwable t) {
+                Throwable c = t;
+                while (c instanceof java.lang.reflect.InvocationTargetException && c.getCause() != null) c = c.getCause();
+                Logger.log("WatchSync > historySync err: " + c);
+            }
+        }
         // 应用完之后的本地库才是真基线 → 统一走 refreshLocalSnap()（与初始化同一函数）
         refreshLocalSnap();
-    }
-
-    /**
-     * 用应用自身的 History.save() 把一条记录写进本地（走 Room 连接 → UI 自动刷新）。
-     * 先用 setCid(anchorCid) 锚定 cid（不用 sync()，避免被强制改成当前配置的 cid）。
-     * 返回是否成功保存。
-     */
-    private boolean saveHistory(JSONObject rec) {
-        try {
-            Object hist = historyObjectFrom.invoke(null, rec.toString());
-            if (hist == null) return false;
-            histSetCid.invoke(hist, anchorCid);                      // 锚定 cid
-            historySave.invoke(hist);                                // 走 Room → 触发 UI 刷新
-            return true;
-        } catch (Throwable t) {
-            Throwable c = t;
-            while (c instanceof java.lang.reflect.InvocationTargetException && c.getCause() != null) c = c.getCause();
-            Logger.log("WatchSync > saveHistory err: " + c);
-            return false;
-        }
     }
 
     /**
