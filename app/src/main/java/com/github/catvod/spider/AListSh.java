@@ -94,6 +94,15 @@ public class AListSh extends Spider {
     @Override
     public String homeContent(boolean filter) throws Exception {
         fetchRule();
+        // 观看记录多端同步：每 AListSh 实例一个 sync，homeContent 首次进入时懒创建并锚定 cid+username。
+        // 不放 start() 静态单例了：实例自持 watchSync 字段，同实例复用，切配置=换 AListSh=换 sync。
+        if (watchSync == null) {
+            try {
+                watchSync = WatchSync.create(mContext, defaultDrive);
+            } catch (Throwable t) {
+                Logger.log("AListSh > WatchSync.create err: " + t);
+            }
+        }
         List<Class> classes = new ArrayList<>();
         for (Drive drive : drives)
             if (!drive.hidden())
@@ -435,9 +444,6 @@ public class AListSh extends Spider {
                 Path.write(wLoginFile, (cUserName + "\n" + cPassword).getBytes());
             }
         }
-        
-        // 观看记录多端同步：FileObserver 监视本地 DB + 30s 拉取 + 启动立即拉一次
-        watchSync = WatchSync.start(mContext, defaultDrive);        
     }
 
     private Drive getDrive(String name) {
