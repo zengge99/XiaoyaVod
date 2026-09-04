@@ -529,38 +529,44 @@ public class WatchSync {
      * 这样即使插入失败，旧记录也不会丢失（不会先删后插导致数据丢失）。
      */
     private boolean saveHistory(JSONObject rec) {
-        String name = rec.optString("vodName", "");
-        long dur = rec.optLong("duration", 0L);
-        // ① 先查出要清理的旧记录的精确 rowid（不删，只查）
-        List<Long> oldRowIds = queryDedupRowIds(name, dur);
+        // ① 先规范化 key：剥离尾部旧 cid，再追加本机 anchorCid，得到最终要保存的 key
+        stripKeyCid(rec);
+        String newKey = "";
         try {
-            // 兼容新旧格式：先剥离 key 尾部可能存在的旧 cid（老格式带 @@cid，新格式不带），
-            // 再追加本机 anchorCid。
-            // "Alist@@@path/~xiaoya@@@25" → stripKeyCid → "Alist@@@path/~xiaoya" → "Alist@@@path/~xiaoya@@@27"
-            stripKeyCid(rec);
             String key = rec.optString("key", "");
             if (!key.endsWith("@@@" + anchorCid)) {
                 rec.put("key", key + "@@@" + anchorCid);
             }
+            newKey = rec.optString("key", "");
+        } catch (Throwable t) {
+            Logger.log("WatchSync > saveHistory key err: " + t);
+        }
+        String name = rec.optString("vodName", "");
+        long dur = rec.optLong("duration", 0L);
+        // ② 先查出要清理的旧记录的精确 rowid（同 cid 同名、时长相近、且 key 与本次不同）。
+        //    key 相同的旧行会被 save() 原地 upsert（rowid 不变），绝不能删自己；
+        //    只删真正多余的旧行（如老格式不同 cid 残留、跨设备重复行）。
+        List<Long> oldRowIds = queryDedupRowIds(name, dur, newKey);
+        try {
             Object hist = historyObjectFrom.invoke(null, rec.toString());
             if (hist == null) return false;
             histSetCid.invoke(hist, anchorCid);                      // 锚定 cid
-            historySave.invoke(hist);                                // ② 先插入新记录
+            historySave.invoke(hist);                                // ③ 先写（同 key 原地 upsert，异 key 插新行）
         } catch (Throwable t) {
             Throwable c = t;
             while (c instanceof java.lang.reflect.InvocationTargetException && c.getCause() != null) c = c.getCause();
             Logger.log("WatchSync > saveHistory err: " + c);
             return false;                                            // 插入失败 → 旧记录完好，不丢
         }
-        // ③ 插入成功后，按 rowid 精确删除旧记录（不会误删刚插入的）
+        // ④ 写入成功后，按 rowid 精确删除真正多余的旧行（绝不会误删刚 upsert 的那一行）
         if (!oldRowIds.isEmpty()) {
             deleteByRowIds(oldRowIds);
         }
         return true;
     }
 
-    /** 查询待去重的旧记录 rowid（只查不删）：同 cid 同名、双方 duration>0 且时长差<=10分钟 */
-    private List<Long> queryDedupRowIds(String name, long dur) {
+    /** 查询待去重的旧记录 rowid（只查不删）：同 cid 同名、双方 duration>0 且时长差<=10分钟、且 key 与本次不同。 */
+    private List<Long> queryDedupRowIds(String name, long dur, String newKey) {
         List<Long> ids = new ArrayList<>();
         if (name.isEmpty()) return ids;
         SQLiteDatabase db = null;
@@ -569,12 +575,15 @@ public class WatchSync {
             File dbf = context.getDatabasePath("tv");
             if (dbf == null || !dbf.exists()) return ids;
             db = SQLiteDatabase.openDatabase(dbf.getPath(), null, SQLiteDatabase.OPEN_READONLY);
-            cur = db.rawQuery("SELECT rowid, duration FROM History WHERE cid = ? AND vodName = ?",
+            cur = db.rawQuery("SELECT rowid, duration, key FROM History WHERE cid = ? AND vodName = ?",
                     new String[]{String.valueOf(anchorCid), name});
             while (cur.moveToNext()) {
                 long rowId = cur.getLong(0);
                 long ldur = cur.getLong(1);
+                String lkey = cur.isNull(2) ? "" : cur.getString(2);
                 if (dur > 0 && ldur > 0 && Math.abs(dur - ldur) <= TimeUnit.MINUTES.toMillis(10)) {
+                    // key 与本次相同 → save() 会原地 upsert 该行，删了就是误删自己，跳过
+                    if (lkey.equals(newKey)) continue;
                     ids.add(rowId);
                 }
             }
