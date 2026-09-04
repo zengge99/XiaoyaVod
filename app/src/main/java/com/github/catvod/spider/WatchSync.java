@@ -533,13 +533,11 @@ public class WatchSync {
         long dur = rec.optLong("duration", 0L);
         dedupLocal(name, dur);                                       // 手工去重（抄 sync 判定）
         try {
-            // 修复 key 里的旧 cid：远端记录的 key 末尾带了写入方的 cid，
-            // 不替换的话 INSERT OR REPLACE 会覆盖其它 cid 分区的同 key 记录。
+            // 远端 key 不含 cid，本地写入时追加 anchorCid：
+            // "Alist@@@path/~xiaoya" → "Alist@@@path/~xiaoya@@@27"
             String key = rec.optString("key", "");
-            int lastAt = key.lastIndexOf("@@@");
-            if (lastAt > 0) {
-                String newKey = key.substring(0, lastAt + 3) + anchorCid;
-                if (!newKey.equals(key)) rec.put("key", newKey);
+            if (!key.endsWith("@@@" + anchorCid)) {
+                rec.put("key", key + "@@@" + anchorCid);
             }
             Object hist = historyObjectFrom.invoke(null, rec.toString());
             if (hist == null) return false;
@@ -851,7 +849,8 @@ public class WatchSync {
             String str = o.toString();
             if (str != null && str.trim().startsWith("{")) {
                 JSONObject j = new JSONObject(str);
-                j.remove("cid");                         // 远端不存 cid：跨设备无意义，避免写放大
+                j.remove("cid");                         // 远端不存 cid：跨设备无意义
+                stripKeyCid(j);                            // key 里的 cid 也去掉
                 return j;
             }
         } catch (Throwable ignored) {
@@ -865,11 +864,19 @@ public class WatchSync {
                 Object val = f.get(o);
                 if (val != null) json.put(f.getName(), val);
             }
+            stripKeyCid(json);                             // key 里的 cid 也去掉
             return json;
         } catch (Throwable t) {
             Logger.log("WatchSync > historyToJson failed: " + t);
             return null;
         }
+    }
+
+    /** 去掉 key 末尾的 @@cid 后缀，远端完全不存 cid。 */
+    private static void stripKeyCid(JSONObject j) {
+        String key = j.optString("key", "");
+        int lastAt = key.lastIndexOf("@@@");
+        if (lastAt > 0) j.put("key", key.substring(0, lastAt));
     }
 
     // ---------------- 进度保护 ----------------
