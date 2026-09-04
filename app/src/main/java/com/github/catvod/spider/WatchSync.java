@@ -533,8 +533,10 @@ public class WatchSync {
         long dur = rec.optLong("duration", 0L);
         dedupLocal(name, dur);                                       // 手工去重（抄 sync 判定）
         try {
-            // 远端 key 不含 cid，本地写入时追加 anchorCid：
-            // "Alist@@@path/~xiaoya" → "Alist@@@path/~xiaoya@@@27"
+            // 兼容新旧格式：先剥离 key 尾部可能存在的旧 cid（老格式带 @@cid，新格式不带），
+            // 再追加本机 anchorCid。
+            // "Alist@@@path/~xiaoya@@@25" → stripKeyCid → "Alist@@@path/~xiaoya" → "Alist@@@path/~xiaoya@@@27"
+            stripKeyCid(rec);
             String key = rec.optString("key", "");
             if (!key.endsWith("@@@" + anchorCid)) {
                 rec.put("key", key + "@@@" + anchorCid);
