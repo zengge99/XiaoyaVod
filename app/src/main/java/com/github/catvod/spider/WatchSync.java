@@ -533,6 +533,14 @@ public class WatchSync {
         long dur = rec.optLong("duration", 0L);
         dedupLocal(name, dur);                                       // 手工去重（抄 sync 判定）
         try {
+            // 修复 key 里的旧 cid：远端记录的 key 末尾带了写入方的 cid，
+            // 不替换的话 INSERT OR REPLACE 会覆盖其它 cid 分区的同 key 记录。
+            String key = rec.optString("key", "");
+            int lastAt = key.lastIndexOf("@@@");
+            if (lastAt > 0) {
+                String newKey = key.substring(0, lastAt + 3) + anchorCid;
+                if (!newKey.equals(key)) rec.put("key", newKey);
+            }
             Object hist = historyObjectFrom.invoke(null, rec.toString());
             if (hist == null) return false;
             histSetCid.invoke(hist, anchorCid);                      // 锚定 cid
