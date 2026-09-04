@@ -842,7 +842,9 @@ public class WatchSync {
         try {
             String str = o.toString();
             if (str != null && str.trim().startsWith("{")) {
-                return new JSONObject(str);
+                JSONObject j = new JSONObject(str);
+                j.remove("cid");                         // 远端不存 cid：跨设备无意义，避免写放大
+                return j;
             }
         } catch (Throwable ignored) {
         }
@@ -850,6 +852,7 @@ public class WatchSync {
             JSONObject json = new JSONObject();
             Field[] fields = historyClass.getDeclaredFields();
             for (Field f : fields) {
+                if ("cid".equals(f.getName())) continue;   // 跳过 cid，远端不存
                 f.setAccessible(true);
                 Object val = f.get(o);
                 if (val != null) json.put(f.getName(), val);
