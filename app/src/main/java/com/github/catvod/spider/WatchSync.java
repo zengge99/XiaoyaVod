@@ -524,14 +524,15 @@ public class WatchSync {
     }
 
     /**
-     * 写入一条并手工去重：逻辑与 History.sync() 的 shouldMerge 判定一致——
-     * 先查找本地（锚定 cid）同名记录，凡是「双方 duration>0 且时长差<=10分钟」的都视为同一条（不同 key 的旧版本）删除，
-     * 再 setCid(anchorCid).save() 写入当前这条。这样避免同名不同 key 记录并存导致的重复显示。
+     * 写入一条并手工去重：先查出旧记录的 rowid（只查不删），
+     * 插入新记录成功后，再按 rowid 精确删除旧记录。
+     * 这样即使插入失败，旧记录也不会丢失（不会先删后插导致数据丢失）。
      */
     private boolean saveHistory(JSONObject rec) {
         String name = rec.optString("vodName", "");
         long dur = rec.optLong("duration", 0L);
-        dedupLocal(name, dur);                                       // 手工去重（抄 sync 判定）
+        // ① 先查出要清理的旧记录的精确 rowid（不删，只查）
+        List<Long> oldRowIds = queryDedupRowIds(name, dur);
         try {
             // 兼容新旧格式：先剥离 key 尾部可能存在的旧 cid（老格式带 @@cid，新格式不带），
             // 再追加本机 anchorCid。
@@ -544,41 +545,64 @@ public class WatchSync {
             Object hist = historyObjectFrom.invoke(null, rec.toString());
             if (hist == null) return false;
             histSetCid.invoke(hist, anchorCid);                      // 锚定 cid
-            historySave.invoke(hist);                                // 单条保存
-            return true;
+            historySave.invoke(hist);                                // ② 先插入新记录
         } catch (Throwable t) {
             Throwable c = t;
             while (c instanceof java.lang.reflect.InvocationTargetException && c.getCause() != null) c = c.getCause();
             Logger.log("WatchSync > saveHistory err: " + c);
-            return false;
+            return false;                                            // 插入失败 → 旧记录完好，不丢
         }
+        // ③ 插入成功后，按 rowid 精确删除旧记录（不会误删刚插入的）
+        if (!oldRowIds.isEmpty()) {
+            deleteByRowIds(oldRowIds);
+        }
+        return true;
     }
 
-    /** 手工去重：删除本地（锚定 cid）与指定片名/时长同一条的旧记录（判定与 sync 的 shouldMerge 一致）。 */
-    private void dedupLocal(String name, long dur) {
-        if (name.isEmpty()) return;
+    /** 查询待去重的旧记录 rowid（只查不删）：同 cid 同名、双方 duration>0 且时长差<=10分钟 */
+    private List<Long> queryDedupRowIds(String name, long dur) {
+        List<Long> ids = new ArrayList<>();
+        if (name.isEmpty()) return ids;
         SQLiteDatabase db = null;
         Cursor cur = null;
         try {
             File dbf = context.getDatabasePath("tv");
-            if (dbf == null || !dbf.exists()) return;
-            db = SQLiteDatabase.openDatabase(dbf.getPath(), null, SQLiteDatabase.OPEN_READWRITE);
-            cur = db.rawQuery("SELECT \"key\", duration FROM History WHERE cid = ? AND vodName = ?",
+            if (dbf == null || !dbf.exists()) return ids;
+            db = SQLiteDatabase.openDatabase(dbf.getPath(), null, SQLiteDatabase.OPEN_READONLY);
+            cur = db.rawQuery("SELECT rowid, duration FROM History WHERE cid = ? AND vodName = ?",
                     new String[]{String.valueOf(anchorCid), name});
             while (cur.moveToNext()) {
-                String k = cur.getString(0);
+                long rowId = cur.getLong(0);
                 long ldur = cur.getLong(1);
-                if (k == null) continue;
-                // sync 的 mergeFrom 判定：force=true 忽略 key 是否相同；仅要求双方 duration>0 且时长差<=10分钟
                 if (dur > 0 && ldur > 0 && Math.abs(dur - ldur) <= TimeUnit.MINUTES.toMillis(10)) {
-                    int del = db.delete("History", "cid = ? AND \"key\" = ?", new String[]{String.valueOf(anchorCid), k});
-                    if (del > 0) Logger.log("WatchSync > 去重删除旧同名记录: " + name);
+                    ids.add(rowId);
                 }
             }
         } catch (Throwable t) {
-            Logger.log("WatchSync > dedupLocal err: " + t);
+            Logger.log("WatchSync > queryDedupRowIds err: " + t);
         } finally {
             if (cur != null) try { cur.close(); } catch (Throwable ignored) {}
+            if (db != null && db.isOpen()) try { db.close(); } catch (Throwable ignored) {}
+        }
+        return ids;
+    }
+
+    /** 按 rowid 精确删除旧记录 */
+    private void deleteByRowIds(List<Long> rowIds) {
+        if (rowIds.isEmpty()) return;
+        SQLiteDatabase db = null;
+        try {
+            File dbf = context.getDatabasePath("tv");
+            if (dbf == null || !dbf.exists()) return;
+            db = SQLiteDatabase.openDatabase(dbf.getPath(), null, SQLiteDatabase.OPEN_READWRITE);
+            int deleted = 0;
+            for (Long id : rowIds) {
+                deleted += db.delete("History", "rowid = ?", new String[]{String.valueOf(id)});
+            }
+            if (deleted > 0) Logger.log("WatchSync > 去重删除旧记录: " + deleted + " 条");
+        } catch (Throwable t) {
+            Logger.log("WatchSync > deleteByRowIds err: " + t);
+        } finally {
             if (db != null && db.isOpen()) try { db.close(); } catch (Throwable ignored) {}
         }
     }
