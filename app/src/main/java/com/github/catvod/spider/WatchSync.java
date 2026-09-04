@@ -876,9 +876,12 @@ public class WatchSync {
 
     /** 去掉 key 末尾的 @@cid 后缀，远端完全不存 cid。 */
     private static void stripKeyCid(JSONObject j) {
-        String key = j.optString("key", "");
-        int lastAt = key.lastIndexOf("@@@");
-        if (lastAt > 0) j.put("key", key.substring(0, lastAt));
+        try {
+            String key = j.optString("key", "");
+            int lastAt = key.lastIndexOf("@@@");
+            if (lastAt > 0) j.put("key", key.substring(0, lastAt));
+        } catch (org.json.JSONException ignored) {
+        }
     }
 
     // ---------------- 进度保护 ----------------
