@@ -715,6 +715,14 @@ public class WatchSync {
     /** 序列化 RemoteData 为远端 JSON 文本（{"records":[...],"tombstones":{...}}）。 */
     private String serialize(RemoteData rd) {
         try {
+            // 写远端前，对所有记录统一 stripKeyCid：不管来自本地还是远端，key 都去 cid
+            for (int i = 0; i < rd.records.length(); i++) {
+                JSONObject wrap = rd.records.optJSONObject(i);
+                if (wrap != null) {
+                    JSONObject h = wrap.optJSONObject("history");
+                    if (h != null) stripKeyCid(h);
+                }
+            }
             JSONObject obj = new JSONObject();
             obj.put("records", rd.records);
             JSONObject tb = new JSONObject();
@@ -852,7 +860,6 @@ public class WatchSync {
             if (str != null && str.trim().startsWith("{")) {
                 JSONObject j = new JSONObject(str);
                 j.remove("cid");                         // 远端不存 cid：跨设备无意义
-                stripKeyCid(j);                            // key 里的 cid 也去掉
                 return j;
             }
         } catch (Throwable ignored) {
@@ -866,7 +873,6 @@ public class WatchSync {
                 Object val = f.get(o);
                 if (val != null) json.put(f.getName(), val);
             }
-            stripKeyCid(json);                             // key 里的 cid 也去掉
             return json;
         } catch (Throwable t) {
             Logger.log("WatchSync > historyToJson failed: " + t);
@@ -874,12 +880,13 @@ public class WatchSync {
         }
     }
 
-    /** 去掉 key 末尾的 @@cid 后缀，远端完全不存 cid。 */
+    /** 去掉 key 末尾的 @@cid 后缀（仅当 key 以 @@@加纯数字结尾时），远端不存 cid。 */
     private static void stripKeyCid(JSONObject j) {
         try {
             String key = j.optString("key", "");
-            int lastAt = key.lastIndexOf("@@@");
-            if (lastAt > 0) j.put("key", key.substring(0, lastAt));
+            if (key.matches(".*@@@\\d+$")) {
+                j.put("key", key.replaceFirst("@@@\\d+$", ""));
+            }
         } catch (org.json.JSONException ignored) {
         }
     }
