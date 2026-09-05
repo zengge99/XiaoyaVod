@@ -913,13 +913,20 @@ public class WatchSync {
         }
     }
 
-    /** 去掉 key 末尾的 @@cid 后缀（仅当 key 以 @@@加纯数字结尾时），远端不存 cid。 */
+    /** 去掉 key 末尾的 @@cid 后缀（远端不存 cid）。
+     * 判据：只有 key 是 \"A@@@B@@@Cid\" 这种 ≥3 段式、且末段是纯数字时才剥掉这最后一小段；
+     * 否则（如 2 段式的路径段本身就以数字结尾）原样不动，避免误删路径段。 */
     private static void stripKeyCid(JSONObject j) {
         try {
             String key = j.optString("key", "");
-            if (key.matches(".*@@@\\d+$")) {
-                j.put("key", key.replaceFirst("@@@\\d+$", ""));
-            }
+            if (key.isEmpty()) return;
+            int last = key.lastIndexOf("@@@");
+            if (last <= 0) return;                    // 找不到分隔符 → 无 cid，不动
+            String tail = key.substring(last + 3);     // 末段
+            if (!tail.matches("\\d+")) return;        // 末段非纯数字 → 不是 cid，不动
+            // 末段是纯数字，且前面还出现过至少一个 @@@（即总段数 ≥3）→ 末段才是 cid，剥掉它
+            if (key.lastIndexOf("@@@", last - 1) < 0) return;   // 只有一段 @@@（2 段式）→ 不动
+            j.put("key", key.substring(0, last));
         } catch (org.json.JSONException ignored) {
         }
     }
