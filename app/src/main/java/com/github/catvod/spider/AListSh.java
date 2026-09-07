@@ -521,14 +521,9 @@ public class AListSh extends Spider {
             File loginFile = new File(loginPath);
             Path.write(loginFile, "\n\n");
             serverTokenCache.remove(server); // 真登录后二次验证仍失败 → 清缓存, 避免下次误复用
-            String extra = errMsg.isEmpty() ? "" : (" | 服务端: " + errMsg);
-            if (code == 401) {
-                Logger.log("登录失败(401): 用户名/密码/token 无效或已过期, 已清空登录缓存" + extra);
-                Notify.show("登录失败(401): 用户名/密码/token 无效或已过期" + extra);
-            } else {
-                Logger.log("登录失败(403): 已登录但无权访问该路径(可能 guest 权限不足), 已清空登录缓存" + extra);
-                Notify.show("登录失败(403): 已登录但无权访问该路径(可能 guest 权限不足)" + extra);
-            }
+            String detail = errMsg.isEmpty() ? ("code=" + code) : ("code=" + code + " - " + errMsg);
+            Logger.log("登录失败: " + detail + ", 已清空登录缓存");
+            Notify.show("登录失败: " + detail);
             return false;
         }
 
