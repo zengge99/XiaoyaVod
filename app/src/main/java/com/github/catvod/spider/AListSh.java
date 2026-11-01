@@ -1221,32 +1221,47 @@ public class AListSh extends Spider {
     private List<Vod> toVods(Drive drive, List<String> lines) {
         Logger.log("toVods() converting " + lines.size() + " lines");
         long startTime = System.currentTimeMillis();
-        try {
-            List<Vod> list = new ArrayList<>();
-            List<Vod> noPicList = new ArrayList<>();
-            for (String line : lines) {
+        List<Vod> list = new ArrayList<>();
+        List<Vod> noPicList = new ArrayList<>();
+        int skipped = 0;
+        for (String line : lines) {
+            if (line == null || line.trim().isEmpty()) {
+                skipped++;
+                continue;
+            }
+            try {
                 String[] splits = line.split("#");
-                //splits[0] = URLDecoder.decode(splits[0], "UTF-8");
                 int index = splits[0].lastIndexOf("/");
-                if (splits[0].endsWith("/")) {
+                if (splits[0].endsWith("/") && index > 0) {
                     splits[0] = splits[0].substring(0, index);
                     index = splits[0].lastIndexOf("/");
                 }
+                // 路径段没有任何斜杠（根级条目/根级目录）时 index 为 -1，
+                // 直接 substring(0, -1) 会抛 StringIndexOutOfBoundsException 并拖垮整个列表
+                String parentPath;
+                String fileName;
+                if (index < 0) {
+                    parentPath = "/";
+                    fileName = splits[0].replace("/", "");
+                } else {
+                    parentPath = "/" + splits[0].substring(0, index);
+                    fileName = splits[0].substring(index + 1);
+                }
+                if (fileName.isEmpty()) {
+                    skipped++;
+                    Logger.log("toVods() skip empty name: " + line);
+                    continue;
+                }
                 Item item = new Item();
                 //合并列表
-                if (isCombinedList(line)){
-                    item.setType(1);
-                } else {
-                    item.setType(0);
-                }
+                item.setType(isCombinedList(line) ? 1 : 0);
                 item.doubanInfo.setId(splits.length >= 3 ? splits[2] : "");
                 item.doubanInfo.setRating(splits.length >= 4 ? splits[3] : "");
                 item.doubanInfo.setYear(splits.length >= 6 ? splits[5] : "");
                 item.doubanInfo.setRegion(splits.length >= 7 ? splits[6] : "");
                 item.doubanInfo.setType(splits.length >= 8 ? splits[7] : "");
                 item.setThumb(splits.length >= 5 ? splits[4] : "");
-                item.setPath("/" + splits[0].substring(0, index));
-                String fileName = splits[0].substring(index + 1);
+                item.setPath(parentPath);
                 item.setName(fileName);
                 item.doubanInfo.setName(splits.length >= 2 ? splits[1] : fileName);
                 Vod vod = item.getVod(drive.getName(), drive.getVodPic());
@@ -1263,15 +1278,15 @@ public class AListSh extends Spider {
                     vod.setVodPic(vod.getVodPic() + picHeader);
                     list.add(vod);
                 }
+            } catch (Throwable t) {
+                skipped++;
+                Logger.log("toVods() skip bad line: " + line + " -> " + t);
             }
-            list.addAll(noPicList);
-            return list;
-        } catch (Throwable e) {
-            Logger.log("toVods() error: " + e.toString());
-            return new ArrayList<>();
-        } finally {
-            Logger.log("toVods() completed in " + (System.currentTimeMillis() - startTime) + "ms");
         }
+        list.addAll(noPicList);
+        Logger.log("toVods() done, ok=" + list.size() + ", skipped=" + skipped
+                + ", cost=" + (System.currentTimeMillis() - startTime) + "ms");
+        return list;
     }
 
     private String calcFlag(String line) {
